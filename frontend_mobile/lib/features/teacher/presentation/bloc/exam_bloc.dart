@@ -1,0 +1,183 @@
+import 'dart:io';
+import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../domain/entities/teacher_entities.dart';
+import '../../domain/usecases/teacher_usecases.dart';
+
+// --- Events ---
+
+abstract class ExamEvent extends Equatable {
+  const ExamEvent();
+
+  @override
+  List<Object?> get props => [];
+}
+
+class CreateExamEvent extends ExamEvent {
+  final int classId;
+  final String title;
+
+  const CreateExamEvent({required this.classId, required this.title});
+
+  @override
+  List<Object?> get props => [classId, title];
+}
+
+class UploadImagesEvent extends ExamEvent {
+  final int examId;
+  final List<File> images;
+
+  const UploadImagesEvent({required this.examId, required this.images});
+
+  @override
+  List<Object?> get props => [examId, images];
+}
+
+class LoadExamStatusEvent extends ExamEvent {
+  final int examId;
+
+  const LoadExamStatusEvent(this.examId);
+
+  @override
+  List<Object?> get props => [examId];
+}
+
+class RefreshExamStatusEvent extends ExamEvent {
+  final int examId;
+
+  const RefreshExamStatusEvent(this.examId);
+
+  @override
+  List<Object?> get props => [examId];
+}
+
+// --- States ---
+
+abstract class ExamState extends Equatable {
+  const ExamState();
+
+  @override
+  List<Object?> get props => [];
+}
+
+class ExamInitial extends ExamState {
+  const ExamInitial();
+}
+
+class ExamCreating extends ExamState {
+  const ExamCreating();
+}
+
+class ExamCreated extends ExamState {
+  final ExamEntity exam;
+
+  const ExamCreated(this.exam);
+
+  @override
+  List<Object?> get props => [exam];
+}
+
+class ImagesUploading extends ExamState {
+  const ImagesUploading();
+}
+
+class ImagesUploaded extends ExamState {
+  final List<ExamImageEntity> images;
+
+  const ImagesUploaded(this.images);
+
+  @override
+  List<Object?> get props => [images];
+}
+
+class ExamStatusLoading extends ExamState {
+  const ExamStatusLoading();
+}
+
+class ExamStatusLoaded extends ExamState {
+  final ExamStatusEntity examStatus;
+
+  const ExamStatusLoaded(this.examStatus);
+
+  @override
+  List<Object?> get props => [examStatus];
+}
+
+class ExamError extends ExamState {
+  final String message;
+
+  const ExamError(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+// --- Bloc ---
+
+class ExamBloc extends Bloc<ExamEvent, ExamState> {
+  final CreateExam createExam;
+  final UploadExamImages uploadExamImages;
+  final GetExamStatus getExamStatus;
+
+  ExamBloc({
+    required this.createExam,
+    required this.uploadExamImages,
+    required this.getExamStatus,
+  }) : super(const ExamInitial()) {
+    on<CreateExamEvent>(_onCreateExam);
+    on<UploadImagesEvent>(_onUploadImages);
+    on<LoadExamStatusEvent>(_onLoadExamStatus);
+    on<RefreshExamStatusEvent>(_onRefreshExamStatus);
+  }
+
+  Future<void> _onCreateExam(
+    CreateExamEvent event,
+    Emitter<ExamState> emit,
+  ) async {
+    emit(const ExamCreating());
+    final result = await createExam(
+      CreateExamParams(classId: event.classId, title: event.title),
+    );
+    result.fold(
+      (failure) => emit(ExamError(failure.message)),
+      (exam) => emit(ExamCreated(exam)),
+    );
+  }
+
+  Future<void> _onUploadImages(
+    UploadImagesEvent event,
+    Emitter<ExamState> emit,
+  ) async {
+    emit(const ImagesUploading());
+    final result = await uploadExamImages(
+      UploadExamImagesParams(examId: event.examId, images: event.images),
+    );
+    result.fold(
+      (failure) => emit(ExamError(failure.message)),
+      (images) => emit(ImagesUploaded(images)),
+    );
+  }
+
+  Future<void> _onLoadExamStatus(
+    LoadExamStatusEvent event,
+    Emitter<ExamState> emit,
+  ) async {
+    emit(const ExamStatusLoading());
+    final result = await getExamStatus(event.examId);
+    result.fold(
+      (failure) => emit(ExamError(failure.message)),
+      (status) => emit(ExamStatusLoaded(status)),
+    );
+  }
+
+  Future<void> _onRefreshExamStatus(
+    RefreshExamStatusEvent event,
+    Emitter<ExamState> emit,
+  ) async {
+    final result = await getExamStatus(event.examId);
+    result.fold(
+      (failure) => emit(ExamError(failure.message)),
+      (status) => emit(ExamStatusLoaded(status)),
+    );
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-03-09T20:30:00.000Z",
+  "__export_source": "fastcheck-backend",
+  "resources": [
+    {
+      "_id": "wrk_fastcheck",
+      "_type": "workspace",
+      "name": "FastCheck Education API",
+      "description": "Role-based education endpoints with OCR status and pagination filters.",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_fastcheck",
+      "_type": "environment",
+      "parentId": "wrk_fastcheck",
+      "name": "Base Environment",
+      "data": {
+        "baseUrl": "http://localhost:8080",
+        "adminToken": "",
+        "teacherToken": "",
+        "studentToken": "",
+        "parentToken": "",
+        "schoolId": 1,
+        "classId": 1,
+        "examId": 1,
+        "parentUserId": 4,
+        "studentUserId": 3,
+        "teacherUserId": 2
+      }
+    },
+    {
+      "_id": "grp_teacher",
+      "_type": "request_group",
+      "parentId": "wrk_fastcheck",
+      "name": "Teacher"
+    },
+    {
+      "_id": "req_teacher_roster",
+      "_type": "request",
+      "parentId": "grp_teacher",
+      "name": "List Class Students (Paged + Name Filter)",
+      "method": "GET",
+      "url": "{{ baseUrl }}/v1/teacher/classes/{{ classId }}/students?page=0&size=20&name=ali",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ teacherToken }}" }
+      ]
+    },
+    {
+      "_id": "req_teacher_exam_status",
+      "_type": "request",
+      "parentId": "grp_teacher",
+      "name": "Get Exam OCR Status",
+      "method": "GET",
+      "url": "{{ baseUrl }}/v1/teacher/exams/{{ examId }}",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ teacherToken }}" }
+      ]
+    },
+    {
+      "_id": "grp_student",
+      "_type": "request_group",
+      "parentId": "wrk_fastcheck",
+      "name": "Student"
+    },
+    {
+      "_id": "req_student_exams",
+      "_type": "request",
+      "parentId": "grp_student",
+      "name": "List Student Exams (Paged + Status Filter)",
+      "method": "GET",
+      "url": "{{ baseUrl }}/v1/student/exams?page=0&size=20&examStatus=READY",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ studentToken }}" }
+      ]
+    },
+    {
+      "_id": "req_student_questions",
+      "_type": "request",
+      "parentId": "grp_student",
+      "name": "Get Student Exam Questions",
+      "method": "GET",
+      "url": "{{ baseUrl }}/v1/student/exams/{{ examId }}/questions",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ studentToken }}" }
+      ]
+    },
+    {
+      "_id": "grp_admin",
+      "_type": "request_group",
+      "parentId": "wrk_fastcheck",
+      "name": "Admin"
+    },
+    {
+      "_id": "req_admin_link_parent_student",
+      "_type": "request",
+      "parentId": "grp_admin",
+      "name": "Link Parent Student",
+      "method": "POST",
+      "url": "{{ baseUrl }}/v1/admin/parent-student-links",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ adminToken }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"parentUserId\": {{ parentUserId }},\n  \"studentUserId\": {{ studentUserId }}\n}"
+      }
+    },
+    {
+      "_id": "req_admin_parent_students",
+      "_type": "request",
+      "parentId": "grp_admin",
+      "name": "List Parent Students",
+      "method": "GET",
+      "url": "{{ baseUrl }}/v1/admin/parents/{{ parentUserId }}/students",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ adminToken }}" }
+      ]
+    }
+  ]
+}

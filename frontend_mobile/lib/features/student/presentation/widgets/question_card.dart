@@ -1,0 +1,285 @@
+import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../domain/entities/student_entities.dart';
+
+class QuestionCard extends StatefulWidget {
+  final QuestionEntity question;
+  final int displayIndex;
+
+  const QuestionCard({
+    super.key,
+    required this.question,
+    required this.displayIndex,
+  });
+
+  @override
+  State<QuestionCard> createState() => _QuestionCardState();
+}
+
+class _QuestionCardState extends State<QuestionCard>
+    with SingleTickerProviderStateMixin {
+  bool _expanded = false;
+
+  QuestionEntity get q => widget.question;
+
+  double get confidencePercent => (q.confidence ?? 0) * 100;
+
+  Color get _confidenceColor {
+    if (confidencePercent >= 80) return AppColors.success;
+    if (confidencePercent >= 50) return AppColors.warning;
+    return AppColors.error;
+  }
+
+  Color get _confidenceBgColor {
+    if (confidencePercent >= 80) return AppColors.successLight;
+    if (confidencePercent >= 50) return AppColors.warningLight;
+    return AppColors.errorLight;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: _expanded ? AppColors.primary.withValues(alpha: 0.3) : AppColors.border,
+          width: _expanded ? 1.5 : 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: () => setState(() => _expanded = !_expanded),
+        borderRadius: BorderRadius.circular(16),
+        child: AnimatedSize(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          alignment: Alignment.topCenter,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(),
+                if (_expanded) ...[
+                  const SizedBox(height: 16),
+                  const Divider(height: 1, color: AppColors.border),
+                  const SizedBox(height: 16),
+                  _buildDetails(),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: AppColors.primarySurface,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            '${widget.displayIndex}',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppColors.primary,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                q.questionText ?? 'Soru ${widget.displayIndex}',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+                maxLines: _expanded ? null : 1,
+                overflow: _expanded ? null : TextOverflow.ellipsis,
+              ),
+              if (q.studentAnswer != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Cevap: ${q.studentAnswer}',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        if (q.confidence != null) _buildConfidenceBadge(),
+        const SizedBox(width: 4),
+        AnimatedRotation(
+          turns: _expanded ? 0.5 : 0,
+          duration: const Duration(milliseconds: 250),
+          child: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: AppColors.textTertiary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildConfidenceBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: _confidenceBgColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        '%${confidencePercent.toStringAsFixed(0)}',
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: _confidenceColor,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetails() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (q.questionText != null) ...[
+          _detailRow('Soru Metni', q.questionText!),
+          const SizedBox(height: 12),
+        ],
+        if (q.studentAnswer != null) ...[
+          _detailRow('Öğrenci Cevabı', q.studentAnswer!),
+          const SizedBox(height: 12),
+        ],
+        _buildRow(
+          'Sayfa',
+          '${q.pageNumber}',
+          Icons.description_outlined,
+        ),
+        const SizedBox(height: 8),
+        _buildRow(
+          'Soru Sırası',
+          '${q.questionOrder}',
+          Icons.format_list_numbered_rounded,
+        ),
+        if (q.confidence != null) ...[
+          const SizedBox(height: 16),
+          _buildConfidenceBar(),
+        ],
+      ],
+    );
+  }
+
+  Widget _detailRow(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textTertiary,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceVariant,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.textPrimary,
+              height: 1.5,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRow(String label, String value, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: AppColors.textTertiary),
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: const TextStyle(
+            fontSize: 13,
+            color: AppColors.textTertiary,
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildConfidenceBar() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Güven Skoru',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textTertiary,
+              ),
+            ),
+            Text(
+              '%${confidencePercent.toStringAsFixed(1)}',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: _confidenceColor,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: LinearProgressIndicator(
+            value: (q.confidence ?? 0).clamp(0.0, 1.0),
+            minHeight: 8,
+            backgroundColor: _confidenceBgColor,
+            valueColor: AlwaysStoppedAnimation<Color>(_confidenceColor),
+          ),
+        ),
+      ],
+    );
+  }
+}

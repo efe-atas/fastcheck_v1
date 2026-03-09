@@ -1,0 +1,348 @@
+{
+  "info": {
+    "name": "FastCheck Education API",
+    "_postman_id": "b8f0f0aa-6f95-4d65-8f0d-96b6b5a3f001",
+    "description": "FastCheck backend endpoints including role-based education flows, OCR status monitoring, and pagination/filter query params.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "accessToken", "value": "" },
+    { "key": "teacherToken", "value": "" },
+    { "key": "studentToken", "value": "" },
+    { "key": "parentToken", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "schoolId", "value": "1" },
+    { "key": "classId", "value": "1" },
+    { "key": "examId", "value": "1" },
+    { "key": "teacherUserId", "value": "2" },
+    { "key": "studentUserId", "value": "3" },
+    { "key": "parentUserId", "value": "4" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Bootstrap Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"System Admin\",\n  \"email\": \"admin@fastcheck.local\",\n  \"password\": \"Admin#12345\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/register"
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@fastcheck.local\",\n  \"password\": \"Admin#12345\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('login response is success', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var data = pm.response.json();",
+                  "if (!data || !data.accessToken) {",
+                  "  throw new Error('accessToken not found in login response');",
+                  "}",
+                  "",
+                  "pm.collectionVariables.set('accessToken', data.accessToken);",
+                  "",
+                  "if (data.role === 'ROLE_ADMIN') {",
+                  "  pm.collectionVariables.set('adminToken', data.accessToken);",
+                  "}",
+                  "if (data.role === 'ROLE_TEACHER') {",
+                  "  pm.collectionVariables.set('teacherToken', data.accessToken);",
+                  "}",
+                  "if (data.role === 'ROLE_STUDENT') {",
+                  "  pm.collectionVariables.set('studentToken', data.accessToken);",
+                  "}",
+                  "if (data.role === 'ROLE_PARENT') {",
+                  "  pm.collectionVariables.set('parentToken', data.accessToken);",
+                  "}",
+                  "",
+                  "if (data.userId) pm.collectionVariables.set('lastLoginUserId', String(data.userId));",
+                  "if (data.role) pm.collectionVariables.set('lastLoginRole', data.role);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create User By Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Teacher A\",\n  \"email\": \"teacher.a@fastcheck.local\",\n  \"password\": \"Teacher#123\",\n  \"role\": \"ROLE_TEACHER\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/admin/users"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Create School",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schoolName\": \"Ataturk Ortaokulu\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/admin/schools"
+          }
+        },
+        {
+          "name": "Assign User To School",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/admin/users/{{teacherUserId}}/schools/{{schoolId}}"
+          }
+        },
+        {
+          "name": "Link Parent Student",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"parentUserId\": {{parentUserId}},\n  \"studentUserId\": {{studentUserId}}\n}"
+            },
+            "url": "{{baseUrl}}/v1/admin/parent-student-links"
+          }
+        },
+        {
+          "name": "List Parent Students",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/admin/parents/{{parentUserId}}/students"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Teacher",
+      "item": [
+        {
+          "name": "Create Class",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{teacherToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schoolId\": {{schoolId}},\n  \"className\": \"7-A\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/teacher/classes"
+          }
+        },
+        {
+          "name": "List Teacher Classes",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{teacherToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/teacher/classes"
+          }
+        },
+        {
+          "name": "Create Student In Class",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{teacherToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Ali Veli\",\n  \"email\": \"ali.veli@fastcheck.local\",\n  \"password\": \"Student#123\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/teacher/classes/{{classId}}/students"
+          }
+        },
+        {
+          "name": "List Class Students (Paged + Name Filter)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{teacherToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/teacher/classes/{{classId}}/students?page=0&size=20&name=ali",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "teacher", "classes", "{{classId}}", "students"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" },
+                { "key": "name", "value": "ali" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Exam",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{teacherToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Matematik Deneme 1\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/teacher/classes/{{classId}}/exams"
+          }
+        },
+        {
+          "name": "List Class Exams",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{teacherToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/teacher/classes/{{classId}}/exams"
+          }
+        },
+        {
+          "name": "Upload Exam Images",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{teacherToken}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": "/absolute/path/to/page-1.png"
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": "/absolute/path/to/page-2.png"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/v1/teacher/exams/{{examId}}/images"
+          }
+        },
+        {
+          "name": "Get Exam OCR Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{teacherToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/teacher/exams/{{examId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Student",
+      "item": [
+        {
+          "name": "List Student Exams (Paged + Status Filter)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{studentToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/student/exams?page=0&size=20&examStatus=READY",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "student", "exams"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" },
+                { "key": "examStatus", "value": "READY" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Student Exam Questions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{studentToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/student/exams/{{examId}}/questions"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Parent",
+      "item": [
+        {
+          "name": "Get Linked Student Exam Questions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{parentToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/parent/students/{{studentUserId}}/exams/{{examId}}/questions"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public Files",
+      "item": [
+        {
+          "name": "Get Uploaded File",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/files/example.png"
+          }
+        }
+      ]
+    }
+  ]
+}
