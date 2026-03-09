@@ -1,0 +1,59 @@
+JSON_SCHEMA = {
+    "name": "exam_ocr_output",
+    "strict": True,
+    "schema": {
+        "type": "object",
+        "properties": {
+            "document_type": {"type": "string", "const": "exam_paper"},
+            "language": {"type": "string"},
+            "pages": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "page_number": {"type": "integer"},
+                        "questions": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "question_id": {"type": "string"},
+                                    "question_text_raw": {"type": "string"},
+                                    "question_lines": {"type": "array", "items": {"type": "string"}},
+                                    "student_answer_raw": {"type": "string"},
+                                    "student_answer_lines": {"type": "array", "items": {"type": "string"}},
+                                    "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+                                },
+                                "required": [
+                                    "question_id",
+                                    "question_text_raw",
+                                    "question_lines",
+                                    "student_answer_raw",
+                                    "student_answer_lines",
+                                    "confidence"
+                                ],
+                                "additionalProperties": False
+                            }
+                        },
+                        "unmatched_text_blocks": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "raw_text": {"type": "string"},
+                                    "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+                                },
+                                "required": ["raw_text", "confidence"],
+                                "additionalProperties": False
+                            }
+                        }
+                    },
+                    "required": ["page_number", "questions", "unmatched_text_blocks"],
+                    "additionalProperties": False
+                }
+            }
+        },
+        "required": ["document_type", "language", "pages"],
+        "additionalProperties": False
+    }
+}
