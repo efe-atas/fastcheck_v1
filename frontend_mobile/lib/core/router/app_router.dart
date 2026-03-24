@@ -24,6 +24,10 @@ import '../../features/student/presentation/bloc/exam_questions_bloc.dart';
 import '../../features/parent/presentation/pages/parent_dashboard_page.dart';
 import '../../features/parent/presentation/pages/student_exam_view_page.dart';
 import '../../features/parent/presentation/bloc/parent_bloc.dart';
+import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
+import '../../features/admin/presentation/cubit/admin_cubit.dart';
+import '../../features/ocr/presentation/pages/ocr_lab_page.dart';
+import '../../features/ocr/presentation/cubit/ocr_cubit.dart';
 
 class AppRouter {
   final AuthBloc authBloc;
@@ -65,6 +69,22 @@ class AppRouter {
       GoRoute(
         path: '/auth/register',
         builder: (context, state) => const RegisterPage(),
+      ),
+
+      GoRoute(
+        path: '/admin',
+        builder: (context, state) => BlocProvider(
+          create: (_) => sl<AdminCubit>(),
+          child: const AdminDashboardPage(),
+        ),
+      ),
+
+      GoRoute(
+        path: '/ocr',
+        builder: (context, state) => BlocProvider(
+          create: (_) => sl<OcrCubit>(),
+          child: const OcrLabPage(),
+        ),
       ),
 
       // Teacher routes
@@ -211,7 +231,7 @@ class AppRouter {
       case 'ROLE_PARENT':
         return '/parent';
       case 'ROLE_ADMIN':
-        return '/teacher';
+        return '/admin';
       default:
         return '/student';
     }

@@ -23,7 +23,7 @@ class QuestionEntity extends Equatable {
   final int id;
   final int pageNumber;
   final int questionOrder;
-  final int? sourceQuestionId;
+  final String? sourceQuestionId;
   final String? questionText;
   final String? studentAnswer;
   final double? confidence;
@@ -48,24 +48,4 @@ class QuestionEntity extends Equatable {
         studentAnswer,
         confidence,
       ];
-}
-
-class PagedResult<T> extends Equatable {
-  final List<T> content;
-  final int totalElements;
-  final int totalPages;
-  final int currentPage;
-  final bool isLast;
-
-  const PagedResult({
-    required this.content,
-    required this.totalElements,
-    required this.totalPages,
-    required this.currentPage,
-    required this.isLast,
-  });
-
-  @override
-  List<Object?> get props =>
-      [content, totalElements, totalPages, currentPage, isLast];
 }

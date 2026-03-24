@@ -26,6 +26,8 @@ class ClassDetailPage extends StatefulWidget {
 class _ClassDetailPageState extends State<ClassDetailPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+  final TextEditingController _studentSearchController =
+      TextEditingController();
   int _currentTab = 0;
 
   @override
@@ -42,6 +44,7 @@ class _ClassDetailPageState extends State<ClassDetailPage>
   @override
   void dispose() {
     _tabController.dispose();
+    _studentSearchController.dispose();
     super.dispose();
   }
 
@@ -153,24 +156,75 @@ class _ClassDetailPageState extends State<ClassDetailPage>
   }
 
   Widget _buildStudentsTab(BuildContext context, ClassDetailLoaded state) {
-    if (state.students.isEmpty) {
-      return EmptyStateWidget(
-        icon: Icons.people_rounded,
-        title: 'Henüz öğrenci yok',
-        subtitle: 'Bu sınıfa öğrenci ekleyerek başlayın.',
-      );
-    }
     return RefreshIndicator(
       onRefresh: () async {
-        context
-            .read<ClassDetailBloc>()
-            .add(RefreshStudents(widget.classId));
+        context.read<ClassDetailBloc>().add(
+              RefreshStudents(
+                widget.classId,
+                name: state.studentNameFilter,
+              ),
+            );
       },
       child: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _studentSearchController,
+                    textInputAction: TextInputAction.search,
+                    decoration: InputDecoration(
+                      hintText: 'Ad / soyad ile ara',
+                      filled: true,
+                      fillColor: AppColors.surface,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide:
+                            const BorderSide(color: AppColors.border),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      isDense: true,
+                    ),
+                    onSubmitted: (value) {
+                      final q = value.trim();
+                      context.read<ClassDetailBloc>().add(
+                            RefreshStudents(
+                              widget.classId,
+                              name: q.isEmpty ? null : q,
+                            ),
+                          );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed: () {
+                    final q = _studentSearchController.text.trim();
+                    context.read<ClassDetailBloc>().add(
+                          RefreshStudents(
+                            widget.classId,
+                            name: q.isEmpty ? null : q,
+                          ),
+                        );
+                  },
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.all(14),
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.textOnPrimary,
+                  ),
+                  child: const Icon(Icons.search_rounded, size: 22),
+                ),
+              ],
+            ),
+          ),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             color: AppColors.surfaceVariant,
             child: Text(
               'Toplam ${state.totalStudents} öğrenci',
@@ -182,18 +236,27 @@ class _ClassDetailPageState extends State<ClassDetailPage>
             ),
           ),
           Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.only(bottom: 100),
-              itemCount: state.students.length,
-              separatorBuilder: (_, __) => const Divider(
-                height: 1,
-                indent: 72,
-                color: AppColors.border,
-              ),
-              itemBuilder: (context, index) {
-                return StudentTile(student: state.students[index]);
-              },
-            ),
+            child: state.students.isEmpty
+                ? EmptyStateWidget(
+                    icon: Icons.people_rounded,
+                    title: 'Öğrenci bulunamadı',
+                    subtitle: state.studentNameFilter != null &&
+                            state.studentNameFilter!.isNotEmpty
+                        ? 'Aramayı değiştirmeyi deneyin.'
+                        : 'Bu sınıfa öğrenci ekleyerek başlayın.',
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.only(bottom: 100),
+                    itemCount: state.students.length,
+                    separatorBuilder: (_, __) => const Divider(
+                      height: 1,
+                      indent: 72,
+                      color: AppColors.border,
+                    ),
+                    itemBuilder: (context, index) {
+                      return StudentTile(student: state.students[index]);
+                    },
+                  ),
           ),
         ],
       ),

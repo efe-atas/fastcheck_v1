@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dartz/dartz.dart';
+import '../../../../core/domain/paged_result.dart';
 import '../../../../core/error/failures.dart';
 import '../entities/teacher_entities.dart';
 
@@ -12,6 +13,7 @@ abstract class TeacherRepository {
     int classId, {
     int page = 0,
     int size = 20,
+    String? name,
   });
 
   Future<Either<Failure, ClassEntity>> createClass({

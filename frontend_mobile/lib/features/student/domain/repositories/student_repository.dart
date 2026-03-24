@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import '../../../../core/domain/paged_result.dart';
 import '../../../../core/error/failures.dart';
 import '../entities/student_entities.dart';
 

@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it/get_it.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -32,9 +31,7 @@ class _CreateExamPageState extends State<CreateExamPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => GetIt.I<ExamBloc>(),
-      child: BlocConsumer<ExamBloc, ExamState>(
+    return BlocConsumer<ExamBloc, ExamState>(
         listener: (context, state) {
           if (state is ExamCreated) {
             _createdExamId = state.exam.examId;
@@ -93,7 +90,6 @@ class _CreateExamPageState extends State<CreateExamPage> {
             ),
           );
         },
-      ),
     );
   }
 

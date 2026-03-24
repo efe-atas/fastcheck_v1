@@ -28,6 +28,20 @@ import '../../features/student/domain/usecases/student_usecases.dart';
 import '../../features/student/presentation/bloc/student_exams_bloc.dart';
 import '../../features/student/presentation/bloc/exam_questions_bloc.dart';
 
+// OCR
+import '../../features/ocr/data/datasources/ocr_remote_datasource.dart';
+import '../../features/ocr/data/repositories/ocr_repository_impl.dart';
+import '../../features/ocr/domain/repositories/ocr_repository.dart';
+import '../../features/ocr/domain/usecases/ocr_usecases.dart';
+import '../../features/ocr/presentation/cubit/ocr_cubit.dart';
+
+// Admin
+import '../../features/admin/data/datasources/admin_remote_datasource.dart';
+import '../../features/admin/data/repositories/admin_repository_impl.dart';
+import '../../features/admin/domain/repositories/admin_repository.dart';
+import '../../features/admin/domain/usecases/admin_usecases.dart';
+import '../../features/admin/presentation/cubit/admin_cubit.dart';
+
 // Parent
 import '../../features/parent/data/datasources/parent_remote_datasource.dart';
 import '../../features/parent/data/repositories/parent_repository_impl.dart';
@@ -117,6 +131,46 @@ Future<void> initDependencies() async {
     () => ParentBloc(
       getLinkedStudents: sl(),
       getStudentExamQuestions: sl(),
+    ),
+  );
+
+  // ── Admin Feature ────────────────────────────────────────────────────────
+  sl.registerLazySingleton<AdminRemoteDataSource>(
+    () => AdminRemoteDataSourceImpl(dio: sl<ApiClient>().dio),
+  );
+  sl.registerLazySingleton<AdminRepository>(
+    () => AdminRepositoryImpl(remoteDataSource: sl()),
+  );
+  sl.registerLazySingleton(() => CreateSchool(sl()));
+  sl.registerLazySingleton(() => AssignUserToSchoolUc(sl()));
+  sl.registerLazySingleton(() => LinkParentStudentUc(sl()));
+  sl.registerLazySingleton(() => ListParentStudentsAdmin(sl()));
+
+  sl.registerFactory(
+    () => AdminCubit(
+      createSchool: sl(),
+      assignUserToSchool: sl(),
+      linkParentStudent: sl(),
+      listParentStudents: sl(),
+    ),
+  );
+
+  // ── OCR Feature ──────────────────────────────────────────────────────────
+  sl.registerLazySingleton<OcrRemoteDataSource>(
+    () => OcrRemoteDataSourceImpl(dio: sl<ApiClient>().dio),
+  );
+  sl.registerLazySingleton<OcrRepository>(
+    () => OcrRepositoryImpl(remoteDataSource: sl()),
+  );
+  sl.registerLazySingleton(() => OcrExtract(sl()));
+  sl.registerLazySingleton(() => OcrListMine(sl()));
+  sl.registerLazySingleton(() => OcrGetMine(sl()));
+
+  sl.registerFactory(
+    () => OcrCubit(
+      ocrExtract: sl(),
+      ocrListMine: sl(),
+      ocrGetMine: sl(),
     ),
   );
 }

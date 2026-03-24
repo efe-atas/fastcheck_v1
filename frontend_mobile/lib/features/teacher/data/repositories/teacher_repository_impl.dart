@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dartz/dartz.dart';
+import '../../../../core/domain/paged_result.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/teacher_entities.dart';
@@ -44,20 +45,18 @@ class TeacherRepositoryImpl implements TeacherRepository {
     int classId, {
     int page = 0,
     int size = 20,
+    String? name,
   }) async {
     try {
       final pagedModel = await remoteDataSource.getClassStudents(
         classId,
         page: page,
         size: size,
+        name: name,
       );
-      return Right(PagedResult(
-        content: pagedModel.content.map((m) => m.toEntity()).toList(),
-        totalElements: pagedModel.totalElements,
-        totalPages: pagedModel.totalPages,
-        currentPage: pagedModel.number,
-        hasNext: !pagedModel.last,
-      ));
+      return Right(
+        pagedModel.toPagedResult((m) => m.toEntity()),
+      );
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, e.statusCode));
     } on NetworkException {
@@ -117,7 +116,11 @@ class TeacherRepositoryImpl implements TeacherRepository {
         examId: examId,
         images: images,
       );
-      return Right(models.map((m) => m.toEntity()).toList());
+      return Right(
+        models
+            .map((m) => m.toEntity(parentExamId: m.examId ?? examId))
+            .toList(),
+      );
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, e.statusCode));
     } on NetworkException {

@@ -1,10 +1,11 @@
 import 'package:dio/dio.dart';
 import '../../../../core/constants/api_constants.dart';
+import '../../../../core/network/paged_response_dto.dart';
 import '../../../../core/error/exceptions.dart';
 import '../models/student_models.dart';
 
 abstract class StudentRemoteDataSource {
-  Future<PagedResponseModel<StudentExamModel>> getStudentExams({
+  Future<PagedResponseDto<StudentExamModel>> getStudentExams({
     required int page,
     required int size,
     String? examStatus,
@@ -19,7 +20,7 @@ class StudentRemoteDataSourceImpl implements StudentRemoteDataSource {
   StudentRemoteDataSourceImpl({required this.dio});
 
   @override
-  Future<PagedResponseModel<StudentExamModel>> getStudentExams({
+  Future<PagedResponseDto<StudentExamModel>> getStudentExams({
     required int page,
     required int size,
     String? examStatus,
@@ -38,7 +39,7 @@ class StudentRemoteDataSourceImpl implements StudentRemoteDataSource {
         queryParameters: queryParams,
       );
 
-      return PagedResponseModel.fromJson(
+      return PagedResponseDto.fromJson(
         response.data as Map<String, dynamic>,
         StudentExamModel.fromJson,
       );

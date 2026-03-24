@@ -155,7 +155,7 @@ class StudentExamsBloc extends Bloc<StudentExamsEvent, StudentExamsState> {
         exams: [...current.exams, ...paged.content],
         currentPage: paged.currentPage,
         totalPages: paged.totalPages,
-        isLast: paged.isLast,
+        isLast: !paged.hasNext,
         isLoadingMore: false,
       )),
     );
@@ -194,7 +194,7 @@ class StudentExamsBloc extends Bloc<StudentExamsEvent, StudentExamsState> {
         exams: paged.content,
         currentPage: paged.currentPage,
         totalPages: paged.totalPages,
-        isLast: paged.isLast,
+        isLast: !paged.hasNext,
         activeFilter: status,
       )),
     );

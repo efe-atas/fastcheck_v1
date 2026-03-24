@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/widgets/gradient_dashboard_header.dart';
 import '../../../../core/widgets/app_error_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
+import '../../../../core/widgets/liquid_glass_bottom_bar.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../bloc/classes_bloc.dart';
@@ -17,11 +20,25 @@ class TeacherDashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        slivers: [
+      extendBody: true,
+      body: RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: () async {
+          final bloc = context.read<ClassesBloc>();
+          bloc.add(const LoadClasses());
+          await bloc.stream.firstWhere((s) => s is! ClassesLoading);
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
           _buildHeader(context),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screenHorizontal,
+              AppSpacing.sm,
+              AppSpacing.screenHorizontal,
+              120,
+            ),
             sliver: BlocBuilder<ClassesBloc, ClassesState>(
               builder: (context, state) {
                 if (state is ClassesLoading) {
@@ -48,7 +65,7 @@ class TeacherDashboardPage extends StatelessWidget {
                         subtitle:
                             'Yeni bir sınıf oluşturarak başlayın.',
                         actionLabel: 'Sınıf Oluştur',
-                        onAction: () => _navigateToCreateClass(context),
+                        onAction: () => _navigateToCreateClassAndReload(context),
                       ),
                     );
                   }
@@ -56,8 +73,8 @@ class TeacherDashboardPage extends StatelessWidget {
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
+                      mainAxisSpacing: AppSpacing.md,
+                      crossAxisSpacing: AppSpacing.md,
                       childAspectRatio: 0.88,
                     ),
                     delegate: SliverChildBuilderDelegate(
@@ -81,103 +98,92 @@ class TeacherDashboardPage extends StatelessWidget {
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _navigateToCreateClass(context),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textOnPrimary,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text(
-          'Sınıf Ekle',
-          style: TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
+      bottomNavigationBar: _buildLiquidNavBar(context),
+    );
+  }
+
+  Widget _buildLiquidNavBar(BuildContext context) {
+    return LiquidGlassBottomBar(
+      items: [
+        LiquidGlassBarItem(
+          icon: Icons.grid_view_rounded,
+          label: 'Sınıflar',
+          selected: true,
+          onTap: () {},
+        ),
+        LiquidGlassBarItem(
+          icon: Icons.document_scanner_outlined,
+          label: 'OCR',
+          onTap: () => context.push('/ocr'),
+        ),
+        LiquidGlassBarItem(
+          icon: Icons.add_rounded,
+          emphasized: true,
+          onTap: () => _navigateToCreateClassAndReload(context),
+        ),
+        LiquidGlassBarItem(
+          icon: Icons.logout_rounded,
+          label: 'Çıkış',
+          onTap: () =>
+              context.read<AuthBloc>().add(const AuthLogoutRequested()),
+        ),
+      ],
     );
   }
 
   Widget _buildHeader(BuildContext context) {
-    return SliverAppBar(
+    return DashboardGradientSliverAppBar(
       expandedHeight: 140,
       pinned: true,
       stretch: true,
-      backgroundColor: AppColors.primary,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: const BoxDecoration(gradient: AppColors.headerGradient),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      title: 'Sınıflarım',
+      titlePadding: const EdgeInsets.only(left: AppSpacing.xl, bottom: 14),
+      expandedChild: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl,
+          AppSpacing.lg,
+          AppSpacing.xl,
+          0,
+        ),
+        child: Row(
+          children: [
+            const DashboardGradientIconBadge(icon: Icons.school_rounded),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.school_rounded,
+                  Text(
+                    'Merhaba, Öğretmen',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           color: Colors.white,
-                          size: 24,
+                          fontWeight: FontWeight.w700,
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Merhaba, Öğretmen',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'Sınıflarınızı yönetin',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => context
-                            .read<AuthBloc>()
-                            .add(const AuthLogoutRequested()),
-                        icon: const Icon(
-                          Icons.logout_rounded,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Sınıflarınızı yönetin',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.white70,
                         ),
-                      ),
-                    ],
                   ),
                 ],
               ),
             ),
-          ),
+          ],
         ),
-        title: const Text(
-          'Sınıflarım',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-        titlePadding: const EdgeInsets.only(left: 20, bottom: 14),
       ),
     );
   }
 
-  void _navigateToCreateClass(BuildContext context) {
-    context.push('/teacher/classes/create');
+  Future<void> _navigateToCreateClassAndReload(BuildContext context) async {
+    final created = await context.push<bool>('/teacher/classes/create');
+    if (!context.mounted) return;
+    if (created == true) {
+      context.read<ClassesBloc>().add(const LoadClasses());
+    }
   }
 
   void _navigateToClassDetail(

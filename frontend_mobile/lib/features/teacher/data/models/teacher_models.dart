@@ -106,64 +106,90 @@ class StudentModel {
 
 class ExamImageModel {
   final int imageId;
-  final int examId;
-  final String filePath;
+  final int? examId;
+  final int pageOrder;
+  final String imageUrl;
   final String status;
+  final String? errorMessage;
 
   const ExamImageModel({
     required this.imageId,
-    required this.examId,
-    required this.filePath,
+    this.examId,
+    this.pageOrder = 0,
+    required this.imageUrl,
     required this.status,
+    this.errorMessage,
   });
 
-  factory ExamImageModel.fromJson(Map<String, dynamic> json) {
+  factory ExamImageModel.fromJson(
+    Map<String, dynamic> json, {
+    int? parentExamId,
+  }) {
     return ExamImageModel(
       imageId: json['imageId'] as int? ?? json['id'] as int,
-      examId: json['examId'] as int,
-      filePath: json['filePath'] as String? ?? json['fileName'] as String? ?? '',
+      examId: json['examId'] as int? ?? parentExamId,
+      pageOrder: (json['pageOrder'] as num?)?.toInt() ?? 0,
+      imageUrl: json['imageUrl'] as String? ??
+          json['filePath'] as String? ??
+          json['fileName'] as String? ??
+          '',
       status: json['status'] as String? ?? 'PENDING',
+      errorMessage: json['errorMessage'] as String?,
     );
   }
 
-  ExamImageEntity toEntity() {
+  ExamImageEntity toEntity({int? parentExamId}) {
     return ExamImageEntity(
       imageId: imageId,
-      examId: examId,
-      filePath: filePath,
+      examId: examId ?? parentExamId,
+      pageOrder: pageOrder,
+      imageUrl: imageUrl,
       status: status,
+      errorMessage: errorMessage,
     );
   }
 }
 
 class OcrJobModel {
-  final int jobId;
-  final int imageId;
+  final String jobId;
+  final String requestId;
   final String status;
+  final int retryCount;
   final String? errorMessage;
+  final DateTime? createdAt;
 
   const OcrJobModel({
     required this.jobId,
-    required this.imageId,
+    required this.requestId,
     required this.status,
+    this.retryCount = 0,
     this.errorMessage,
+    this.createdAt,
   });
 
   factory OcrJobModel.fromJson(Map<String, dynamic> json) {
+    final jobRaw = json['jobId'];
+    final reqRaw = json['requestId'];
     return OcrJobModel(
-      jobId: json['jobId'] as int? ?? json['id'] as int,
-      imageId: json['imageId'] as int,
+      jobId: jobRaw?.toString() ?? '',
+      requestId: reqRaw?.toString() ?? '',
       status: json['status'] as String,
+      retryCount: (json['retryCount'] as num?)?.toInt() ?? 0,
       errorMessage: json['errorMessage'] as String?,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : null,
     );
   }
 
   OcrJobEntity toEntity() {
     return OcrJobEntity(
       jobId: jobId,
-      imageId: imageId,
+      requestId: requestId,
       status: status,
+      retryCount: retryCount,
       errorMessage: errorMessage,
+      createdAt: createdAt,
     );
   }
 }
@@ -192,7 +218,12 @@ class ExamStatusModel {
       title: json['title'] as String,
       examStatus: json['examStatus'] as String? ?? json['status'] as String? ?? 'DRAFT',
       images: (json['images'] as List<dynamic>?)
-              ?.map((e) => ExamImageModel.fromJson(e as Map<String, dynamic>))
+              ?.map(
+                (e) => ExamImageModel.fromJson(
+                  e as Map<String, dynamic>,
+                  parentExamId: json['examId'] as int?,
+                ),
+              )
               .toList() ??
           [],
       ocrJobs: (json['ocrJobs'] as List<dynamic>?)
@@ -208,39 +239,8 @@ class ExamStatusModel {
       classId: classId,
       title: title,
       examStatus: examStatus,
-      images: images.map((e) => e.toEntity()).toList(),
+      images: images.map((e) => e.toEntity(parentExamId: examId)).toList(),
       ocrJobs: ocrJobs.map((e) => e.toEntity()).toList(),
-    );
-  }
-}
-
-class PagedResponseModel<T> {
-  final List<T> content;
-  final int totalElements;
-  final int totalPages;
-  final int number;
-  final bool last;
-
-  const PagedResponseModel({
-    required this.content,
-    required this.totalElements,
-    required this.totalPages,
-    required this.number,
-    required this.last,
-  });
-
-  factory PagedResponseModel.fromJson(
-    Map<String, dynamic> json,
-    T Function(Map<String, dynamic>) fromJsonT,
-  ) {
-    return PagedResponseModel(
-      content: (json['content'] as List<dynamic>)
-          .map((e) => fromJsonT(e as Map<String, dynamic>))
-          .toList(),
-      totalElements: json['totalElements'] as int? ?? 0,
-      totalPages: json['totalPages'] as int? ?? 0,
-      number: json['number'] as int? ?? 0,
-      last: json['last'] as bool? ?? true,
     );
   }
 }

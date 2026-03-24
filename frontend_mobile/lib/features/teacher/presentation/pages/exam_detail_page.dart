@@ -5,6 +5,7 @@ import 'package:get_it/get_it.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_error_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
+import '../../../../core/widgets/authenticated_image.dart';
 import '../../domain/entities/teacher_entities.dart';
 import '../bloc/exam_bloc.dart';
 
@@ -317,23 +318,35 @@ class _ExamDetailPageState extends State<ExamDetailPage> {
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: _statusColor(imageStatus).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.image_rounded,
-              color: _statusColor(imageStatus),
-              size: 20,
-            ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: image.imageUrl.isNotEmpty
+                ? AuthenticatedImage(
+                    url: image.imageUrl,
+                    width: 44,
+                    height: 44,
+                    fit: BoxFit.cover,
+                  )
+                : Container(
+                    width: 44,
+                    height: 44,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _statusColor(imageStatus).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.image_rounded,
+                      color: _statusColor(imageStatus),
+                      size: 20,
+                    ),
+                  ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              image.filePath.isNotEmpty
-                  ? image.filePath.split('/').last
+              image.imageUrl.isNotEmpty
+                  ? image.imageUrl.split('/').last
                   : 'Görsel #${image.imageId}',
               style: const TextStyle(
                 fontSize: 14,
@@ -413,7 +426,7 @@ class _ExamDetailPageState extends State<ExamDetailPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'İş #${job.jobId}',
+                          'İş ${job.jobId.length > 8 ? job.jobId.substring(0, 8) : job.jobId}…',
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,

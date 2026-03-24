@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/widgets/gradient_dashboard_header.dart';
 import '../../../../core/widgets/app_error_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
+import '../../../../core/widgets/liquid_glass_bottom_bar.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
@@ -16,6 +19,7 @@ class StudentDashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       backgroundColor: AppColors.background,
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxScrolled) => [
@@ -29,73 +33,39 @@ class StudentDashboardPage extends StatelessWidget {
           ],
         ),
       ),
+      bottomNavigationBar: LiquidGlassBottomBar(
+        items: [
+          LiquidGlassBarItem(
+            icon: Icons.quiz_rounded,
+            label: 'Sınavlar',
+            selected: true,
+            onTap: () {},
+          ),
+          LiquidGlassBarItem(
+            icon: Icons.refresh_rounded,
+            label: 'Yenile',
+            onTap: () {
+              context
+                  .read<StudentExamsBloc>()
+                  .add(const RefreshStudentExams());
+            },
+          ),
+          LiquidGlassBarItem(
+            icon: Icons.logout_rounded,
+            label: 'Çıkış',
+            onTap: () =>
+                context.read<AuthBloc>().add(const AuthLogoutRequested()),
+          ),
+        ],
+      ),
     );
   }
 
-  SliverAppBar _buildHeader(BuildContext context) {
-    return SliverAppBar(
+  Widget _buildHeader(BuildContext context) {
+    return DashboardGradientSliverAppBar(
       expandedHeight: 160,
-      floating: false,
       pinned: true,
-      elevation: 0,
-      backgroundColor: AppColors.primary,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: const BoxDecoration(gradient: AppColors.headerGradient),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Icon(
-                          Icons.school_rounded,
-                          color: Colors.white,
-                          size: 26,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Merhaba! 👋',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.white.withValues(alpha: 0.85),
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            const Text(
-                              'Sınavlarım',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
+      expandedContentAlignment: Alignment.bottomLeft,
       actions: [
         IconButton(
           icon: const Icon(Icons.refresh_rounded, color: Colors.white),
@@ -105,13 +75,49 @@ class StudentDashboardPage extends StatelessWidget {
                 .add(const RefreshStudentExams());
           },
         ),
-        IconButton(
-          icon: const Icon(Icons.logout_rounded, color: Colors.white70),
-          onPressed: () =>
-              context.read<AuthBloc>().add(const AuthLogoutRequested()),
-        ),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.sm),
       ],
+      expandedChild: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xxl,
+          AppSpacing.lg,
+          AppSpacing.xxl,
+          AppSpacing.xxl,
+        ),
+        child: Row(
+          children: [
+            const DashboardGradientIconBadge(
+              icon: Icons.school_rounded,
+              size: 48,
+              iconSize: 26,
+              borderRadius: AppSpacing.radiusMd,
+            ),
+            const SizedBox(width: AppSpacing.lg),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Merhaba! 👋',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.85),
+                        ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Sınavlarım',
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -227,26 +233,35 @@ class _ExamListState extends State<_ExamList> {
     return BlocBuilder<StudentExamsBloc, StudentExamsState>(
       builder: (context, state) {
         if (state is StudentExamsLoading) {
-          return const ShimmerList(itemCount: 6, itemHeight: 88);
+          return const Padding(
+            padding: EdgeInsets.only(bottom: 100),
+            child: ShimmerList(itemCount: 6, itemHeight: 88),
+          );
         }
 
         if (state is StudentExamsError) {
-          return AppErrorWidget(
-            message: state.message,
-            onRetry: () => context
-                .read<StudentExamsBloc>()
-                .add(const RefreshStudentExams()),
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 100),
+            child: AppErrorWidget(
+              message: state.message,
+              onRetry: () => context
+                  .read<StudentExamsBloc>()
+                  .add(const RefreshStudentExams()),
+            ),
           );
         }
 
         if (state is StudentExamsLoaded) {
           if (state.exams.isEmpty) {
-            return EmptyStateWidget(
-              icon: Icons.assignment_outlined,
-              title: 'Henüz sınav bulunmuyor',
-              subtitle: state.activeFilter != null
-                  ? 'Bu filtreye uygun sınav yok. Filtreyi değiştirmeyi deneyin.'
-                  : 'Öğretmeniniz sınav eklediğinde burada görünecektir.',
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 100),
+              child: EmptyStateWidget(
+                icon: Icons.assignment_outlined,
+                title: 'Henüz sınav bulunmuyor',
+                subtitle: state.activeFilter != null
+                    ? 'Bu filtreye uygun sınav yok. Filtreyi değiştirmeyi deneyin.'
+                    : 'Öğretmeniniz sınav eklediğinde burada görünecektir.',
+              ),
             );
           }
 
@@ -260,7 +275,7 @@ class _ExamListState extends State<_ExamList> {
             child: ListView.separated(
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
               itemCount: state.exams.length + (state.isLoadingMore ? 1 : 0),
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, index) {

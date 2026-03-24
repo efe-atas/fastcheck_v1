@@ -1,16 +1,18 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import '../../../../core/constants/api_constants.dart';
+import '../../../../core/network/paged_response_dto.dart';
 import '../../../../core/error/exceptions.dart';
 import '../models/teacher_models.dart';
 
 abstract class TeacherRemoteDataSource {
   Future<List<ClassModel>> getClasses();
   Future<List<ExamModel>> getClassExams(int classId);
-  Future<PagedResponseModel<StudentModel>> getClassStudents(
+  Future<PagedResponseDto<StudentModel>> getClassStudents(
     int classId, {
     int page = 0,
     int size = 20,
+    String? name,
   });
   Future<ClassModel> createClass({
     required int schoolId,
@@ -68,17 +70,22 @@ class TeacherRemoteDataSourceImpl implements TeacherRemoteDataSource {
   }
 
   @override
-  Future<PagedResponseModel<StudentModel>> getClassStudents(
+  Future<PagedResponseDto<StudentModel>> getClassStudents(
     int classId, {
     int page = 0,
     int size = 20,
+    String? name,
   }) async {
     try {
+      final query = <String, dynamic>{'page': page, 'size': size};
+      if (name != null && name.trim().isNotEmpty) {
+        query['name'] = name.trim();
+      }
       final response = await dio.get(
         ApiConstants.teacherClassStudents(classId),
-        queryParameters: {'page': page, 'size': size},
+        queryParameters: query,
       );
-      return PagedResponseModel.fromJson(
+      return PagedResponseDto.fromJson(
         response.data as Map<String, dynamic>,
         StudentModel.fromJson,
       );
@@ -137,7 +144,7 @@ class TeacherRemoteDataSourceImpl implements TeacherRemoteDataSource {
       final formData = FormData();
       for (final image in images) {
         formData.files.add(MapEntry(
-          'files',
+          'images',
           await MultipartFile.fromFile(
             image.path,
             filename: image.path.split('/').last,
@@ -149,15 +156,27 @@ class TeacherRemoteDataSourceImpl implements TeacherRemoteDataSource {
         data: formData,
         options: Options(contentType: 'multipart/form-data'),
       );
-      if (response.data is List) {
-        return (response.data as List<dynamic>)
-            .map((e) => ExamImageModel.fromJson(e as Map<String, dynamic>))
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        final resExamId = data['examId'] as int? ?? examId;
+        final rawList = data['images'] as List<dynamic>? ?? [];
+        return rawList
+            .map(
+              (e) => ExamImageModel.fromJson(
+                e as Map<String, dynamic>,
+                parentExamId: resExamId,
+              ),
+            )
             .toList();
       }
-      final data = response.data as Map<String, dynamic>;
-      if (data.containsKey('images')) {
-        return (data['images'] as List<dynamic>)
-            .map((e) => ExamImageModel.fromJson(e as Map<String, dynamic>))
+      if (data is List<dynamic>) {
+        return data
+            .map(
+              (e) => ExamImageModel.fromJson(
+                e as Map<String, dynamic>,
+                parentExamId: examId,
+              ),
+            )
             .toList();
       }
       return [];

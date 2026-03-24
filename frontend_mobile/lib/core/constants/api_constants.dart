@@ -3,11 +3,17 @@ import 'dart:io' show Platform;
 class ApiConstants {
   ApiConstants._();
 
-  static const String _devMachineIp =
-      String.fromEnvironment('DEV_MACHINE_IP', defaultValue: '192.168.1.104');
+  /// Geliştirme makinesinin API adresi.
+  /// - iOS **simülatör**: varsayılan `127.0.0.1` (Mac’teki backend’e doğrudan gider).
+  /// - Fiziksel cihaz: `flutter run --dart-define=DEV_MACHINE_IP=192.168.x.x`
+  static const String _devMachineIp = String.fromEnvironment(
+    'DEV_MACHINE_IP',
+    defaultValue: '127.0.0.1',
+  );
 
   static String get baseUrl {
     if (Platform.isAndroid) {
+      // Android emülatör → host makinesi
       return 'http://10.0.2.2:8080';
     }
     return 'http://$_devMachineIp:8080';
@@ -49,4 +55,9 @@ class ApiConstants {
 
   // Files
   static String fileUrl(String fileName) => '/files/$fileName';
+
+  // OCR (istek gövdesinde herkese açık http/https URL gerekir)
+  static const String ocrExtract = '/v1/ocr/extract';
+  static const String ocrResults = '/v1/ocr/results';
+  static String ocrResult(String jobId) => '/v1/ocr/results/$jobId';
 }

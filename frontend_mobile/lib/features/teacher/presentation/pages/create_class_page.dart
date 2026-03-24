@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/usecase/usecase.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../domain/usecases/teacher_usecases.dart';
@@ -17,6 +18,27 @@ class _CreateClassPageState extends State<CreateClassPage> {
   final _schoolIdController = TextEditingController();
   final _classNameController = TextEditingController();
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _prefillSchoolIdFromExistingClasses();
+  }
+
+  /// Backend’de öğretmen yalnızca kendi okulunda sınıf açabilir; mevcut sınıflardan okul ID önerilir.
+  Future<void> _prefillSchoolIdFromExistingClasses() async {
+    final getClasses = GetIt.I<GetClasses>();
+    final result = await getClasses(const NoParams());
+    if (!mounted) return;
+    result.fold((_) {}, (classes) {
+      if (classes.isEmpty) return;
+      final sid = classes.first.schoolId;
+      if (_schoolIdController.text.trim().isEmpty) {
+        _schoolIdController.text = '$sid';
+        setState(() {});
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -89,10 +111,30 @@ class _CreateClassPageState extends State<CreateClassPage> {
                 ),
               ),
               const SizedBox(height: 28),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: const Text(
+                  'Okul ID, yöneticinin sizi bir okula atadığı kayıttaki numaradır. '
+                  'Zaten sınıfınız varsa aşağıdaki alan genelde otomatik dolar; '
+                  'ilk kez oluşturuyorsanız yöneticiden öğrenin.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1.35,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
               AppTextField(
                 controller: _schoolIdController,
                 label: 'Okul ID',
-                hint: 'Okul numarasını girin',
+                hint: 'Örn: 1',
                 prefixIcon: Icons.business_rounded,
                 keyboardType: TextInputType.number,
                 validator: (value) {

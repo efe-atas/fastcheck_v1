@@ -33,11 +33,12 @@ class RefreshExams extends ClassDetailEvent {
 class RefreshStudents extends ClassDetailEvent {
   final int classId;
   final int page;
+  final String? name;
 
-  const RefreshStudents(this.classId, {this.page = 0});
+  const RefreshStudents(this.classId, {this.page = 0, this.name});
 
   @override
-  List<Object?> get props => [classId, page];
+  List<Object?> get props => [classId, page, name];
 }
 
 class ExamCreatedInClass extends ClassDetailEvent {
@@ -80,12 +81,14 @@ class ClassDetailLoaded extends ClassDetailState {
   final List<StudentEntity> students;
   final int totalStudents;
   final bool hasMoreStudents;
+  final String? studentNameFilter;
 
   const ClassDetailLoaded({
     required this.exams,
     required this.students,
     required this.totalStudents,
     this.hasMoreStudents = false,
+    this.studentNameFilter,
   });
 
   ClassDetailLoaded copyWith({
@@ -93,17 +96,23 @@ class ClassDetailLoaded extends ClassDetailState {
     List<StudentEntity>? students,
     int? totalStudents,
     bool? hasMoreStudents,
+    String? studentNameFilter,
+    bool clearStudentNameFilter = false,
   }) {
     return ClassDetailLoaded(
       exams: exams ?? this.exams,
       students: students ?? this.students,
       totalStudents: totalStudents ?? this.totalStudents,
       hasMoreStudents: hasMoreStudents ?? this.hasMoreStudents,
+      studentNameFilter: clearStudentNameFilter
+          ? null
+          : (studentNameFilter ?? this.studentNameFilter),
     );
   }
 
   @override
-  List<Object?> get props => [exams, students, totalStudents, hasMoreStudents];
+  List<Object?> get props =>
+      [exams, students, totalStudents, hasMoreStudents, studentNameFilter];
 }
 
 class ClassDetailError extends ClassDetailState {
@@ -155,6 +164,7 @@ class ClassDetailBloc extends Bloc<ClassDetailEvent, ClassDetailState> {
         students: paged.content,
         totalStudents: paged.totalElements,
         hasMoreStudents: paged.hasNext,
+        studentNameFilter: null,
       )),
     );
 
@@ -193,7 +203,11 @@ class ClassDetailBloc extends Bloc<ClassDetailEvent, ClassDetailState> {
     Emitter<ClassDetailState> emit,
   ) async {
     final result = await getClassStudents(
-      GetClassStudentsParams(classId: event.classId, page: event.page),
+      GetClassStudentsParams(
+        classId: event.classId,
+        page: event.page,
+        name: event.name,
+      ),
     );
     final currentState = state;
     result.fold(
@@ -204,6 +218,7 @@ class ClassDetailBloc extends Bloc<ClassDetailEvent, ClassDetailState> {
             students: paged.content,
             totalStudents: paged.totalElements,
             hasMoreStudents: paged.hasNext,
+            studentNameFilter: event.name,
           ));
         }
       },

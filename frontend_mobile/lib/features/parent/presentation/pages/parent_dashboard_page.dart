@@ -1,93 +1,80 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/gradient_dashboard_header.dart';
 import '../../../../core/widgets/app_error_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
+import '../../../../core/widgets/liquid_glass_bottom_bar.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 import '../bloc/parent_bloc.dart';
 
-class ParentDashboardPage extends StatelessWidget {
+class ParentDashboardPage extends StatefulWidget {
   const ParentDashboardPage({super.key});
+
+  @override
+  State<ParentDashboardPage> createState() => _ParentDashboardPageState();
+}
+
+class _ParentDashboardPageState extends State<ParentDashboardPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadStudents());
+  }
+
+  void _loadStudents() {
+    final auth = context.read<AuthBloc>().state;
+    if (auth is AuthAuthenticated) {
+      context.read<ParentBloc>().add(LoadLinkedStudents(auth.user.id));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
+      backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          _buildHeader(context),
+          const SliverToBoxAdapter(
+            child: DashboardGradientBoxHeader(
+              headline: 'Merhaba, Veli 👋',
+              subtitle: 'Öğrenci durumlarını takip edin',
+            ),
+          ),
           _buildStudentList(),
         ],
       ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return SliverToBoxAdapter(
-      child: Container(
-        padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 20,
-          left: 24,
-          right: 24,
-          bottom: 24,
-        ),
-        decoration: const BoxDecoration(
-          gradient: AppColors.headerGradient,
-          borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(28),
-            bottomRight: Radius.circular(28),
+      bottomNavigationBar: LiquidGlassBottomBar(
+        items: [
+          LiquidGlassBarItem(
+            icon: Icons.family_restroom_rounded,
+            label: 'Öğrenciler',
+            selected: true,
+            onTap: () {},
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Merhaba, Veli 👋',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Öğrenci durumlarını takip edin',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => context
-                      .read<AuthBloc>()
-                      .add(const AuthLogoutRequested()),
-                  icon: const Icon(
-                    Icons.logout_rounded,
-                    color: Colors.white70,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+          LiquidGlassBarItem(
+            icon: Icons.refresh_rounded,
+            label: 'Yenile',
+            onTap: _loadStudents,
+          ),
+          LiquidGlassBarItem(
+            icon: Icons.logout_rounded,
+            label: 'Çıkış',
+            onTap: () =>
+                context.read<AuthBloc>().add(const AuthLogoutRequested()),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildStudentList() {
     return SliverPadding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       sliver: BlocBuilder<ParentBloc, ParentState>(
         builder: (context, state) {
           if (state is ParentLoading) {
@@ -97,9 +84,7 @@ class ParentDashboardPage extends StatelessWidget {
             return SliverFillRemaining(
               child: AppErrorWidget(
                 message: state.message,
-                onRetry: () {
-                  // Reload
-                },
+                onRetry: _loadStudents,
               ),
             );
           }

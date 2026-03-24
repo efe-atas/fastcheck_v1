@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
+import '../../../../core/domain/paged_result.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/usecase/usecase.dart';
 import '../entities/teacher_entities.dart';
@@ -32,15 +33,17 @@ class GetClassStudentsParams extends Equatable {
   final int classId;
   final int page;
   final int size;
+  final String? name;
 
   const GetClassStudentsParams({
     required this.classId,
     this.page = 0,
     this.size = 20,
+    this.name,
   });
 
   @override
-  List<Object?> get props => [classId, page, size];
+  List<Object?> get props => [classId, page, size, name];
 }
 
 class GetClassStudents
@@ -57,6 +60,7 @@ class GetClassStudents
       params.classId,
       page: params.page,
       size: params.size,
+      name: params.name,
     );
   }
 }

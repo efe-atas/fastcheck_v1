@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import '../../../../core/domain/paged_result.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/student_entities.dart';
@@ -22,8 +23,9 @@ class StudentRepositoryImpl implements StudentRepository {
         size: size,
         examStatus: examStatus,
       );
-      final pagedResult = response.toEntity((model) => model.toEntity());
-      return Right(pagedResult);
+      return Right(
+        response.toPagedResult((m) => m.toEntity()),
+      );
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, e.statusCode));
     } catch (e) {
