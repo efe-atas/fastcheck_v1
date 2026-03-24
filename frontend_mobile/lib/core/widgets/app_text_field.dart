@@ -44,17 +44,18 @@ class _AppTextFieldState extends State<AppTextField> {
 
   @override
   Widget build(BuildContext context) {
+    final labelStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w500,
+          color: AppColors.textPrimary,
+        );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (widget.label != null) ...[
           Text(
             widget.label!,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
-            ),
+            style: labelStyle,
           ),
           const SizedBox(height: 8),
         ],
@@ -66,6 +67,7 @@ class _AppTextFieldState extends State<AppTextField> {
           onChanged: widget.onChanged,
           enabled: widget.enabled,
           maxLines: widget.obscureText ? 1 : widget.maxLines,
+          style: Theme.of(context).textTheme.bodyLarge,
           decoration: InputDecoration(
             hintText: widget.hint,
             prefixIcon: widget.prefixIcon != null

@@ -39,3 +39,13 @@ class AuthRegisterRequested extends AuthEvent {
 class AuthLogoutRequested extends AuthEvent {
   const AuthLogoutRequested();
 }
+
+/// Sadece geliştirme / UI testi: API olmadan ana sayfaya yönlendirir.
+class AuthDevBypassRequested extends AuthEvent {
+  final String role;
+
+  const AuthDevBypassRequested({this.role = 'ROLE_TEACHER'});
+
+  @override
+  List<Object?> get props => [role];
+}

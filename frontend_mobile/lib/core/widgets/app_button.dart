@@ -68,6 +68,11 @@ class AppGradientButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
+          color: AppColors.textOnPrimary,
+          fontWeight: FontWeight.w600,
+        );
+
     return Container(
       width: double.infinity,
       height: 52,
@@ -93,14 +98,7 @@ class AppGradientButton extends StatelessWidget {
                       color: AppColors.textOnPrimary,
                     ),
                   )
-                : Text(
-                    text,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textOnPrimary,
-                    ),
-                  ),
+                : Text(text, style: textStyle),
           ),
         ),
       ),

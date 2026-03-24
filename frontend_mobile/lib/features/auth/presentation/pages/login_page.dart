@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -68,6 +69,10 @@ class _LoginPageState extends State<LoginPage> {
                   _buildLoginButton(),
                   const SizedBox(height: 24),
                   _buildRegisterLink(),
+                  if (kDebugMode) ...[
+                    const SizedBox(height: 24),
+                    _buildDevBypassButton(context),
+                  ],
                   const SizedBox(height: 32),
                 ],
               ),
@@ -173,6 +178,30 @@ class _LoginPageState extends State<LoginPage> {
         TextButton(
           onPressed: () => context.push('/auth/register'),
           child: const Text('Kayıt Olun'),
+        ),
+      ],
+    );
+  }
+
+  /// Debug: API olmadan ana sayfaya (varsayılan öğretmen paneli).
+  Widget _buildDevBypassButton(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Geliştirici testi',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.textTertiary,
+              ),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: () => context.read<AuthBloc>().add(
+                const AuthDevBypassRequested(),
+              ),
+          icon: const Icon(Icons.home_outlined, size: 20),
+          label: const Text('Ana sayfaya geç (test)'),
         ),
       ],
     );
