@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
+import '../../../../core/constants/auth_roles.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
@@ -20,6 +23,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  String _selectedRole = AuthRoles.student;
 
   @override
   void dispose() {
@@ -37,6 +41,7 @@ class _RegisterPageState extends State<RegisterPage> {
               fullName: _fullNameController.text.trim(),
               email: _emailController.text.trim(),
               password: _passwordController.text,
+              role: _selectedRole,
             ),
           );
     }
@@ -54,11 +59,10 @@ class _RegisterPageState extends State<RegisterPage> {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppColors.error,
-              ),
+            showAppToast(
+              context,
+              message: state.message,
+              destructive: true,
             );
           }
         },
@@ -109,7 +113,34 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Widget _buildForm() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Text(
+          'Hesap türü',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: AppColors.textSecondary,
+              ),
+        ),
+        const SizedBox(height: 10),
+        SegmentedButton<String>(
+          segments: const [
+            ButtonSegment<String>(
+              value: AuthRoles.student,
+              label: Text('Öğrenci'),
+              icon: Icon(Icons.school_outlined, size: 18),
+            ),
+            ButtonSegment<String>(
+              value: AuthRoles.teacher,
+              label: Text('Öğretmen'),
+              icon: Icon(Icons.co_present_outlined, size: 18),
+            ),
+          ],
+          selected: {_selectedRole},
+          onSelectionChanged: (next) {
+            setState(() => _selectedRole = next.first);
+          },
+        ),
+        const SizedBox(height: 24),
         AppTextField(
           controller: _fullNameController,
           label: 'Ad Soyad',
@@ -200,7 +231,7 @@ class _RegisterPageState extends State<RegisterPage> {
           'Zaten hesabınız var mı? ',
           style: TextStyle(color: AppColors.textSecondary),
         ),
-        TextButton(
+        ShadButton.link(
           onPressed: () => Navigator.of(context).maybePop(),
           child: const Text('Giriş Yapın'),
         ),

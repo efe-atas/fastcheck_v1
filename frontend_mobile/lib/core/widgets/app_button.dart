@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
+
 import '../theme/app_colors.dart';
 
 class AppButton extends StatelessWidget {
@@ -19,36 +21,30 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final enabled = !isLoading && onPressed != null;
     final child = isLoading
         ? const SizedBox(
             height: 22,
             width: 22,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.5,
-              color: AppColors.textOnPrimary,
-            ),
+            child: CircularProgressIndicator(strokeWidth: 2.5),
           )
-        : Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: 20),
-                const SizedBox(width: 8),
-              ],
-              Text(text),
-            ],
-          );
+        : Text(text);
 
     if (isOutlined) {
-      return OutlinedButton(
-        onPressed: isLoading ? null : onPressed,
+      return ShadButton.outline(
+        leading: icon != null && !isLoading
+            ? Icon(icon, size: 20)
+            : null,
+        onPressed: enabled ? onPressed : null,
+        enabled: enabled,
         child: child,
       );
     }
 
-    return ElevatedButton(
-      onPressed: isLoading ? null : onPressed,
+    return ShadButton(
+      leading: icon != null && !isLoading ? Icon(icon, size: 20) : null,
+      onPressed: enabled ? onPressed : null,
+      enabled: enabled,
       child: child,
     );
   }
@@ -68,39 +64,35 @@ class AppGradientButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
-          color: AppColors.textOnPrimary,
-          fontWeight: FontWeight.w600,
-        );
+    final theme = ShadTheme.of(context);
+    final enabled = !isLoading && onPressed != null;
 
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: 52,
-      decoration: BoxDecoration(
-        gradient: onPressed != null && !isLoading
-            ? AppColors.primaryGradient
-            : null,
-        color: onPressed == null || isLoading ? AppColors.textTertiary : null,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: isLoading ? null : onPressed,
-          borderRadius: BorderRadius.circular(12),
-          child: Center(
-            child: isLoading
-                ? const SizedBox(
-                    height: 22,
-                    width: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: AppColors.textOnPrimary,
-                    ),
-                  )
-                : Text(text, style: textStyle),
-          ),
-        ),
+      child: ShadButton(
+        onPressed: enabled ? onPressed : null,
+        enabled: enabled,
+        expands: true,
+        gradient: enabled ? AppColors.primaryGradient : null,
+        backgroundColor: enabled ? null : AppColors.textTertiary,
+        foregroundColor: AppColors.textOnPrimary,
+        child: isLoading
+            ? const SizedBox(
+                height: 22,
+                width: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: AppColors.textOnPrimary,
+                ),
+              )
+            : Text(
+                text,
+                style: theme.textTheme.large.copyWith(
+                  color: AppColors.textOnPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
       ),
     );
   }

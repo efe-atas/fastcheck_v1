@@ -16,6 +16,7 @@ class RegisterUseCase extends UseCase<UserEntity, RegisterParams> {
       fullName: params.fullName,
       email: params.email,
       password: params.password,
+      role: params.role,
     );
   }
 }
@@ -24,13 +25,15 @@ class RegisterParams extends Equatable {
   final String fullName;
   final String email;
   final String password;
+  final String role;
 
   const RegisterParams({
     required this.fullName,
     required this.email,
     required this.password,
+    required this.role,
   });
 
   @override
-  List<Object?> get props => [fullName, email, password];
+  List<Object?> get props => [fullName, email, password, role];
 }

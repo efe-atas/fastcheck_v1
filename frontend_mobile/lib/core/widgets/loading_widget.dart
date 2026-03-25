@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:shimmer/shimmer.dart';
+
 import '../theme/app_colors.dart';
 
 class LoadingWidget extends StatelessWidget {
@@ -9,19 +11,17 @@ class LoadingWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = ShadTheme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const CircularProgressIndicator(color: AppColors.primary),
+          CircularProgressIndicator(color: scheme.primary),
           if (message != null) ...[
             const SizedBox(height: 16),
             Text(
               message!,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 14,
-              ),
+              style: ShadTheme.of(context).textTheme.muted,
             ),
           ],
         ],
@@ -42,6 +42,7 @@ class ShimmerList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = ShadTheme.of(context).colorScheme;
     return Shimmer.fromColors(
       baseColor: AppColors.shimmerBase,
       highlightColor: AppColors.shimmerHighlight,
@@ -53,7 +54,7 @@ class ShimmerList extends StatelessWidget {
         itemBuilder: (_, __) => Container(
           height: itemHeight,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: scheme.card,
             borderRadius: BorderRadius.circular(16),
           ),
         ),
@@ -69,13 +70,14 @@ class ShimmerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = ShadTheme.of(context).colorScheme;
     return Shimmer.fromColors(
       baseColor: AppColors.shimmerBase,
       highlightColor: AppColors.shimmerHighlight,
       child: Container(
         height: height,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: scheme.card,
           borderRadius: BorderRadius.circular(16),
         ),
       ),

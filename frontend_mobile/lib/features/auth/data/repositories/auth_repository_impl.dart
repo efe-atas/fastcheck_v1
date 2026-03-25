@@ -41,12 +41,14 @@ class AuthRepositoryImpl implements AuthRepository {
     required String fullName,
     required String email,
     required String password,
+    required String role,
   }) async {
     try {
       final response = await remoteDataSource.register(
         fullName: fullName,
         email: email,
         password: password,
+        role: role,
       );
       final entity = response.toEntity();
       await _persistAuth(entity);
@@ -96,7 +98,7 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       if (_isTokenExpired(token)) {
-        return this.refreshToken();
+        return refreshToken();
       }
 
       return Right(UserEntity(

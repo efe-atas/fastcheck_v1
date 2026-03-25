@@ -39,4 +39,7 @@ public class OcrDtos {
             JsonNode result
     ) {
     }
+
+    public record OcrUploadImageResponse(String imageUrl) {
+    }
 }

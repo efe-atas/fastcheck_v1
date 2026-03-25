@@ -5,6 +5,26 @@ import '../../../../core/usecase/usecase.dart' show UseCase, NoParams;
 import '../entities/ocr_entities.dart';
 import '../repositories/ocr_repository.dart';
 
+class OcrUploadImage extends UseCase<String, OcrUploadImageParams> {
+  final OcrRepository repository;
+
+  OcrUploadImage(this.repository);
+
+  @override
+  Future<Either<Failure, String>> call(OcrUploadImageParams params) {
+    return repository.uploadImage(params.localPath);
+  }
+}
+
+class OcrUploadImageParams extends Equatable {
+  final String localPath;
+
+  const OcrUploadImageParams({required this.localPath});
+
+  @override
+  List<Object?> get props => [localPath];
+}
+
 class OcrExtract extends UseCase<OcrResultEntity, OcrExtractParams> {
   final OcrRepository repository;
 

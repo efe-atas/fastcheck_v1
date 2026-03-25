@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 
 class AppTextField extends StatefulWidget {
   final TextEditingController? controller;
@@ -34,59 +34,100 @@ class AppTextField extends StatefulWidget {
 }
 
 class _AppTextFieldState extends State<AppTextField> {
-  late bool _isObscured;
+  late bool _obscured;
 
   @override
   void initState() {
     super.initState();
-    _isObscured = widget.obscureText;
+    _obscured = widget.obscureText;
   }
 
   @override
   Widget build(BuildContext context) {
-    final labelStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontWeight: FontWeight.w500,
-          color: AppColors.textPrimary,
-        );
+    final theme = ShadTheme.of(context);
+    final labelWidget = widget.label != null
+        ? Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              widget.label!,
+              style: theme.textTheme.large.copyWith(
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.foreground,
+              ),
+            ),
+          )
+        : null;
+
+    Widget buildInput(void Function(String)? onChangedExtra) {
+      return ShadInput(
+        controller: widget.controller,
+        placeholder: widget.hint != null ? Text(widget.hint!) : null,
+        leading: widget.prefixIcon != null
+            ? Icon(
+                widget.prefixIcon,
+                size: 20,
+                color: theme.colorScheme.mutedForeground,
+              )
+            : null,
+        trailing: widget.obscureText
+            ? ShadIconButton.ghost(
+                icon: Icon(
+                  _obscured
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  size: 20,
+                  color: theme.colorScheme.mutedForeground,
+                ),
+                onPressed: () => setState(() => _obscured = !_obscured),
+              )
+            : widget.suffix,
+        obscureText: widget.obscureText && _obscured,
+        keyboardType: widget.keyboardType,
+        enabled: widget.enabled,
+        maxLines: widget.obscureText ? 1 : widget.maxLines,
+        onChanged: (value) {
+          widget.onChanged?.call(value);
+          onChangedExtra?.call(value);
+        },
+      );
+    }
+
+    if (widget.validator != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (labelWidget != null) labelWidget,
+          FormField<String>(
+            initialValue: widget.controller?.text ?? '',
+            validator: widget.validator,
+            builder: (state) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  buildInput(state.didChange),
+                  if (state.hasError)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        state.errorText!,
+                        style: theme.textTheme.small.copyWith(
+                          color: theme.colorScheme.destructive,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (widget.label != null) ...[
-          Text(
-            widget.label!,
-            style: labelStyle,
-          ),
-          const SizedBox(height: 8),
-        ],
-        TextFormField(
-          controller: widget.controller,
-          obscureText: _isObscured,
-          keyboardType: widget.keyboardType,
-          validator: widget.validator,
-          onChanged: widget.onChanged,
-          enabled: widget.enabled,
-          maxLines: widget.obscureText ? 1 : widget.maxLines,
-          style: Theme.of(context).textTheme.bodyLarge,
-          decoration: InputDecoration(
-            hintText: widget.hint,
-            prefixIcon: widget.prefixIcon != null
-                ? Icon(widget.prefixIcon, size: 20, color: AppColors.textTertiary)
-                : null,
-            suffixIcon: widget.obscureText
-                ? IconButton(
-                    icon: Icon(
-                      _isObscured
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                      size: 20,
-                      color: AppColors.textTertiary,
-                    ),
-                    onPressed: () => setState(() => _isObscured = !_isObscured),
-                  )
-                : widget.suffix,
-          ),
-        ),
+        if (labelWidget != null) labelWidget,
+        buildInput(null),
       ],
     );
   }

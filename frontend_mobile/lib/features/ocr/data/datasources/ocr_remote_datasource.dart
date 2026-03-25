@@ -1,9 +1,13 @@
+import 'package:cross_file/cross_file.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/error/exceptions.dart';
 import '../models/ocr_models.dart';
 
 abstract class OcrRemoteDataSource {
+  /// Tarayıcıdan gelen yerel dosya yolunu multipart ile yükler; sunucunun döndürdüğü http(s) URL.
+  Future<String> uploadImage(String localPath);
+
   Future<OcrResultModel> extract({
     required String imageUrl,
     String? sourceId,
@@ -19,6 +23,59 @@ class OcrRemoteDataSourceImpl implements OcrRemoteDataSource {
   final Dio dio;
 
   OcrRemoteDataSourceImpl({required this.dio});
+
+  /// iOS dosya yolu, Android `content://` URI veya `file://` URI.
+  String _pathForXFile(String pathOrUri) {
+    if (pathOrUri.startsWith('content://')) {
+      return pathOrUri;
+    }
+    if (pathOrUri.startsWith('file://')) {
+      return Uri.parse(pathOrUri).toFilePath();
+    }
+    return pathOrUri;
+  }
+
+  String _uploadFilename(String pathOrUri) {
+    final normalized = pathOrUri.replaceAll(r'\', '/');
+    final last = normalized.split('/').last;
+    if (last.isEmpty || last.length > 128) {
+      return 'scan.jpg';
+    }
+    if (!last.contains('.')) {
+      return '$last.jpg';
+    }
+    return last;
+  }
+
+  @override
+  Future<String> uploadImage(String localPath) async {
+    try {
+      final path = _pathForXFile(localPath);
+      final bytes = await XFile(path).readAsBytes();
+      if (bytes.isEmpty) {
+        throw ServerException(message: 'Taranan dosya boş veya okunamadı');
+      }
+      final name = _uploadFilename(localPath);
+      final formData = FormData.fromMap({
+        'file': MultipartFile.fromBytes(bytes, filename: name),
+      });
+      final response = await dio.post<Map<String, dynamic>>(
+        ApiConstants.ocrUploadImage,
+        data: formData,
+      );
+      final data = response.data;
+      final url = data?['imageUrl'] as String?;
+      if (url == null || url.isEmpty) {
+        throw ServerException(message: 'Yükleme yanıtı geçersiz');
+      }
+      return url;
+    } on DioException catch (e) {
+      throw ServerException(
+        message: _msg(e),
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
 
   @override
   Future<OcrResultModel> extract({

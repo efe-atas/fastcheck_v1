@@ -13,6 +13,7 @@ abstract class AuthRemoteDataSource {
     required String fullName,
     required String email,
     required String password,
+    required String role,
   });
 
   Future<AuthResponseModel> refreshToken(String refreshToken);
@@ -47,11 +48,17 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String fullName,
     required String email,
     required String password,
+    required String role,
   }) async {
     try {
       final response = await dio.post(
         ApiConstants.register,
-        data: {'fullName': fullName, 'email': email, 'password': password},
+        data: {
+          'fullName': fullName,
+          'email': email,
+          'password': password,
+          'role': role,
+        },
       );
       return AuthResponseModel.fromJson(response.data);
     } on DioException catch (e) {

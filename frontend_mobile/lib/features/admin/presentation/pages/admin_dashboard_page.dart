@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/liquid_glass_bottom_bar.dart';
+import '../../../../core/widgets/app_toast.dart';
+import '../../../../core/widgets/app_google_bottom_nav.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../cubit/admin_cubit.dart';
@@ -36,16 +38,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   int? _parseId(String s, String label) {
     final v = s.trim();
     if (v.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$label gerekli')),
-      );
+      showAppToast(context, message: '$label gerekli');
       return null;
     }
     final n = int.tryParse(v);
     if (n == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$label sayı olmalı')),
-      );
+      showAppToast(context, message: '$label sayı olmalı');
     }
     return n;
   }
@@ -64,11 +62,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         listenWhen: (prev, curr) =>
             curr.errorMessage != null && prev.errorMessage != curr.errorMessage,
         listener: (context, state) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.errorMessage!),
-              backgroundColor: AppColors.error,
-            ),
+          showAppToast(
+            context,
+            message: state.errorMessage!,
+            destructive: true,
           );
         },
         builder: (context, state) {
@@ -115,24 +112,25 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        TextField(
+                        Text(
+                          'Okul adı',
+                          style: ShadTheme.of(context).textTheme.large,
+                        ),
+                        const SizedBox(height: 6),
+                        ShadInput(
                           controller: _schoolNameCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Okul adı',
-                            border: OutlineInputBorder(),
-                          ),
+                          placeholder: const Text('Okul adı'),
                         ),
                         const SizedBox(height: 12),
-                        FilledButton(
+                        ShadButton(
                           onPressed: state.isLoading
                               ? null
                               : () {
                                   final name = _schoolNameCtrl.text.trim();
                                   if (name.length < 2) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Okul adı en az 2 karakter'),
-                                      ),
+                                    showAppToast(
+                                      context,
+                                      message: 'Okul adı en az 2 karakter',
                                     );
                                     return;
                                   }
@@ -150,25 +148,29 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     title: 'Kullanıcıyı okula ata',
                     child: Column(
                       children: [
-                        TextField(
+                        Text(
+                          'Kullanıcı ID',
+                          style: ShadTheme.of(context).textTheme.large,
+                        ),
+                        const SizedBox(height: 6),
+                        ShadInput(
                           controller: _assignUserIdCtrl,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Kullanıcı ID',
-                            border: OutlineInputBorder(),
-                          ),
+                          placeholder: const Text('Kullanıcı ID'),
                         ),
                         const SizedBox(height: 8),
-                        TextField(
+                        Text(
+                          'Okul ID',
+                          style: ShadTheme.of(context).textTheme.large,
+                        ),
+                        const SizedBox(height: 6),
+                        ShadInput(
                           controller: _assignSchoolIdCtrl,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Okul ID',
-                            border: OutlineInputBorder(),
-                          ),
+                          placeholder: const Text('Okul ID'),
                         ),
                         const SizedBox(height: 12),
-                        FilledButton(
+                        ShadButton(
                           onPressed: state.isLoading
                               ? null
                               : () {
@@ -195,25 +197,29 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     title: 'Veli — öğrenci bağla',
                     child: Column(
                       children: [
-                        TextField(
+                        Text(
+                          'Veli kullanıcı ID',
+                          style: ShadTheme.of(context).textTheme.large,
+                        ),
+                        const SizedBox(height: 6),
+                        ShadInput(
                           controller: _linkParentCtrl,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Veli kullanıcı ID',
-                            border: OutlineInputBorder(),
-                          ),
+                          placeholder: const Text('Veli kullanıcı ID'),
                         ),
                         const SizedBox(height: 8),
-                        TextField(
+                        Text(
+                          'Öğrenci kullanıcı ID',
+                          style: ShadTheme.of(context).textTheme.large,
+                        ),
+                        const SizedBox(height: 6),
+                        ShadInput(
                           controller: _linkStudentCtrl,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Öğrenci kullanıcı ID',
-                            border: OutlineInputBorder(),
-                          ),
+                          placeholder: const Text('Öğrenci kullanıcı ID'),
                         ),
                         const SizedBox(height: 12),
-                        FilledButton(
+                        ShadButton(
                           onPressed: state.isLoading
                               ? null
                               : () {
@@ -241,16 +247,18 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        TextField(
+                        Text(
+                          'Veli kullanıcı ID',
+                          style: ShadTheme.of(context).textTheme.large,
+                        ),
+                        const SizedBox(height: 6),
+                        ShadInput(
                           controller: _listParentCtrl,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Veli kullanıcı ID',
-                            border: OutlineInputBorder(),
-                          ),
+                          placeholder: const Text('Veli kullanıcı ID'),
                         ),
                         const SizedBox(height: 12),
-                        FilledButton(
+                        ShadButton(
                           onPressed: state.isLoading
                               ? null
                               : () {
@@ -268,12 +276,27 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                         if (state.listedStudents != null) ...[
                           const SizedBox(height: 16),
                           ...state.listedStudents!.map(
-                            (e) => Card(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              child: ListTile(
-                                title: Text(e.fullName),
-                                subtitle: Text(
-                                  '${e.email}${e.classId != null ? ' · sınıf: ${e.classId}' : ''}',
+                            (e) => Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: ShadCard(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      e.fullName,
+                                      style: ShadTheme.of(context)
+                                          .textTheme
+                                          .h4,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${e.email}${e.classId != null ? ' · sınıf: ${e.classId}' : ''}',
+                                      style: ShadTheme.of(context)
+                                          .textTheme
+                                          .muted,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -290,22 +313,23 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           );
         },
       ),
-      bottomNavigationBar: LiquidGlassBottomBar(
+      bottomNavigationBar: AppGoogleBottomNav(
         items: [
-          LiquidGlassBarItem(
+          AppGoogleNavItem(
             icon: Icons.admin_panel_settings_outlined,
             label: 'Yönetim',
-            selected: true,
             onTap: () {},
           ),
-          LiquidGlassBarItem(
+          AppGoogleNavItem(
             icon: Icons.document_scanner_outlined,
             label: 'OCR',
+            persistSelection: false,
             onTap: () => context.push('/ocr'),
           ),
-          LiquidGlassBarItem(
+          AppGoogleNavItem(
             icon: Icons.logout_rounded,
             label: 'Çıkış',
+            persistSelection: false,
             onTap: () =>
                 context.read<AuthBloc>().add(const AuthLogoutRequested()),
           ),

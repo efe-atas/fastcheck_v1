@@ -56,7 +56,8 @@ class ApiConstants {
   // Files
   static String fileUrl(String fileName) => '/files/$fileName';
 
-  // OCR (istek gövdesinde herkese açık http/https URL gerekir)
+  // OCR (extract için herkese açık http/https imageUrl; yükleme sonrası sunucu URL döner)
+  static const String ocrUploadImage = '/v1/ocr/upload-image';
   static const String ocrExtract = '/v1/ocr/extract';
   static const String ocrResults = '/v1/ocr/results';
   static String ocrResult(String jobId) => '/v1/ocr/results/$jobId';

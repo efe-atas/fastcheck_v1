@@ -1,13 +1,13 @@
-import 'dart:convert';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../cubit/ocr_cubit.dart';
 
-/// OCR API yalnızca **http/https** ile erişilebilen görsel URL’leri kabul eder.
-/// Cihazdaki ham dosya için önce sunucuya yükleyip public URL üretmeniz gerekir.
+/// OCR ekranı yalnızca hızlı sınav kağıdı tarama akışını sunar.
 class OcrLabPage extends StatefulWidget {
   const OcrLabPage({super.key});
 
@@ -16,11 +16,6 @@ class OcrLabPage extends StatefulWidget {
 }
 
 class _OcrLabPageState extends State<OcrLabPage> {
-  final _urlCtrl = TextEditingController();
-  final _sourceCtrl = TextEditingController();
-  final _langCtrl = TextEditingController();
-  final _jobIdCtrl = TextEditingController();
-
   @override
   void initState() {
     super.initState();
@@ -28,24 +23,6 @@ class _OcrLabPageState extends State<OcrLabPage> {
       if (!mounted) return;
       context.read<OcrCubit>().refreshList();
     });
-  }
-
-  @override
-  void dispose() {
-    _urlCtrl.dispose();
-    _sourceCtrl.dispose();
-    _langCtrl.dispose();
-    _jobIdCtrl.dispose();
-    super.dispose();
-  }
-
-  String _prettyResult(dynamic result) {
-    if (result == null) return '—';
-    try {
-      return const JsonEncoder.withIndent('  ').convert(result);
-    } catch (_) {
-      return result.toString();
-    }
   }
 
   @override
@@ -61,158 +38,141 @@ class _OcrLabPageState extends State<OcrLabPage> {
           onPressed: () => context.pop(),
         ),
       ),
-      body: BlocBuilder<OcrCubit, OcrState>(
-        builder: (context, state) {
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.warningLight,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.warning),
-                ),
-                child: const Text(
-                  'Bu uç nokta yalnızca herkese açık http(s) görsel adresi kabul eder. '
-                  'Yerel fotoğraf göndermek için önce dosyayı bir sunucuya yükleyin.',
-                  style: TextStyle(fontSize: 12, color: AppColors.textPrimary),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _urlCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Görsel URL (https://...)',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.url,
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _sourceCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Kaynak ID (opsiyonel)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _langCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Dil ipucu (opsiyonel)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              FilledButton(
-                onPressed: state.isLoading
-                    ? null
-                    : () {
-                        final u = _urlCtrl.text.trim();
-                        if (!u.startsWith('http://') && !u.startsWith('https://')) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('URL http veya https ile başlamalı'),
-                            ),
-                          );
-                          return;
-                        }
-                        final s = _sourceCtrl.text.trim();
-                        final l = _langCtrl.text.trim();
-                        context.read<OcrCubit>().extract(
-                              imageUrl: u,
-                              sourceId: s.isEmpty ? null : s,
-                              languageHint: l.isEmpty ? null : l,
-                            );
-                      },
-                child: const Text('Metin çıkar (extract)'),
-              ),
-              const SizedBox(height: 24),
-              TextField(
-                controller: _jobIdCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Job ID (UUID)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton(
-                onPressed: state.isLoading
-                    ? null
-                    : () {
-                        final id = _jobIdCtrl.text.trim();
-                        if (id.isEmpty) return;
-                        context.read<OcrCubit>().loadByJobId(id);
-                      },
-                child: const Text('Job detayı getir'),
-              ),
-              if (state.errorMessage != null) ...[
-                const SizedBox(height: 16),
+      body: MultiBlocListener(
+        listeners: [
+          BlocListener<OcrCubit, OcrState>(
+            listenWhen: (prev, curr) =>
+                curr.errorMessage != prev.errorMessage &&
+                curr.errorMessage != null,
+            listener: (context, state) {
+              showAppToast(
+                context,
+                message: state.errorMessage!,
+                destructive: true,
+              );
+            },
+          ),
+          BlocListener<OcrCubit, OcrState>(
+            listenWhen: (prev, curr) =>
+                curr.lastMessage != null &&
+                curr.lastMessage != prev.lastMessage &&
+                (!curr.isLoading || curr.errorMessage != null),
+            listener: (context, state) {
+              final msg = state.lastMessage;
+              if (msg == null || msg.isEmpty) return;
+              showAppToast(context, message: msg);
+            },
+          ),
+        ],
+        child: BlocBuilder<OcrCubit, OcrState>(
+          builder: (context, state) {
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
                 Text(
-                  state.errorMessage!,
-                  style: const TextStyle(color: AppColors.error),
-                ),
-              ],
-              if (state.lastExtract != null) ...[
-                const SizedBox(height: 16),
-                const Text(
-                  'Son sonuç',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                  'Sınav kağıtlarını hızlıca tarayın',
+                  style: ShadTheme.of(context).textTheme.h4,
                 ),
                 const SizedBox(height: 8),
-                SelectableText(
-                  _prettyResult(state.lastExtract!.result),
-                  style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
+                Text(
+                  kIsWeb
+                      ? 'Belge tarama yalnızca mobil uygulamada (iOS/Android) kullanılabilir.'
+                      : 'Tek dokunuşla tarayın. Çok sayfa varsa sistem hepsini sırayla işler.',
+                  style: ShadTheme.of(context).textTheme.muted,
                 ),
-              ],
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  const Text(
-                    'Sonuçlarım',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                const SizedBox(height: 16),
+                ShadButton(
+                  onPressed: kIsWeb || state.isLoading
+                      ? null
+                      : () => context.read<OcrCubit>().scanAndExtract(),
+                  child: Text(
+                      state.isLoading ? 'Taranıyor...' : 'Sınav kağıdını tara'),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.border),
                   ),
-                  const Spacer(),
-                  TextButton.icon(
-                    onPressed:
-                        state.isLoading ? null : () => context.read<OcrCubit>().refreshList(),
-                    icon: const Icon(Icons.refresh, size: 18),
-                    label: const Text('Yenile'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        state.lastMessage ?? 'Tarama bekleniyor',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'İlerleme: ${state.processedCount}/${state.totalCount}',
+                        style: ShadTheme.of(context).textTheme.muted,
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              if (state.results == null || state.results!.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
-                  child: Text('Kayıt yok'),
-                )
-              else
-                ...state.results!.map(
-                  (e) => Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      title: Text(
-                        e.jobId.length > 12
-                            ? '${e.jobId.substring(0, 12)}…'
-                            : e.jobId,
-                        style: const TextStyle(fontFamily: 'monospace'),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Text(
+                      'Sonuçlarım',
+                      style: ShadTheme.of(context).textTheme.h4,
+                    ),
+                    const Spacer(),
+                    ShadButton.ghost(
+                      leading: const Icon(Icons.refresh, size: 18),
+                      onPressed: state.isLoading
+                          ? null
+                          : () => context.read<OcrCubit>().refreshList(),
+                      child: const Text('Yenile'),
+                    ),
+                  ],
+                ),
+                if (state.results == null || state.results!.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      'Kayıt yok',
+                      style: ShadTheme.of(context).textTheme.muted,
+                    ),
+                  )
+                else
+                  ...state.results!.map(
+                    (e) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.description_outlined, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                e.imageUrl ?? e.jobId,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: ShadTheme.of(context).textTheme.muted,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${e.createdAt.day.toString().padLeft(2, '0')}.${e.createdAt.month.toString().padLeft(2, '0')}',
+                              style: ShadTheme.of(context).textTheme.muted,
+                            ),
+                          ],
+                        ),
                       ),
-                      subtitle: Text(
-                        e.imageUrl ?? '',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      onTap: () {
-                        _jobIdCtrl.text = e.jobId;
-                        context.read<OcrCubit>().loadByJobId(e.jobId);
-                      },
                     ),
                   ),
-                ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
     );
   }

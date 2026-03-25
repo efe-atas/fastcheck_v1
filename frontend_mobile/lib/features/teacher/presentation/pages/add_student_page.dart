@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../../domain/usecases/teacher_usecases.dart';
 
 class AddStudentPage extends StatefulWidget {
@@ -176,19 +177,16 @@ class _AddStudentPageState extends State<AddStudentPage> {
 
     result.fold(
       (failure) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(failure.message),
-            backgroundColor: AppColors.error,
-          ),
+        showAppToast(
+          context,
+          message: failure.message,
+          destructive: true,
         );
       },
       (student) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${student.fullName} başarıyla eklendi'),
-            backgroundColor: AppColors.success,
-          ),
+        showAppToast(
+          context,
+          message: '${student.fullName} başarıyla eklendi',
         );
         Navigator.of(context).pop(true);
       },

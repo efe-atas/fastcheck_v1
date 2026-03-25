@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
+
 import '../theme/app_colors.dart';
 
 class AppErrorWidget extends StatelessWidget {
@@ -15,6 +17,7 @@ class AppErrorWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = ShadTheme.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -27,28 +30,23 @@ class AppErrorWidget extends StatelessWidget {
                 color: AppColors.errorLight,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 48, color: AppColors.error),
+              child: Icon(icon, size: 48, color: theme.colorScheme.destructive),
             ),
             const SizedBox(height: 20),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 16,
-                color: AppColors.textSecondary,
+              style: theme.textTheme.p.copyWith(
+                color: theme.colorScheme.mutedForeground,
                 height: 1.5,
               ),
             ),
             if (onRetry != null) ...[
               const SizedBox(height: 24),
-              OutlinedButton.icon(
+              ShadButton.outline(
+                leading: const Icon(Icons.refresh_rounded, size: 20),
                 onPressed: onRetry,
-                icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Tekrar Dene'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 24, vertical: 12),
-                ),
+                child: const Text('Tekrar Dene'),
               ),
             ],
           ],

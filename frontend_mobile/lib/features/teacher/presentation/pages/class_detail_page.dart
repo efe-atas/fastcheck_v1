@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_error_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
@@ -172,24 +173,10 @@ class _ClassDetailPageState extends State<ClassDetailPage>
             child: Row(
               children: [
                 Expanded(
-                  child: TextField(
+                  child: ShadInput(
                     controller: _studentSearchController,
                     textInputAction: TextInputAction.search,
-                    decoration: InputDecoration(
-                      hintText: 'Ad / soyad ile ara',
-                      filled: true,
-                      fillColor: AppColors.surface,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide:
-                            const BorderSide(color: AppColors.border),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 10,
-                      ),
-                      isDense: true,
-                    ),
+                    placeholder: const Text('Ad / soyad ile ara'),
                     onSubmitted: (value) {
                       final q = value.trim();
                       context.read<ClassDetailBloc>().add(
@@ -202,7 +189,7 @@ class _ClassDetailPageState extends State<ClassDetailPage>
                   ),
                 ),
                 const SizedBox(width: 8),
-                FilledButton(
+                ShadButton(
                   onPressed: () {
                     final q = _studentSearchController.text.trim();
                     context.read<ClassDetailBloc>().add(
@@ -212,11 +199,7 @@ class _ClassDetailPageState extends State<ClassDetailPage>
                           ),
                         );
                   },
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.all(14),
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.textOnPrimary,
-                  ),
+                  padding: const EdgeInsets.all(14),
                   child: const Icon(Icons.search_rounded, size: 22),
                 ),
               ],

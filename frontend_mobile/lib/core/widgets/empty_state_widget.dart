@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 
 class EmptyStateWidget extends StatelessWidget {
   final IconData icon;
@@ -19,15 +19,7 @@ class EmptyStateWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final titleStyle = Theme.of(context).textTheme.titleLarge?.copyWith(
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.w600,
-        );
-    final subtitleStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: AppColors.textSecondary,
-          height: 1.5,
-        );
-
+    final theme = ShadTheme.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -37,28 +29,28 @@ class EmptyStateWidget extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppColors.primarySurface,
+                color: theme.colorScheme.accent,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 56, color: AppColors.primary),
+              child: Icon(icon, size: 56, color: theme.colorScheme.primary),
             ),
             const SizedBox(height: 24),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: titleStyle,
+              style: theme.textTheme.h3,
             ),
             if (subtitle != null) ...[
               const SizedBox(height: 8),
               Text(
                 subtitle!,
                 textAlign: TextAlign.center,
-                style: subtitleStyle,
+                style: theme.textTheme.muted,
               ),
             ],
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 24),
-              ElevatedButton(
+              ShadButton(
                 onPressed: onAction,
                 child: Text(actionLabel!),
               ),

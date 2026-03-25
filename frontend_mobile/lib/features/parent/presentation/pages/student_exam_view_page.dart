@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_error_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
@@ -171,10 +172,9 @@ class _QuestionCard extends StatelessWidget {
     final confidenceColor = _getColor(question.confidence);
     final confidencePercent = question.confidencePercent;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+    return ShadCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -291,7 +291,6 @@ class _QuestionCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
     );
   }
 

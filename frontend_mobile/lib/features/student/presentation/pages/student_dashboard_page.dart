@@ -6,7 +6,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/gradient_dashboard_header.dart';
 import '../../../../core/widgets/app_error_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
-import '../../../../core/widgets/liquid_glass_bottom_bar.dart';
+import '../../../../core/widgets/app_google_bottom_nav.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
@@ -33,26 +33,27 @@ class StudentDashboardPage extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: LiquidGlassBottomBar(
+      bottomNavigationBar: AppGoogleBottomNav(
         items: [
-          LiquidGlassBarItem(
+          AppGoogleNavItem(
             icon: Icons.quiz_rounded,
             label: 'Sınavlar',
-            selected: true,
             onTap: () {},
           ),
-          LiquidGlassBarItem(
+          AppGoogleNavItem(
             icon: Icons.refresh_rounded,
             label: 'Yenile',
+            persistSelection: false,
             onTap: () {
               context
                   .read<StudentExamsBloc>()
                   .add(const RefreshStudentExams());
             },
           ),
-          LiquidGlassBarItem(
+          AppGoogleNavItem(
             icon: Icons.logout_rounded,
             label: 'Çıkış',
+            persistSelection: false,
             onTap: () =>
                 context.read<AuthBloc>().add(const AuthLogoutRequested()),
           ),

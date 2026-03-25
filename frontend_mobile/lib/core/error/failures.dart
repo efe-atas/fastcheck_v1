@@ -11,31 +11,29 @@ abstract class Failure extends Equatable {
 }
 
 class ServerFailure extends Failure {
+  // ignore: use_super_parameters — statusCode ayrı iletiliyor
   const ServerFailure([String message = 'Sunucu hatası oluştu', int? statusCode])
       : super(message, statusCode: statusCode);
 }
 
 class NetworkFailure extends Failure {
-  const NetworkFailure([String message = 'İnternet bağlantısı bulunamadı'])
-      : super(message);
+  const NetworkFailure([super.message = 'İnternet bağlantısı bulunamadı']);
 }
 
 class CacheFailure extends Failure {
-  const CacheFailure([String message = 'Önbellek hatası oluştu'])
-      : super(message);
+  const CacheFailure([super.message = 'Önbellek hatası oluştu']);
 }
 
 class AuthFailure extends Failure {
-  const AuthFailure([String message = 'Kimlik doğrulama hatası'])
-      : super(message);
+  const AuthFailure([super.message = 'Kimlik doğrulama hatası']);
 }
 
 class ValidationFailure extends Failure {
-  const ValidationFailure([String message = 'Doğrulama hatası'])
-      : super(message);
+  const ValidationFailure([super.message = 'Doğrulama hatası']);
 }
 
 class UnauthorizedFailure extends Failure {
+  // ignore: use_super_parameters — statusCode: 401 sabit
   const UnauthorizedFailure([String message = 'Oturum süresi doldu'])
       : super(message, statusCode: 401);
 }

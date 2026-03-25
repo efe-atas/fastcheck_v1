@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/student_entities.dart';
 
@@ -38,25 +39,24 @@ class _QuestionCardState extends State<QuestionCard>
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.zero,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: _expanded ? AppColors.primary.withValues(alpha: 0.3) : AppColors.border,
-          width: _expanded ? 1.5 : 1,
-        ),
-      ),
+    return Material(
+      color: Colors.transparent,
       child: InkWell(
         onTap: () => setState(() => _expanded = !_expanded),
         borderRadius: BorderRadius.circular(16),
-        child: AnimatedSize(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeInOut,
-          alignment: Alignment.topCenter,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
+        child: ShadCard(
+          padding: const EdgeInsets.all(16),
+          radius: BorderRadius.circular(16),
+          border: ShadBorder.all(
+            color: _expanded
+                ? AppColors.primary.withValues(alpha: 0.3)
+                : AppColors.border,
+            width: _expanded ? 1.5 : 1,
+          ),
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOut,
+            alignment: Alignment.topCenter,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

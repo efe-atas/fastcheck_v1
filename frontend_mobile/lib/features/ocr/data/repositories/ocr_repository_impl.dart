@@ -11,6 +11,18 @@ class OcrRepositoryImpl implements OcrRepository {
   OcrRepositoryImpl({required this.remoteDataSource});
 
   @override
+  Future<Either<Failure, String>> uploadImage(String localPath) async {
+    try {
+      final url = await remoteDataSource.uploadImage(localPath);
+      return Right(url);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.statusCode));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, OcrResultEntity>> extract({
     required String imageUrl,
     String? sourceId,

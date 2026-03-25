@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/teacher_entities.dart';
 
@@ -21,40 +22,57 @@ class StudentTile extends StatelessWidget {
         .map((s) => s[0].toUpperCase())
         .join();
 
-    return ListTile(
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: CircleAvatar(
-        radius: 22,
-        backgroundColor: AppColors.primarySurface,
-        child: Text(
-          initials,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppColors.primary,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: ShadCard(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: AppColors.primarySurface,
+                child: Text(
+                  initials,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      student.fullName,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      student.email,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textTertiary,
+                size: 20,
+              ),
+            ],
           ),
         ),
-      ),
-      title: Text(
-        student.fullName,
-        style: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w500,
-          color: AppColors.textPrimary,
-        ),
-      ),
-      subtitle: Text(
-        student.email,
-        style: const TextStyle(
-          fontSize: 13,
-          color: AppColors.textTertiary,
-        ),
-      ),
-      trailing: const Icon(
-        Icons.chevron_right_rounded,
-        color: AppColors.textTertiary,
-        size: 20,
       ),
     );
   }

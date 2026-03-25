@@ -12,6 +12,7 @@ abstract class AuthRepository {
     required String fullName,
     required String email,
     required String password,
+    required String role,
   });
 
   Future<Either<Failure, UserEntity>> refreshToken();

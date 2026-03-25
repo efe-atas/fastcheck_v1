@@ -162,12 +162,14 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<OcrRepository>(
     () => OcrRepositoryImpl(remoteDataSource: sl()),
   );
+  sl.registerLazySingleton(() => OcrUploadImage(sl()));
   sl.registerLazySingleton(() => OcrExtract(sl()));
   sl.registerLazySingleton(() => OcrListMine(sl()));
   sl.registerLazySingleton(() => OcrGetMine(sl()));
 
   sl.registerFactory(
     () => OcrCubit(
+      ocrUploadImage: sl(),
       ocrExtract: sl(),
       ocrListMine: sl(),
       ocrGetMine: sl(),

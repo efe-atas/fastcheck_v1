@@ -2,9 +2,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../bloc/exam_bloc.dart';
 
 class CreateExamPage extends StatefulWidget {
@@ -35,26 +37,21 @@ class _CreateExamPageState extends State<CreateExamPage> {
         listener: (context, state) {
           if (state is ExamCreated) {
             _createdExamId = state.exam.examId;
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Sınav oluşturuldu. Şimdi fotoğraf ekleyin.'),
-                backgroundColor: AppColors.success,
-              ),
+            showAppToast(
+              context,
+              message: 'Sınav oluşturuldu. Şimdi fotoğraf ekleyin.',
             );
           } else if (state is ImagesUploaded) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Fotoğraflar başarıyla yüklendi'),
-                backgroundColor: AppColors.success,
-              ),
+            showAppToast(
+              context,
+              message: 'Fotoğraflar başarıyla yüklendi',
             );
             Navigator.of(context).pop(true);
           } else if (state is ExamError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppColors.error,
-              ),
+            showAppToast(
+              context,
+              message: state.message,
+              destructive: true,
             );
           }
         },
@@ -236,24 +233,20 @@ class _CreateExamPageState extends State<CreateExamPage> {
         Row(
           children: [
             Expanded(
-              child: OutlinedButton.icon(
+              child: ShadButton.outline(
                 onPressed: isUploading ? null : _pickFromCamera,
-                icon: const Icon(Icons.camera_alt_rounded),
-                label: const Text('Kamera'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
+                leading: const Icon(Icons.camera_alt_rounded),
+                height: 48,
+                child: const Text('Kamera'),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: OutlinedButton.icon(
+              child: ShadButton.outline(
                 onPressed: isUploading ? null : _pickFromGallery,
-                icon: const Icon(Icons.photo_library_rounded),
-                label: const Text('Galeri'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
+                leading: const Icon(Icons.photo_library_rounded),
+                height: 48,
+                child: const Text('Galeri'),
               ),
             ),
           ],
@@ -360,7 +353,7 @@ class _CreateExamPageState extends State<CreateExamPage> {
           ),
         ],
         const SizedBox(height: 16),
-        TextButton(
+        ShadButton.link(
           onPressed: () => Navigator.of(context).pop(true),
           child: const Text('Fotoğraf yüklemeden devam et'),
         ),

@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/usecase/usecase.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../../domain/usecases/teacher_usecases.dart';
 
 class CreateClassPage extends StatefulWidget {
@@ -194,19 +195,16 @@ class _CreateClassPageState extends State<CreateClassPage> {
 
     result.fold(
       (failure) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(failure.message),
-            backgroundColor: AppColors.error,
-          ),
+        showAppToast(
+          context,
+          message: failure.message,
+          destructive: true,
         );
       },
       (classEntity) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Sınıf başarıyla oluşturuldu'),
-            backgroundColor: AppColors.success,
-          ),
+        showAppToast(
+          context,
+          message: 'Sınıf başarıyla oluşturuldu',
         );
         Navigator.of(context).pop(true);
       },

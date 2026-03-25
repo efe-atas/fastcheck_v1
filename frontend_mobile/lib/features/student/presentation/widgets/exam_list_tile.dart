@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/student_entities.dart';
 
@@ -15,18 +15,15 @@ class ExamListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.zero,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.border, width: 1),
-      ),
+    return Material(
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        child: Padding(
+        child: ShadCard(
           padding: const EdgeInsets.all(16),
+          radius: BorderRadius.circular(16),
+          border: ShadBorder.all(color: AppColors.border, width: 1),
           child: Row(
             children: [
               Container(

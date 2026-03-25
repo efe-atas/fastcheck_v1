@@ -34,7 +34,7 @@ public class UserService {
         user.setFullName(request.fullName().trim());
         user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(request.password()));
-        user.setRole(Role.ROLE_STUDENT);
+        user.setRole(resolveRegistrationRole(request.role()));
         user = userRepository.save(user);
 
         return issueTokens(user);
@@ -80,6 +80,16 @@ public class UserService {
         user.setUpdatedAt(Instant.now());
 
         return new AuthDtos.AuthResponse(user.getId(), user.getEmail(), access, refresh);
+    }
+
+    private static Role resolveRegistrationRole(Role requested) {
+        if (requested == null) {
+            return Role.ROLE_STUDENT;
+        }
+        if (requested == Role.ROLE_STUDENT || requested == Role.ROLE_TEACHER) {
+            return requested;
+        }
+        throw new ApiException(HttpStatus.BAD_REQUEST, "invalid registration role");
     }
 
     private AuthDtos.AuthResponse issueTokens(UserAccount user) {

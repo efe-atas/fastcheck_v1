@@ -2,9 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
@@ -45,11 +47,10 @@ class _LoginPageState extends State<LoginPage> {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppColors.error,
-              ),
+            showAppToast(
+              context,
+              message: state.message,
+              destructive: true,
             );
           }
         },
@@ -175,7 +176,7 @@ class _LoginPageState extends State<LoginPage> {
           'Hesabınız yok mu? ',
           style: TextStyle(color: AppColors.textSecondary),
         ),
-        TextButton(
+        ShadButton.link(
           onPressed: () => context.push('/auth/register'),
           child: const Text('Kayıt Olun'),
         ),
@@ -196,12 +197,12 @@ class _LoginPageState extends State<LoginPage> {
               ),
         ),
         const SizedBox(height: 8),
-        OutlinedButton.icon(
+        ShadButton.outline(
+          leading: const Icon(Icons.home_outlined, size: 20),
           onPressed: () => context.read<AuthBloc>().add(
                 const AuthDevBypassRequested(),
               ),
-          icon: const Icon(Icons.home_outlined, size: 20),
-          label: const Text('Ana sayfaya geç (test)'),
+          child: const Text('Ana sayfaya geç (test)'),
         ),
       ],
     );
