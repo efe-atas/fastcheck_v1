@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../../core/domain/paged_result.dart';
 
 class SchoolEntity extends Equatable {
   final int schoolId;
@@ -71,3 +72,75 @@ class AdminParentStudentViewEntity extends Equatable {
   @override
   List<Object?> get props => [userId, fullName, email, classId];
 }
+
+class AdminUserSummaryEntity extends Equatable {
+  final int userId;
+  final String fullName;
+  final String email;
+  final String role;
+  final int? schoolId;
+  final int? classId;
+
+  const AdminUserSummaryEntity({
+    required this.userId,
+    required this.fullName,
+    required this.email,
+    required this.role,
+    this.schoolId,
+    this.classId,
+  });
+
+  bool get isParent => role == 'ROLE_PARENT';
+  bool get isStudent => role == 'ROLE_STUDENT';
+
+  @override
+  List<Object?> get props => [userId, fullName, email, role, schoolId, classId];
+}
+
+class AdminSchoolSummaryEntity extends Equatable {
+  final int schoolId;
+  final String schoolName;
+  final DateTime createdAt;
+
+  const AdminSchoolSummaryEntity({
+    required this.schoolId,
+    required this.schoolName,
+    required this.createdAt,
+  });
+
+  @override
+  List<Object?> get props => [schoolId, schoolName, createdAt];
+}
+
+class AdminBulkRowErrorEntity extends Equatable {
+  final int rowNumber;
+  final String message;
+
+  const AdminBulkRowErrorEntity({
+    required this.rowNumber,
+    required this.message,
+  });
+
+  @override
+  List<Object?> get props => [rowNumber, message];
+}
+
+class AdminBulkOperationEntity extends Equatable {
+  final int processed;
+  final int success;
+  final int failed;
+  final List<AdminBulkRowErrorEntity> errors;
+
+  const AdminBulkOperationEntity({
+    required this.processed,
+    required this.success,
+    required this.failed,
+    required this.errors,
+  });
+
+  @override
+  List<Object?> get props => [processed, success, failed, errors];
+}
+
+typedef AdminUserSearchResult = PagedResult<AdminUserSummaryEntity>;
+typedef AdminSchoolSearchResult = PagedResult<AdminSchoolSummaryEntity>;

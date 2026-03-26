@@ -46,10 +46,15 @@ class ApiConstants {
 
   // Admin
   static const String adminSchools = '/v1/admin/schools';
+  static const String adminUsers = '/v1/admin/users';
   static String adminAssignUser(int userId, int schoolId) =>
       '/v1/admin/users/$userId/schools/$schoolId';
+  static const String adminBulkAssignUsersToSchools =
+      '/v1/admin/users/schools/bulk';
   static const String adminParentStudentLinks =
       '/v1/admin/parent-student-links';
+  static const String adminBulkParentStudentLinks =
+      '/v1/admin/parent-student-links/bulk';
   static String adminParentStudents(int parentUserId) =>
       '/v1/admin/parents/$parentUserId/students';
 

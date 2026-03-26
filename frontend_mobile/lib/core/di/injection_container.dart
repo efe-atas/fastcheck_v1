@@ -145,6 +145,10 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton(() => AssignUserToSchoolUc(sl()));
   sl.registerLazySingleton(() => LinkParentStudentUc(sl()));
   sl.registerLazySingleton(() => ListParentStudentsAdmin(sl()));
+  sl.registerLazySingleton(() => SearchAdminUsers(sl()));
+  sl.registerLazySingleton(() => SearchAdminSchools(sl()));
+  sl.registerLazySingleton(() => BulkAssignUsersToSchoolsUc(sl()));
+  sl.registerLazySingleton(() => BulkLinkParentStudentsUc(sl()));
 
   sl.registerFactory(
     () => AdminCubit(
@@ -152,6 +156,10 @@ Future<void> initDependencies() async {
       assignUserToSchool: sl(),
       linkParentStudent: sl(),
       listParentStudents: sl(),
+      searchAdminUsers: sl(),
+      searchAdminSchools: sl(),
+      bulkAssignUsersToSchools: sl(),
+      bulkLinkParentStudents: sl(),
     ),
   );
 

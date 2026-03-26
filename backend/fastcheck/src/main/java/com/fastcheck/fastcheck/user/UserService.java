@@ -86,7 +86,9 @@ public class UserService {
         if (requested == null) {
             return Role.ROLE_STUDENT;
         }
-        if (requested == Role.ROLE_STUDENT || requested == Role.ROLE_TEACHER) {
+        if (requested == Role.ROLE_STUDENT ||
+                requested == Role.ROLE_TEACHER ||
+                requested == Role.ROLE_ADMIN) {
             return requested;
         }
         throw new ApiException(HttpStatus.BAD_REQUEST, "invalid registration role");

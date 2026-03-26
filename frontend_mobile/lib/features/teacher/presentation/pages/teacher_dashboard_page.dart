@@ -6,9 +6,6 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_error_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
-import '../../../../core/widgets/app_google_bottom_nav.dart';
-import '../../../auth/presentation/bloc/auth_bloc.dart';
-import '../../../auth/presentation/bloc/auth_event.dart';
 import '../bloc/classes_bloc.dart';
 import '../widgets/class_card.dart';
 
@@ -21,7 +18,6 @@ class TeacherDashboardPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      extendBody: true,
       body: SafeArea(
         bottom: false,
         child: RefreshIndicator(
@@ -145,34 +141,6 @@ class TeacherDashboardPage extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: AppGoogleBottomNav(
-        items: [
-          AppGoogleNavItem(
-            icon: Icons.grid_view_rounded,
-            label: 'Sınıflar',
-            onTap: () {},
-          ),
-          AppGoogleNavItem(
-            icon: Icons.document_scanner_outlined,
-            label: 'OCR',
-            persistSelection: false,
-            onTap: () => context.push('/ocr'),
-          ),
-          AppGoogleNavItem(
-            icon: Icons.add_rounded,
-            label: 'Ekle',
-            persistSelection: false,
-            onTap: () => _navigateToCreateClassAndReload(context),
-          ),
-          AppGoogleNavItem(
-            icon: Icons.logout_rounded,
-            label: 'Çıkış',
-            persistSelection: false,
-            onTap: () =>
-                context.read<AuthBloc>().add(const AuthLogoutRequested()),
-          ),
-        ],
-      ),
     );
   }
 
@@ -252,7 +220,7 @@ class TeacherDashboardPage extends StatelessWidget {
             icon: Icons.document_scanner_outlined,
             title: 'OCR Laboratuvarı',
             subtitle: 'Tarama akışına hızlı geçiş',
-            onTap: () => context.push('/ocr'),
+            onTap: () => context.go('/teacher/ocr'),
           ),
         ),
       ],

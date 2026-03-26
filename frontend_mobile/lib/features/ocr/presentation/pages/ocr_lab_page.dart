@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_toast.dart';
@@ -29,15 +28,6 @@ class _OcrLabPageState extends State<OcrLabPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('OCR'),
-        backgroundColor: AppColors.surface,
-        surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.pop(),
-        ),
-      ),
       body: MultiBlocListener(
         listeners: [
           BlocListener<OcrCubit, OcrState>(
@@ -67,11 +57,23 @@ class _OcrLabPageState extends State<OcrLabPage> {
         child: BlocBuilder<OcrCubit, OcrState>(
           builder: (context, state) {
             return ListView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                MediaQuery.paddingOf(context).top + 16,
+                16,
+                16,
+              ),
               children: [
                 Text(
+                  'OCR Laboratuvarı',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
                   'Sınav kağıtlarını hızlıca tarayın',
-                  style: ShadTheme.of(context).textTheme.h4,
+                  style: ShadTheme.of(context).textTheme.muted,
                 ),
                 const SizedBox(height: 8),
                 Text(

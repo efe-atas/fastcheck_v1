@@ -4,4 +4,5 @@ abstract final class AuthRoles {
 
   static const student = 'ROLE_STUDENT';
   static const teacher = 'ROLE_TEACHER';
+  static const admin = 'ROLE_ADMIN';
 }

@@ -125,6 +125,11 @@ class _RegisterPageState extends State<RegisterPage> {
         SegmentedButton<String>(
           segments: const [
             ButtonSegment<String>(
+              value: AuthRoles.admin,
+              label: Text('Admin'),
+              icon: Icon(Icons.admin_panel_settings_outlined, size: 18),
+            ),
+            ButtonSegment<String>(
               value: AuthRoles.student,
               label: Text('Öğrenci'),
               icon: Icon(Icons.school_outlined, size: 18),

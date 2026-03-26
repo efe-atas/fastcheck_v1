@@ -42,12 +42,45 @@ public class EducationController {
         return adminEducationService.assignUserToSchool(userId, schoolId);
     }
 
+    @GetMapping("/admin/users")
+    public EducationDtos.PagedResponse<EducationDtos.AdminUserSummary> listAdminUsers(
+            @RequestParam(name = "role", required = false) String role,
+            @RequestParam(name = "q", required = false) String q,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size
+    ) {
+        return adminEducationService.listUsers(role, q, page, size);
+    }
+
+    @GetMapping("/admin/schools")
+    public EducationDtos.PagedResponse<EducationDtos.AdminSchoolSummary> listSchools(
+            @RequestParam(name = "q", required = false) String q,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size
+    ) {
+        return adminEducationService.listSchools(q, page, size);
+    }
+
+    @PostMapping("/admin/users/schools/bulk")
+    public EducationDtos.BulkOperationResponse bulkAssignUsersToSchools(
+            @RequestParam("file") MultipartFile file
+    ) {
+        return adminEducationService.bulkAssignUsersToSchools(file);
+    }
+
     @PostMapping("/admin/parent-student-links")
     @ResponseStatus(HttpStatus.CREATED)
     public EducationDtos.ParentStudentLinkResponse linkParentStudent(
             @Valid @RequestBody EducationDtos.ParentStudentLinkRequest request
     ) {
         return adminEducationService.linkParentStudent(request);
+    }
+
+    @PostMapping("/admin/parent-student-links/bulk")
+    public EducationDtos.BulkOperationResponse bulkLinkParentStudents(
+            @RequestParam("file") MultipartFile file
+    ) {
+        return adminEducationService.bulkLinkParentStudents(file);
     }
 
     @GetMapping("/admin/parents/{parentUserId}/students")

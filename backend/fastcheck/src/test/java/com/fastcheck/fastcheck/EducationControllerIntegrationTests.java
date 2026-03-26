@@ -23,10 +23,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -223,6 +225,89 @@ class EducationControllerIntegrationTests {
             .andExpect(jsonPath("$[0].userId").value(student.getId()))
             .andExpect(jsonPath("$[0].fullName").value("Student List"));
         }
+
+    @Test
+    void adminCanSearchUsersAndSchools() throws Exception {
+        UserAccount admin = saveUser("admin-search@fastcheck.local", "Admin Search", Role.ROLE_ADMIN);
+        UserAccount teacher = saveUser("teacher-search@fastcheck.local", "Alpha Teacher", Role.ROLE_TEACHER);
+        saveUser("student-search@fastcheck.local", "Beta Student", Role.ROLE_STUDENT);
+
+        School schoolA = new School();
+        schoolA.setName("Ankara Campus");
+        schoolA = schoolRepository.save(schoolA);
+        School schoolB = new School();
+        schoolB.setName("Izmir Campus");
+        schoolRepository.save(schoolB);
+
+        teacher.setSchool(schoolA);
+        userRepository.save(teacher);
+
+        mockMvc.perform(get("/v1/admin/users")
+                        .param("role", "ROLE_TEACHER")
+                        .param("q", "alpha")
+                        .header("Authorization", bearerToken(admin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].email").value("teacher-search@fastcheck.local"))
+                .andExpect(jsonPath("$.items[0].schoolId").value(schoolA.getId()));
+
+        mockMvc.perform(get("/v1/admin/schools")
+                        .param("q", "campus")
+                        .header("Authorization", bearerToken(admin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].schoolName").exists())
+                .andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @Test
+    void adminCanBulkAssignUsersAndLinkParentStudentsWithPartialFailures() throws Exception {
+        UserAccount admin = saveUser("admin-bulk@fastcheck.local", "Admin Bulk", Role.ROLE_ADMIN);
+        UserAccount student = saveUser("student-bulk@fastcheck.local", "Student Bulk", Role.ROLE_STUDENT);
+        UserAccount parent = saveUser("parent-bulk@fastcheck.local", "Parent Bulk", Role.ROLE_PARENT);
+
+        School school = new School();
+        school.setName("Bulk School");
+        school = schoolRepository.save(school);
+
+        MockMultipartFile assignCsv = new MockMultipartFile(
+                "file",
+                "assign.csv",
+                "text/csv",
+                ("""
+                        userEmail,schoolName
+                        student-bulk@fastcheck.local,Bulk School
+                        missing@fastcheck.local,Bulk School
+                        """).getBytes()
+        );
+
+        mockMvc.perform(multipart("/v1/admin/users/schools/bulk")
+                        .file(assignCsv)
+                        .header("Authorization", bearerToken(admin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.processed").value(2))
+                .andExpect(jsonPath("$.success").value(1))
+                .andExpect(jsonPath("$.failed").value(1))
+                .andExpect(jsonPath("$.errors[0].rowNumber").value(3));
+
+        MockMultipartFile linkCsv = new MockMultipartFile(
+                "file",
+                "links.csv",
+                "text/csv",
+                ("""
+                        parentEmail,studentEmail
+                        parent-bulk@fastcheck.local,student-bulk@fastcheck.local
+                        parent-bulk@fastcheck.local,missing-student@fastcheck.local
+                        """).getBytes()
+        );
+
+        mockMvc.perform(multipart("/v1/admin/parent-student-links/bulk")
+                        .file(linkCsv)
+                        .header("Authorization", bearerToken(admin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.processed").value(2))
+                .andExpect(jsonPath("$.success").value(1))
+                .andExpect(jsonPath("$.failed").value(1))
+                .andExpect(jsonPath("$.errors[0].rowNumber").value(3));
+    }
 
     @Test
     void teacherCanListClassRoster() throws Exception {

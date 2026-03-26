@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
+import '../../../../core/domain/paged_result.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/usecase/usecase.dart';
 import '../entities/admin_entities.dart';
@@ -94,4 +95,120 @@ class ListParentStudentsAdmin
   ) {
     return repository.listParentStudents(parentUserId);
   }
+}
+
+class SearchAdminUsers
+    extends UseCase<PagedResult<AdminUserSummaryEntity>, SearchAdminUsersParams> {
+  final AdminRepository repository;
+
+  SearchAdminUsers(this.repository);
+
+  @override
+  Future<Either<Failure, PagedResult<AdminUserSummaryEntity>>> call(
+    SearchAdminUsersParams params,
+  ) {
+    return repository.searchUsers(
+      role: params.role,
+      query: params.query,
+      page: params.page,
+      size: params.size,
+    );
+  }
+}
+
+class SearchAdminUsersParams extends Equatable {
+  final String? role;
+  final String? query;
+  final int page;
+  final int size;
+
+  const SearchAdminUsersParams({
+    this.role,
+    this.query,
+    this.page = 0,
+    this.size = 20,
+  });
+
+  @override
+  List<Object?> get props => [role, query, page, size];
+}
+
+class SearchAdminSchools extends UseCase<
+    PagedResult<AdminSchoolSummaryEntity>, SearchAdminSchoolsParams> {
+  final AdminRepository repository;
+
+  SearchAdminSchools(this.repository);
+
+  @override
+  Future<Either<Failure, PagedResult<AdminSchoolSummaryEntity>>> call(
+    SearchAdminSchoolsParams params,
+  ) {
+    return repository.searchSchools(
+      query: params.query,
+      page: params.page,
+      size: params.size,
+    );
+  }
+}
+
+class SearchAdminSchoolsParams extends Equatable {
+  final String? query;
+  final int page;
+  final int size;
+
+  const SearchAdminSchoolsParams({
+    this.query,
+    this.page = 0,
+    this.size = 20,
+  });
+
+  @override
+  List<Object?> get props => [query, page, size];
+}
+
+class BulkAssignUsersToSchoolsUc
+    extends UseCase<AdminBulkOperationEntity, BulkCsvUploadParams> {
+  final AdminRepository repository;
+
+  BulkAssignUsersToSchoolsUc(this.repository);
+
+  @override
+  Future<Either<Failure, AdminBulkOperationEntity>> call(
+    BulkCsvUploadParams params,
+  ) {
+    return repository.bulkAssignUsersToSchools(
+      fileBytes: params.fileBytes,
+      fileName: params.fileName,
+    );
+  }
+}
+
+class BulkLinkParentStudentsUc
+    extends UseCase<AdminBulkOperationEntity, BulkCsvUploadParams> {
+  final AdminRepository repository;
+
+  BulkLinkParentStudentsUc(this.repository);
+
+  @override
+  Future<Either<Failure, AdminBulkOperationEntity>> call(
+    BulkCsvUploadParams params,
+  ) {
+    return repository.bulkLinkParentStudents(
+      fileBytes: params.fileBytes,
+      fileName: params.fileName,
+    );
+  }
+}
+
+class BulkCsvUploadParams extends Equatable {
+  final List<int> fileBytes;
+  final String fileName;
+
+  const BulkCsvUploadParams({
+    required this.fileBytes,
+    required this.fileName,
+  });
+
+  @override
+  List<Object?> get props => [fileBytes, fileName];
 }

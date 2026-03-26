@@ -44,6 +44,7 @@ dependencies:
   google_nav_bar: ^5.0.7
   flutter_doc_scanner: ^0.0.18
   cross_file: ^0.3.5+2
+  file_picker: ^10.3.10
 
 dev_dependencies:
   flutter_test:

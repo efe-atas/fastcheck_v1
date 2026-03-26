@@ -6,9 +6,28 @@ import '../models/admin_models.dart';
 abstract class AdminRemoteDataSource {
   Future<SchoolModel> createSchool(String schoolName);
   Future<AssignUserToSchoolModel> assignUserToSchool(int userId, int schoolId);
+  Future<AdminPagedResultModel<AdminUserSummaryModel>> searchUsers({
+    String? role,
+    String? query,
+    required int page,
+    required int size,
+  });
+  Future<AdminPagedResultModel<AdminSchoolSummaryModel>> searchSchools({
+    String? query,
+    required int page,
+    required int size,
+  });
+  Future<AdminBulkOperationModel> bulkAssignUsersToSchools({
+    required List<int> fileBytes,
+    required String fileName,
+  });
   Future<ParentStudentLinkModel> linkParentStudent({
     required int parentUserId,
     required int studentUserId,
+  });
+  Future<AdminBulkOperationModel> bulkLinkParentStudents({
+    required List<int> fileBytes,
+    required String fileName,
   });
   Future<List<AdminParentStudentViewModel>> listParentStudents(int parentUserId);
 }
@@ -55,6 +74,89 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
   }
 
   @override
+  Future<AdminPagedResultModel<AdminUserSummaryModel>> searchUsers({
+    String? role,
+    String? query,
+    required int page,
+    required int size,
+  }) async {
+    try {
+      final response = await dio.get(
+        ApiConstants.adminUsers,
+        queryParameters: {
+          'role': role,
+          'q': query,
+          'page': page,
+          'size': size,
+        }..removeWhere((key, value) => value == null),
+      );
+      return AdminPagedResultModel.fromJson(
+        response.data as Map<String, dynamic>,
+        AdminUserSummaryModel.fromJson,
+      );
+    } on DioException catch (e) {
+      throw ServerException(
+        message: _msg(e),
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
+
+  @override
+  Future<AdminPagedResultModel<AdminSchoolSummaryModel>> searchSchools({
+    String? query,
+    required int page,
+    required int size,
+  }) async {
+    try {
+      final response = await dio.get(
+        ApiConstants.adminSchools,
+        queryParameters: {
+          'q': query,
+          'page': page,
+          'size': size,
+        }..removeWhere((key, value) => value == null),
+      );
+      return AdminPagedResultModel.fromJson(
+        response.data as Map<String, dynamic>,
+        AdminSchoolSummaryModel.fromJson,
+      );
+    } on DioException catch (e) {
+      throw ServerException(
+        message: _msg(e),
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
+
+  @override
+  Future<AdminBulkOperationModel> bulkAssignUsersToSchools({
+    required List<int> fileBytes,
+    required String fileName,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        'file': MultipartFile.fromBytes(
+          fileBytes,
+          filename: fileName,
+        ),
+      });
+      final response = await dio.post(
+        ApiConstants.adminBulkAssignUsersToSchools,
+        data: formData,
+      );
+      return AdminBulkOperationModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
+      throw ServerException(
+        message: _msg(e),
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
+
+  @override
   Future<ParentStudentLinkModel> linkParentStudent({
     required int parentUserId,
     required int studentUserId,
@@ -68,6 +170,33 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
         },
       );
       return ParentStudentLinkModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
+      throw ServerException(
+        message: _msg(e),
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
+
+  @override
+  Future<AdminBulkOperationModel> bulkLinkParentStudents({
+    required List<int> fileBytes,
+    required String fileName,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        'file': MultipartFile.fromBytes(
+          fileBytes,
+          filename: fileName,
+        ),
+      });
+      final response = await dio.post(
+        ApiConstants.adminBulkParentStudentLinks,
+        data: formData,
+      );
+      return AdminBulkOperationModel.fromJson(
         response.data as Map<String, dynamic>,
       );
     } on DioException catch (e) {

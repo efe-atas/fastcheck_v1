@@ -16,51 +16,24 @@ class AppGoogleNavItem {
 }
 
 /// Uygulama temasına tam uyumlu, sade ve erişilebilir alt gezinme çubuğu.
-class AppGoogleBottomNav extends StatefulWidget {
+/// selectedIndex ve onSelected ile tamamen dışarıdan kontrol edilir (controlled widget).
+class AppGoogleBottomNav extends StatelessWidget {
   const AppGoogleBottomNav({
     super.key,
     required this.items,
-    this.initialIndex = 0,
+    required this.selectedIndex,
+    required this.onSelected,
     this.margin = const EdgeInsets.fromLTRB(12, 0, 12, 8),
   });
 
   final List<AppGoogleNavItem> items;
-  final int initialIndex;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
   final EdgeInsets margin;
 
   @override
-  State<AppGoogleBottomNav> createState() => _AppGoogleBottomNavState();
-}
-
-class _AppGoogleBottomNavState extends State<AppGoogleBottomNav> {
-  late int _selectedIndex;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedIndex = _normalizedIndex(widget.initialIndex);
-  }
-
-  @override
-  void didUpdateWidget(covariant AppGoogleBottomNav oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.initialIndex != widget.initialIndex) {
-      _selectedIndex = _normalizedIndex(widget.initialIndex);
-    } else if (_selectedIndex >= widget.items.length) {
-      _selectedIndex = _normalizedIndex(widget.items.length - 1);
-    }
-  }
-
-  int _normalizedIndex(int index) {
-    if (widget.items.isEmpty) return 0;
-    if (index < 0) return 0;
-    if (index >= widget.items.length) return widget.items.length - 1;
-    return index;
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (widget.items.isEmpty) {
+    if (items.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -69,7 +42,7 @@ class _AppGoogleBottomNavState extends State<AppGoogleBottomNav> {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Padding(
-      padding: widget.margin.copyWith(bottom: widget.margin.bottom + bottomInset),
+      padding: margin.copyWith(bottom: margin.bottom + bottomInset),
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.surface,
@@ -87,16 +60,16 @@ class _AppGoogleBottomNavState extends State<AppGoogleBottomNav> {
           padding: const EdgeInsets.all(6),
           child: Row(
             children: [
-              for (var i = 0; i < widget.items.length; i++)
+              for (var i = 0; i < items.length; i++)
                 Expanded(
                   child: _NavItemButton(
-                    item: widget.items[i],
-                    selected: _selectedIndex == i,
+                    item: items[i],
+                    selected: selectedIndex == i,
                     labelStyle: textTheme.labelLarge,
                     onTap: () {
-                      final tappedItem = widget.items[i];
+                      final tappedItem = items[i];
                       if (tappedItem.persistSelection) {
-                        setState(() => _selectedIndex = i);
+                        onSelected(i);
                       }
                       tappedItem.onTap();
                     },

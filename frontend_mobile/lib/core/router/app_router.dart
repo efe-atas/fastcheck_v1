@@ -9,6 +9,7 @@ import '../../features/auth/presentation/pages/splash_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/teacher/presentation/pages/teacher_dashboard_page.dart';
+import '../../features/teacher/presentation/pages/teacher_shell_page.dart';
 import '../../features/teacher/presentation/pages/class_detail_page.dart';
 import '../../features/teacher/presentation/pages/create_class_page.dart';
 import '../../features/teacher/presentation/pages/create_exam_page.dart';
@@ -18,13 +19,16 @@ import '../../features/teacher/presentation/bloc/classes_bloc.dart';
 import '../../features/teacher/presentation/bloc/class_detail_bloc.dart';
 import '../../features/teacher/presentation/bloc/exam_bloc.dart';
 import '../../features/student/presentation/pages/student_dashboard_page.dart';
+import '../../features/student/presentation/pages/student_shell_page.dart';
 import '../../features/student/presentation/pages/exam_questions_page.dart';
 import '../../features/student/presentation/bloc/student_exams_bloc.dart';
 import '../../features/student/presentation/bloc/exam_questions_bloc.dart';
 import '../../features/parent/presentation/pages/parent_dashboard_page.dart';
+import '../../features/parent/presentation/pages/parent_shell_page.dart';
 import '../../features/parent/presentation/pages/student_exam_view_page.dart';
 import '../../features/parent/presentation/bloc/parent_bloc.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
+import '../../features/admin/presentation/pages/admin_shell_page.dart';
 import '../../features/admin/presentation/cubit/admin_cubit.dart';
 import '../../features/ocr/presentation/pages/ocr_lab_page.dart';
 import '../../features/ocr/presentation/cubit/ocr_cubit.dart';
@@ -71,151 +75,201 @@ class AppRouter {
         builder: (context, state) => const RegisterPage(),
       ),
 
-      GoRoute(
-        path: '/admin',
-        builder: (context, state) => BlocProvider(
-          create: (_) => sl<AdminCubit>(),
-          child: const AdminDashboardPage(),
-        ),
-      ),
-
-      GoRoute(
-        path: '/ocr',
-        builder: (context, state) => BlocProvider(
-          create: (_) => sl<OcrCubit>(),
-          child: const OcrLabPage(),
-        ),
-      ),
-
-      // Teacher routes
-      GoRoute(
-        path: '/teacher',
-        builder: (context, state) => BlocProvider(
+      // Teacher shell (Sınıflar + OCR sekmeleri)
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) => BlocProvider(
           create: (_) => sl<ClassesBloc>()..add(const LoadClasses()),
-          child: const TeacherDashboardPage(),
+          child: TeacherShellPage(navigationShell: navigationShell),
         ),
-        routes: [
-          GoRoute(
-            path: 'classes/create',
-            builder: (context, state) => BlocProvider(
-              create: (_) => sl<ExamBloc>(),
-              child: const CreateClassPage(),
-            ),
-          ),
-          GoRoute(
-            path: 'classes/:classId',
-            builder: (context, state) {
-              final classId =
-                  int.parse(state.pathParameters['classId'] ?? '0');
-              final className =
-                  state.uri.queryParameters['name'] ?? 'Sınıf';
-              return BlocProvider(
-                create: (_) =>
-                    sl<ClassDetailBloc>()..add(LoadClassDetail(classId)),
-                child: ClassDetailPage(
-                    classId: classId, className: className),
-              );
-            },
+        branches: [
+          StatefulShellBranch(
             routes: [
               GoRoute(
-                path: 'exams/create',
-                builder: (context, state) {
-                  final classId =
-                      int.parse(state.pathParameters['classId'] ?? '0');
-                  return BlocProvider(
-                    create: (_) => sl<ExamBloc>(),
-                    child: CreateExamPage(classId: classId),
-                  );
-                },
-              ),
-              GoRoute(
-                path: 'students/add',
-                builder: (context, state) {
-                  final classId =
-                      int.parse(state.pathParameters['classId'] ?? '0');
-                  return BlocProvider(
-                    create: (_) => sl<ExamBloc>(),
-                    child: AddStudentPage(classId: classId),
-                  );
-                },
+                path: '/teacher',
+                builder: (context, state) => const TeacherDashboardPage(),
+                routes: [
+                  GoRoute(
+                    path: 'classes/create',
+                    builder: (context, state) => BlocProvider(
+                      create: (_) => sl<ExamBloc>(),
+                      child: const CreateClassPage(),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'classes/:classId',
+                    builder: (context, state) {
+                      final classId =
+                          int.parse(state.pathParameters['classId'] ?? '0');
+                      final className =
+                          state.uri.queryParameters['name'] ?? 'Sınıf';
+                      return BlocProvider(
+                        create: (_) =>
+                            sl<ClassDetailBloc>()..add(LoadClassDetail(classId)),
+                        child: ClassDetailPage(
+                            classId: classId, className: className),
+                      );
+                    },
+                    routes: [
+                      GoRoute(
+                        path: 'exams/create',
+                        builder: (context, state) {
+                          final classId =
+                              int.parse(state.pathParameters['classId'] ?? '0');
+                          return BlocProvider(
+                            create: (_) => sl<ExamBloc>(),
+                            child: CreateExamPage(classId: classId),
+                          );
+                        },
+                      ),
+                      GoRoute(
+                        path: 'students/add',
+                        builder: (context, state) {
+                          final classId =
+                              int.parse(state.pathParameters['classId'] ?? '0');
+                          return BlocProvider(
+                            create: (_) => sl<ExamBloc>(),
+                            child: AddStudentPage(classId: classId),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  GoRoute(
+                    path: 'exams/:examId',
+                    builder: (context, state) {
+                      final examId =
+                          int.parse(state.pathParameters['examId'] ?? '0');
+                      final title =
+                          state.uri.queryParameters['title'] ?? 'Sınav';
+                      return BlocProvider(
+                        create: (_) =>
+                            sl<ExamBloc>()..add(LoadExamStatusEvent(examId)),
+                        child: ExamDetailPage(examId: examId, examTitle: title),
+                      );
+                    },
+                  ),
+                ],
               ),
             ],
           ),
-          GoRoute(
-            path: 'exams/:examId',
-            builder: (context, state) {
-              final examId =
-                  int.parse(state.pathParameters['examId'] ?? '0');
-              final title =
-                  state.uri.queryParameters['title'] ?? 'Sınav';
-              return BlocProvider(
-                create: (_) =>
-                    sl<ExamBloc>()..add(LoadExamStatusEvent(examId)),
-                child: ExamDetailPage(examId: examId, examTitle: title),
-              );
-            },
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/teacher/ocr',
+                builder: (context, state) => BlocProvider(
+                  create: (_) => sl<OcrCubit>(),
+                  child: const OcrLabPage(),
+                ),
+              ),
+            ],
           ),
         ],
       ),
 
-      // Student routes
-      GoRoute(
-        path: '/student',
-        builder: (context, state) => BlocProvider(
+      // Student shell (Sınavlar sekmesi)
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) => BlocProvider(
           create: (_) =>
               sl<StudentExamsBloc>()..add(const LoadStudentExams()),
-          child: const StudentDashboardPage(),
+          child: StudentShellPage(navigationShell: navigationShell),
         ),
-        routes: [
-          GoRoute(
-            path: 'exams/:examId/questions',
-            builder: (context, state) {
-              final examId =
-                  int.parse(state.pathParameters['examId'] ?? '0');
-              final title =
-                  state.uri.queryParameters['title'] ?? 'Sınav';
-              return BlocProvider(
-                create: (_) => sl<ExamQuestionsBloc>()
-                  ..add(LoadExamQuestions(examId: examId)),
-                child: ExamQuestionsPage(examId: examId, examTitle: title),
-              );
-            },
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/student',
+                builder: (context, state) => const StudentDashboardPage(),
+                routes: [
+                  GoRoute(
+                    path: 'exams/:examId/questions',
+                    builder: (context, state) {
+                      final examId =
+                          int.parse(state.pathParameters['examId'] ?? '0');
+                      final title =
+                          state.uri.queryParameters['title'] ?? 'Sınav';
+                      return BlocProvider(
+                        create: (_) => sl<ExamQuestionsBloc>()
+                          ..add(LoadExamQuestions(examId: examId)),
+                        child: ExamQuestionsPage(
+                            examId: examId, examTitle: title),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
 
-      // Parent routes
-      GoRoute(
-        path: '/parent',
-        builder: (context, state) {
-          return BlocProvider(
-            create: (_) => sl<ParentBloc>(),
-            child: const ParentDashboardPage(),
-          );
-        },
-        routes: [
-          GoRoute(
-            path: 'students/:studentId/exams/:examId',
-            builder: (context, state) {
-              final studentId =
-                  int.parse(state.pathParameters['studentId'] ?? '0');
-              final examId =
-                  int.parse(state.pathParameters['examId'] ?? '0');
-              final studentName =
-                  state.uri.queryParameters['name'] ?? 'Öğrenci';
-              return BlocProvider(
-                create: (_) => sl<ParentBloc>()
-                  ..add(LoadStudentExamQuestions(
-                    studentId: studentId,
-                    examId: examId,
-                  )),
-                child: StudentExamViewPage(
-                  studentId: studentId,
-                  examId: examId,
-                  studentName: studentName,
+      // Parent shell (Öğrenciler sekmesi)
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) => BlocProvider(
+          create: (_) => sl<ParentBloc>(),
+          child: ParentShellPage(navigationShell: navigationShell),
+        ),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/parent',
+                builder: (context, state) => const ParentDashboardPage(),
+                routes: [
+                  GoRoute(
+                    path: 'students/:studentId/exams/:examId',
+                    builder: (context, state) {
+                      final studentId =
+                          int.parse(state.pathParameters['studentId'] ?? '0');
+                      final examId =
+                          int.parse(state.pathParameters['examId'] ?? '0');
+                      final studentName =
+                          state.uri.queryParameters['name'] ?? 'Öğrenci';
+                      return BlocProvider(
+                        create: (_) => sl<ParentBloc>()
+                          ..add(LoadStudentExamQuestions(
+                            studentId: studentId,
+                            examId: examId,
+                          )),
+                        child: StudentExamViewPage(
+                          studentId: studentId,
+                          examId: examId,
+                          studentName: studentName,
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+
+      // Admin shell (Yönetim + OCR sekmeleri)
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) => BlocProvider(
+          create: (_) => sl<AdminCubit>(),
+          child: AdminShellPage(navigationShell: navigationShell),
+        ),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/admin',
+                builder: (context, state) => const AdminDashboardPage(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/admin/ocr',
+                builder: (context, state) => BlocProvider(
+                  create: (_) => sl<OcrCubit>(),
+                  child: const OcrLabPage(),
                 ),
-              );
-            },
+              ),
+            ],
           ),
         ],
       ),

@@ -184,27 +184,64 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  /// Debug: API olmadan ana sayfaya (varsayılan öğretmen paneli).
+  /// Debug: API olmadan seçilen rolle direkt panele gir.
   Widget _buildDevBypassButton(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const Divider(),
+        const SizedBox(height: 4),
         Text(
-          'Geliştirici testi',
+          'Hızlı Giriş (Dev)',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: AppColors.textTertiary,
               ),
         ),
         const SizedBox(height: 8),
-        ShadButton.outline(
-          leading: const Icon(Icons.home_outlined, size: 20),
-          onPressed: () => context.read<AuthBloc>().add(
-                const AuthDevBypassRequested(),
-              ),
-          child: const Text('Ana sayfaya geç (test)'),
+        _devRoleButton(
+          context,
+          label: 'Admin',
+          role: 'ROLE_ADMIN',
+          icon: Icons.admin_panel_settings_outlined,
+        ),
+        const SizedBox(height: 8),
+        _devRoleButton(
+          context,
+          label: 'Öğretmen',
+          role: 'ROLE_TEACHER',
+          icon: Icons.school_outlined,
+        ),
+        const SizedBox(height: 8),
+        _devRoleButton(
+          context,
+          label: 'Öğrenci',
+          role: 'ROLE_STUDENT',
+          icon: Icons.person_outlined,
+        ),
+        const SizedBox(height: 8),
+        _devRoleButton(
+          context,
+          label: 'Veli',
+          role: 'ROLE_PARENT',
+          icon: Icons.family_restroom_outlined,
         ),
       ],
+    );
+  }
+
+  Widget _devRoleButton(
+    BuildContext context, {
+    required String label,
+    required String role,
+    required IconData icon,
+  }) {
+    return ShadButton.outline(
+      leading: Icon(icon, size: 18),
+      onPressed: () => context.read<AuthBloc>().add(
+            AuthDevBypassRequested(role: role),
+          ),
+      child: Text('$label olarak gir'),
     );
   }
 }

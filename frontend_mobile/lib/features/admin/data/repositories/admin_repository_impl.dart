@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import '../../../../core/domain/paged_result.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/admin_entities.dart';
@@ -38,6 +39,66 @@ class AdminRepositoryImpl implements AdminRepository {
   }
 
   @override
+  Future<Either<Failure, PagedResult<AdminUserSummaryEntity>>> searchUsers({
+    String? role,
+    String? query,
+    required int page,
+    required int size,
+  }) async {
+    try {
+      final result = await remoteDataSource.searchUsers(
+        role: role,
+        query: query,
+        page: page,
+        size: size,
+      );
+      return Right(result.toEntity((m) => m.toEntity()));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.statusCode));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, PagedResult<AdminSchoolSummaryEntity>>> searchSchools({
+    String? query,
+    required int page,
+    required int size,
+  }) async {
+    try {
+      final result = await remoteDataSource.searchSchools(
+        query: query,
+        page: page,
+        size: size,
+      );
+      return Right(result.toEntity((m) => m.toEntity()));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.statusCode));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, AdminBulkOperationEntity>> bulkAssignUsersToSchools({
+    required List<int> fileBytes,
+    required String fileName,
+  }) async {
+    try {
+      final result = await remoteDataSource.bulkAssignUsersToSchools(
+        fileBytes: fileBytes,
+        fileName: fileName,
+      );
+      return Right(result.toEntity());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.statusCode));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, ParentStudentLinkEntity>> linkParentStudent({
     required int parentUserId,
     required int studentUserId,
@@ -48,6 +109,24 @@ class AdminRepositoryImpl implements AdminRepository {
         studentUserId: studentUserId,
       );
       return Right(m.toEntity());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.statusCode));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, AdminBulkOperationEntity>> bulkLinkParentStudents({
+    required List<int> fileBytes,
+    required String fileName,
+  }) async {
+    try {
+      final result = await remoteDataSource.bulkLinkParentStudents(
+        fileBytes: fileBytes,
+        fileName: fileName,
+      );
+      return Right(result.toEntity());
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, e.statusCode));
     } catch (e) {

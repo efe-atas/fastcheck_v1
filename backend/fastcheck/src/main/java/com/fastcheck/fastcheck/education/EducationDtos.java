@@ -92,6 +92,37 @@ public class EducationDtos {
     ) {
     }
 
+    public record AdminUserSummary(
+            Long userId,
+            String fullName,
+            String email,
+            String role,
+            Long schoolId,
+            Long classId
+    ) {
+    }
+
+    public record AdminSchoolSummary(
+            Long schoolId,
+            String schoolName,
+            Instant createdAt
+    ) {
+    }
+
+    public record BulkRowError(
+            int rowNumber,
+            String message
+    ) {
+    }
+
+    public record BulkOperationResponse(
+            int processed,
+            int success,
+            int failed,
+            List<BulkRowError> errors
+    ) {
+    }
+
     public record CreateExamRequest(
             @NotBlank @Size(min = 2, max = 255) String title
     ) {

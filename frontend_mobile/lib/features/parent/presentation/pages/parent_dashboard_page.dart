@@ -5,10 +5,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/gradient_dashboard_header.dart';
 import '../../../../core/widgets/app_error_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
-import '../../../../core/widgets/app_google_bottom_nav.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
-import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../bloc/parent_bloc.dart';
 
@@ -36,7 +34,6 @@ class _ParentDashboardPageState extends State<ParentDashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
@@ -47,28 +44,6 @@ class _ParentDashboardPageState extends State<ParentDashboardPage> {
             ),
           ),
           _buildStudentList(),
-        ],
-      ),
-      bottomNavigationBar: AppGoogleBottomNav(
-        items: [
-          AppGoogleNavItem(
-            icon: Icons.family_restroom_rounded,
-            label: 'Öğrenciler',
-            onTap: () {},
-          ),
-          AppGoogleNavItem(
-            icon: Icons.refresh_rounded,
-            label: 'Yenile',
-            persistSelection: false,
-            onTap: _loadStudents,
-          ),
-          AppGoogleNavItem(
-            icon: Icons.logout_rounded,
-            label: 'Çıkış',
-            persistSelection: false,
-            onTap: () =>
-                context.read<AuthBloc>().add(const AuthLogoutRequested()),
-          ),
         ],
       ),
     );
