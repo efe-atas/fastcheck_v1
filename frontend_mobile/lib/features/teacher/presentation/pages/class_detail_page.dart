@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -29,6 +30,7 @@ class _ClassDetailPageState extends State<ClassDetailPage>
   late final TabController _tabController;
   final TextEditingController _studentSearchController =
       TextEditingController();
+  Timer? _searchDebounce;
   int _currentTab = 0;
 
   @override
@@ -44,6 +46,7 @@ class _ClassDetailPageState extends State<ClassDetailPage>
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _tabController.dispose();
     _studentSearchController.dispose();
     super.dispose();
@@ -52,79 +55,79 @@ class _ClassDetailPageState extends State<ClassDetailPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(
-          title: Text(widget.className),
-          backgroundColor: AppColors.surface,
-          surfaceTintColor: Colors.transparent,
-          bottom: TabBar(
-            controller: _tabController,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: AppColors.textTertiary,
-            indicatorColor: AppColors.primary,
-            indicatorWeight: 3,
-            labelStyle: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-            tabs: const [
-              Tab(
-                icon: Icon(Icons.assignment_rounded, size: 20),
-                text: 'Sınavlar',
-              ),
-              Tab(
-                icon: Icon(Icons.people_rounded, size: 20),
-                text: 'Öğrenciler',
-              ),
-            ],
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: Text(widget.className),
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: AppColors.primary,
+          unselectedLabelColor: AppColors.textTertiary,
+          indicatorColor: AppColors.primary,
+          indicatorWeight: 3,
+          labelStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
           ),
+          tabs: const [
+            Tab(
+              icon: Icon(Icons.assignment_rounded, size: 20),
+              text: 'Sınavlar',
+            ),
+            Tab(
+              icon: Icon(Icons.people_rounded, size: 20),
+              text: 'Öğrenciler',
+            ),
+          ],
         ),
-        body: BlocBuilder<ClassDetailBloc, ClassDetailState>(
-          builder: (context, state) {
-            if (state is ClassDetailLoading) {
-              return const LoadingWidget(message: 'Yükleniyor...');
-            }
-            if (state is ClassDetailError) {
-              return AppErrorWidget(
-                message: state.message,
-                onRetry: () => context
-                    .read<ClassDetailBloc>()
-                    .add(LoadClassDetail(widget.classId)),
-              );
-            }
-            if (state is ClassDetailLoaded) {
-              return TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildExamsTab(context, state),
-                  _buildStudentsTab(context, state),
-                ],
-              );
-            }
-            return const SizedBox();
-          },
-        ),
-        floatingActionButton: Builder(
-          builder: (context) {
-            return FloatingActionButton.extended(
-              onPressed: () => _currentTab == 0
-                  ? _navigateToCreateExam(context)
-                  : _navigateToAddStudent(context),
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.textOnPrimary,
-              icon: Icon(
-                _currentTab == 0
-                    ? Icons.note_add_rounded
-                    : Icons.person_add_rounded,
-              ),
-              label: Text(
-                _currentTab == 0 ? 'Sınav Ekle' : 'Öğrenci Ekle',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
+      ),
+      body: BlocBuilder<ClassDetailBloc, ClassDetailState>(
+        builder: (context, state) {
+          if (state is ClassDetailLoading) {
+            return const LoadingWidget(message: 'Yükleniyor...');
+          }
+          if (state is ClassDetailError) {
+            return AppErrorWidget(
+              message: state.message,
+              onRetry: () => context
+                  .read<ClassDetailBloc>()
+                  .add(LoadClassDetail(widget.classId)),
             );
-          },
-        ),
-      );
+          }
+          if (state is ClassDetailLoaded) {
+            return TabBarView(
+              controller: _tabController,
+              children: [
+                _buildExamsTab(context, state),
+                _buildStudentsTab(context, state),
+              ],
+            );
+          }
+          return const SizedBox();
+        },
+      ),
+      floatingActionButton: Builder(
+        builder: (context) {
+          return FloatingActionButton.extended(
+            onPressed: () => _currentTab == 0
+                ? _navigateToCreateExam(context)
+                : _navigateToAddStudent(context),
+            backgroundColor: AppColors.primary,
+            foregroundColor: AppColors.textOnPrimary,
+            icon: Icon(
+              _currentTab == 0
+                  ? Icons.note_add_rounded
+                  : Icons.person_add_rounded,
+            ),
+            label: Text(
+              _currentTab == 0 ? 'Sınav Ekle' : 'Öğrenci Ekle',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Widget _buildExamsTab(BuildContext context, ClassDetailLoaded state) {
@@ -133,13 +136,13 @@ class _ClassDetailPageState extends State<ClassDetailPage>
         icon: Icons.assignment_rounded,
         title: 'Henüz sınav yok',
         subtitle: 'Bu sınıf için ilk sınavınızı oluşturun.',
+        actionLabel: 'Sınav Oluştur',
+        onAction: () => _navigateToCreateExam(context),
       );
     }
     return RefreshIndicator(
       onRefresh: () async {
-        context
-            .read<ClassDetailBloc>()
-            .add(RefreshExams(widget.classId));
+        context.read<ClassDetailBloc>().add(RefreshExams(widget.classId));
       },
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
@@ -149,7 +152,8 @@ class _ClassDetailPageState extends State<ClassDetailPage>
           final exam = state.exams[index];
           return ExamCard(
             exam: exam,
-            onTap: () => _navigateToExamDetail(context, exam.examId, exam.title),
+            onTap: () =>
+                _navigateToExamDetail(context, exam.examId, exam.title),
           );
         },
       ),
@@ -177,30 +181,9 @@ class _ClassDetailPageState extends State<ClassDetailPage>
                     controller: _studentSearchController,
                     textInputAction: TextInputAction.search,
                     placeholder: const Text('Ad / soyad ile ara'),
-                    onSubmitted: (value) {
-                      final q = value.trim();
-                      context.read<ClassDetailBloc>().add(
-                            RefreshStudents(
-                              widget.classId,
-                              name: q.isEmpty ? null : q,
-                            ),
-                          );
-                    },
+                    onChanged: _onStudentSearchChanged,
+                    onSubmitted: _onStudentSearchChanged,
                   ),
-                ),
-                const SizedBox(width: 8),
-                ShadButton(
-                  onPressed: () {
-                    final q = _studentSearchController.text.trim();
-                    context.read<ClassDetailBloc>().add(
-                          RefreshStudents(
-                            widget.classId,
-                            name: q.isEmpty ? null : q,
-                          ),
-                        );
-                  },
-                  padding: const EdgeInsets.all(14),
-                  child: const Icon(Icons.search_rounded, size: 22),
                 ),
               ],
             ),
@@ -260,5 +243,19 @@ class _ClassDetailPageState extends State<ClassDetailPage>
     String title,
   ) {
     context.push('/teacher/exams/$examId?title=${Uri.encodeComponent(title)}');
+  }
+
+  void _onStudentSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (!mounted) return;
+      final query = value.trim();
+      context.read<ClassDetailBloc>().add(
+            RefreshStudents(
+              widget.classId,
+              name: query.isEmpty ? null : query,
+            ),
+          );
+    });
   }
 }

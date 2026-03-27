@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/app_google_bottom_nav.dart';
-import '../../../auth/presentation/bloc/auth_bloc.dart';
-import '../../../auth/presentation/bloc/auth_event.dart';
-import '../bloc/classes_bloc.dart';
 
 class TeacherShellPage extends StatelessWidget {
   const TeacherShellPage({
@@ -36,29 +32,8 @@ class TeacherShellPage extends StatelessWidget {
             label: 'OCR',
             onTap: () {},
           ),
-          AppGoogleNavItem(
-            icon: Icons.add_rounded,
-            label: 'Ekle',
-            persistSelection: false,
-            onTap: () => _navigateToCreateClass(context),
-          ),
-          AppGoogleNavItem(
-            icon: Icons.logout_rounded,
-            label: 'Çıkış',
-            persistSelection: false,
-            onTap: () =>
-                context.read<AuthBloc>().add(const AuthLogoutRequested()),
-          ),
         ],
       ),
     );
-  }
-
-  Future<void> _navigateToCreateClass(BuildContext context) async {
-    final created = await context.push<bool>('/teacher/classes/create');
-    if (!context.mounted) return;
-    if (created == true) {
-      context.read<ClassesBloc>().add(const LoadClasses());
-    }
   }
 }

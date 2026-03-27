@@ -113,6 +113,7 @@ class OcrCubit extends Cubit<OcrState> {
   /// Cihaz belge tarayıcısını açar ve sayfaları sırayla upload + extract yapar.
   Future<void> scanAndExtract({
     String? sourceId,
+    String? examTitle,
     String? languageHint,
     int maxPages = 4,
   }) async {
@@ -167,7 +168,9 @@ class OcrCubit extends Cubit<OcrState> {
       processedCount: 0,
       successCount: 0,
       failedCount: 0,
-      lastMessage: '0/$total sayfa hazırlanıyor...',
+      lastMessage: examTitle == null
+          ? '0/$total sayfa hazırlanıyor...'
+          : '$examTitle için 0/$total sayfa hazırlanıyor...',
     ));
 
     for (var i = 0; i < total; i++) {
@@ -186,7 +189,9 @@ class OcrCubit extends Cubit<OcrState> {
             successCount: success,
             failedCount: failed,
             errorMessage: latestError,
-            lastMessage: '$processed/$total tamamlandı',
+            lastMessage: examTitle == null
+                ? '$processed/$total tamamlandı'
+                : '$examTitle için $processed/$total tamamlandı',
           ));
         },
         (imageUrl) async {
@@ -207,7 +212,9 @@ class OcrCubit extends Cubit<OcrState> {
                 successCount: success,
                 failedCount: failed,
                 errorMessage: latestError,
-                lastMessage: '$processed/$total tamamlandı',
+                lastMessage: examTitle == null
+                    ? '$processed/$total tamamlandı'
+                    : '$examTitle için $processed/$total tamamlandı',
               ));
             },
             (entity) {
@@ -220,7 +227,9 @@ class OcrCubit extends Cubit<OcrState> {
                 successCount: success,
                 failedCount: failed,
                 lastExtract: entity,
-                lastMessage: '$processed/$total tamamlandı',
+                lastMessage: examTitle == null
+                    ? '$processed/$total tamamlandı'
+                    : '$examTitle için $processed/$total tamamlandı',
               ));
             },
           );
@@ -229,8 +238,9 @@ class OcrCubit extends Cubit<OcrState> {
     }
 
     final refreshed = await _refreshResults();
-    final summary =
-        '$total sayfa işlendi, $success başarılı, $failed başarısız';
+    final summary = examTitle == null
+        ? '$total sayfa işlendi, $success başarılı, $failed başarısız'
+        : '$examTitle için $total sayfa işlendi, $success başarılı, $failed başarısız';
     emit(state.copyWith(
       isLoading: false,
       results: refreshed ?? state.results,

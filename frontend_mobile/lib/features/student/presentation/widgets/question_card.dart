@@ -110,21 +110,9 @@ class _QuestionCardState extends State<QuestionCard>
                 maxLines: _expanded ? null : 1,
                 overflow: _expanded ? null : TextOverflow.ellipsis,
               ),
-              if (q.studentAnswer != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  'Cevap: ${q.studentAnswer}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
             ],
           ),
         ),
-        const SizedBox(width: 8),
-        if (q.confidence != null) _buildConfidenceBadge(),
         const SizedBox(width: 4),
         AnimatedRotation(
           turns: _expanded ? 0.5 : 0,
@@ -138,36 +126,17 @@ class _QuestionCardState extends State<QuestionCard>
     );
   }
 
-  Widget _buildConfidenceBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: _confidenceBgColor,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        '%${confidencePercent.toStringAsFixed(0)}',
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          color: _confidenceColor,
-        ),
-      ),
-    );
-  }
-
   Widget _buildDetails() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (q.questionText != null) ...[
-          _detailRow('Soru Metni', q.questionText!),
-          const SizedBox(height: 12),
-        ],
-        if (q.studentAnswer != null) ...[
-          _detailRow('Öğrenci Cevabı', q.studentAnswer!),
-          const SizedBox(height: 12),
-        ],
+        _detailRow(
+          'Öğrenci Cevabı',
+          (q.studentAnswer == null || q.studentAnswer!.trim().isEmpty)
+              ? 'Öğrenci cevabı bulunmuyor.'
+              : q.studentAnswer!,
+        ),
+        const SizedBox(height: 12),
         _buildRow(
           'Sayfa',
           '${q.pageNumber}',
@@ -179,11 +148,47 @@ class _QuestionCardState extends State<QuestionCard>
           '${q.questionOrder}',
           Icons.format_list_numbered_rounded,
         ),
-        if (q.confidence != null) ...[
+        if (q.confidence != null || q.sourceQuestionId != null) ...[
           const SizedBox(height: 16),
-          _buildConfidenceBar(),
+          _buildTechnicalDetails(),
         ],
       ],
+    );
+  }
+
+  Widget _buildTechnicalDetails() {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 12),
+          childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          title: const Text(
+            'Teknik detaylar',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          children: [
+            if (q.sourceQuestionId != null && q.sourceQuestionId!.isNotEmpty)
+              _buildRow(
+                'Kaynak ID',
+                q.sourceQuestionId!,
+                Icons.tag_rounded,
+              ),
+            if (q.sourceQuestionId != null && q.sourceQuestionId!.isNotEmpty)
+              const SizedBox(height: 10),
+            if (q.confidence != null) _buildConfidenceBar(),
+          ],
+        ),
+      ),
     );
   }
 

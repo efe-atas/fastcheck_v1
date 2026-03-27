@@ -11,6 +11,9 @@ import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
 
+/// Giriş ekranı maskot görseli (`lib/mascot/`).
+const _loginMascotAsset = 'lib/mascot/5.png';
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -86,18 +89,20 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _buildHeader() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: AppColors.primaryGradient,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: const Icon(
-            Icons.check_circle_outline_rounded,
-            size: 40,
-            color: Colors.white,
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            height: 240,
+            width: 240,
+            color: AppColors.surface.withValues(alpha: 0.3),
+            alignment: Alignment.center,
+            child: Image.asset(
+              _loginMascotAsset,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+            ),
           ),
         ),
         const SizedBox(height: 24),

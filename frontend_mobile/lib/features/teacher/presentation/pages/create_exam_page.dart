@@ -1,8 +1,5 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
@@ -21,9 +18,6 @@ class CreateExamPage extends StatefulWidget {
 class _CreateExamPageState extends State<CreateExamPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
-  final _imagePicker = ImagePicker();
-  final List<File> _selectedImages = [];
-  int? _createdExamId;
 
   @override
   void dispose() {
@@ -34,103 +28,40 @@ class _CreateExamPageState extends State<CreateExamPage> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<ExamBloc, ExamState>(
-        listener: (context, state) {
-          if (state is ExamCreated) {
-            _createdExamId = state.exam.examId;
-            showAppToast(
-              context,
-              message: 'Sınav oluşturuldu. Şimdi fotoğraf ekleyin.',
-            );
-          } else if (state is ImagesUploaded) {
-            showAppToast(
-              context,
-              message: 'Fotoğraflar başarıyla yüklendi',
-            );
-            Navigator.of(context).pop(true);
-          } else if (state is ExamError) {
-            showAppToast(
-              context,
-              message: state.message,
-              destructive: true,
-            );
-          }
-        },
-        builder: (context, state) {
-          final isCreating = state is ExamCreating;
-          final isUploading = state is ImagesUploading;
-          final examCreated = _createdExamId != null;
-
-          return Scaffold(
-            backgroundColor: AppColors.background,
-            appBar: AppBar(
-              title: const Text('Yeni Sınav'),
-              backgroundColor: AppColors.surface,
-              surfaceTintColor: Colors.transparent,
-            ),
-            body: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildStepIndicator(examCreated),
-                    const SizedBox(height: 24),
-                    if (!examCreated) ...[
-                      _buildCreateExamSection(context, isCreating),
-                    ] else ...[
-                      _buildImageUploadSection(context, isUploading),
-                    ],
-                  ],
-                ),
-              ),
-            ),
+      listener: (context, state) {
+        if (state is ExamCreated) {
+          showAppToast(
+            context,
+            message: 'Sınav oluşturuldu. Tarama için OCR sekmesini kullanın.',
           );
-        },
-    );
-  }
+          Navigator.of(context).pop(true);
+        } else if (state is ExamError) {
+          showAppToast(
+            context,
+            message: state.message,
+            destructive: true,
+          );
+        }
+      },
+      builder: (context, state) {
+        final isCreating = state is ExamCreating;
 
-  Widget _buildStepIndicator(bool examCreated) {
-    return Row(
-      children: [
-        _buildStep(1, 'Sınav Bilgisi', true),
-        Expanded(
-          child: Container(
-            height: 2,
-            color: examCreated ? AppColors.primary : AppColors.border,
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: AppBar(
+            title: const Text('Yeni Sınav'),
+            backgroundColor: AppColors.surface,
+            surfaceTintColor: Colors.transparent,
           ),
-        ),
-        _buildStep(2, 'Fotoğraflar', examCreated),
-      ],
-    );
-  }
-
-  Widget _buildStep(int number, String label, bool active) {
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 16,
-          backgroundColor:
-              active ? AppColors.primary : AppColors.surfaceVariant,
-          child: Text(
-            '$number',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: active ? Colors.white : AppColors.textTertiary,
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Form(
+              key: _formKey,
+              child: _buildCreateExamSection(context, isCreating),
             ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            color: active ? AppColors.primary : AppColors.textTertiary,
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -161,7 +92,7 @@ class _CreateExamPageState extends State<CreateExamPage> {
               const SizedBox(width: 16),
               const Expanded(
                 child: Text(
-                  'Sınav başlığını girin ve oluşturun.',
+                  'Sınavı oluşturduktan sonra OCR sekmesinden tarama yapabilirsiniz.',
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondary,
@@ -201,182 +132,5 @@ class _CreateExamPageState extends State<CreateExamPage> {
         ),
       ],
     );
-  }
-
-  Widget _buildImageUploadSection(BuildContext context, bool isUploading) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.successLight,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: const Row(
-            children: [
-              Icon(Icons.check_circle_rounded, color: AppColors.success),
-              SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Sınav oluşturuldu! Şimdi sınav kağıtlarının fotoğraflarını yükleyin.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-        Row(
-          children: [
-            Expanded(
-              child: ShadButton.outline(
-                onPressed: isUploading ? null : _pickFromCamera,
-                leading: const Icon(Icons.camera_alt_rounded),
-                height: 48,
-                child: const Text('Kamera'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ShadButton.outline(
-                onPressed: isUploading ? null : _pickFromGallery,
-                leading: const Icon(Icons.photo_library_rounded),
-                height: 48,
-                child: const Text('Galeri'),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        if (_selectedImages.isNotEmpty) ...[
-          Text(
-            '${_selectedImages.length} fotoğraf seçildi',
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 100,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: _selectedImages.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (_, index) {
-                return Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.file(
-                        _selectedImages[index],
-                        width: 100,
-                        height: 100,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedImages.removeAt(index);
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: const BoxDecoration(
-                            color: AppColors.error,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.close,
-                            size: 14,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 24),
-          AppGradientButton(
-            text: 'Fotoğrafları Yükle',
-            isLoading: isUploading,
-            onPressed: isUploading
-                ? null
-                : () {
-                    context.read<ExamBloc>().add(UploadImagesEvent(
-                          examId: _createdExamId!,
-                          images: _selectedImages,
-                        ));
-                  },
-          ),
-        ] else ...[
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: AppColors.border,
-                style: BorderStyle.solid,
-              ),
-              borderRadius: BorderRadius.circular(14),
-              color: AppColors.surfaceVariant,
-            ),
-            child: const Column(
-              children: [
-                Icon(
-                  Icons.add_photo_alternate_rounded,
-                  size: 48,
-                  color: AppColors.textTertiary,
-                ),
-                SizedBox(height: 12),
-                Text(
-                  'Henüz fotoğraf seçilmedi',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textTertiary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-        const SizedBox(height: 16),
-        ShadButton.link(
-          onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('Fotoğraf yüklemeden devam et'),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _pickFromCamera() async {
-    final image = await _imagePicker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 85,
-    );
-    if (image != null) {
-      setState(() => _selectedImages.add(File(image.path)));
-    }
-  }
-
-  Future<void> _pickFromGallery() async {
-    final images = await _imagePicker.pickMultiImage(imageQuality: 85);
-    if (images.isNotEmpty) {
-      setState(() {
-        _selectedImages.addAll(images.map((e) => File(e.path)));
-      });
-    }
   }
 }

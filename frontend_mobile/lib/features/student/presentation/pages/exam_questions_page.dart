@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it/get_it.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_error_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
@@ -20,17 +20,13 @@ class ExamQuestionsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => GetIt.I<ExamQuestionsBloc>()
-        ..add(LoadExamQuestions(examId: examId)),
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        body: CustomScrollView(
-          slivers: [
-            _buildAppBar(context),
-            _buildBody(),
-          ],
-        ),
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: CustomScrollView(
+        slivers: [
+          _buildAppBar(context),
+          _buildBody(),
+        ],
       ),
     );
   }
@@ -44,7 +40,7 @@ class ExamQuestionsPage extends StatelessWidget {
       backgroundColor: AppColors.primary,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: () => context.pop(),
       ),
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
@@ -113,8 +109,7 @@ class ExamQuestionsPage extends StatelessWidget {
                 child: EmptyStateWidget(
                   icon: Icons.quiz_outlined,
                   title: 'Henüz soru bulunmuyor',
-                  subtitle:
-                      'Bu sınava ait sorular henüz işlenmemiş olabilir.',
+                  subtitle: 'Bu sınava ait sorular henüz işlenmemiş olabilir.',
                 ),
               );
             }

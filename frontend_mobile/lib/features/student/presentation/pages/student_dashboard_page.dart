@@ -7,6 +7,8 @@ import '../../../../core/widgets/gradient_dashboard_header.dart';
 import '../../../../core/widgets/app_error_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_event.dart';
 import '../bloc/student_exams_bloc.dart';
 import '../widgets/exam_list_tile.dart';
 
@@ -38,13 +40,19 @@ class StudentDashboardPage extends StatelessWidget {
       pinned: true,
       expandedContentAlignment: Alignment.bottomLeft,
       actions: [
-        IconButton(
-          icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-          onPressed: () {
-            context
-                .read<StudentExamsBloc>()
-                .add(const RefreshStudentExams());
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
+          onSelected: (value) {
+            if (value == 'logout') {
+              context.read<AuthBloc>().add(const AuthLogoutRequested());
+            }
           },
+          itemBuilder: (context) => const [
+            PopupMenuItem<String>(
+              value: 'logout',
+              child: Text('Çıkış yap'),
+            ),
+          ],
         ),
         const SizedBox(width: AppSpacing.sm),
       ],
@@ -112,8 +120,7 @@ class _FilterChips extends StatelessWidget {
         return prevFilter != currFilter || prev.runtimeType != curr.runtimeType;
       },
       builder: (context, state) {
-        final active =
-            state is StudentExamsLoaded ? state.activeFilter : null;
+        final active = state is StudentExamsLoaded ? state.activeFilter : null;
 
         return Container(
           color: AppColors.surface,
@@ -239,9 +246,7 @@ class _ExamListState extends State<_ExamList> {
           return RefreshIndicator(
             color: AppColors.primary,
             onRefresh: () async {
-              context
-                  .read<StudentExamsBloc>()
-                  .add(const RefreshStudentExams());
+              context.read<StudentExamsBloc>().add(const RefreshStudentExams());
             },
             child: ListView.separated(
               controller: _scrollController,
@@ -270,6 +275,16 @@ class _ExamListState extends State<_ExamList> {
                 return ExamListTile(
                   exam: exam,
                   onTap: () {
+                    if (exam.status.toUpperCase() != 'READY') {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Bu sınav henüz hazır değil. Hazır olduğunda sorular açılacaktır.',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
                     context.push(
                       '/student/exams/${exam.examId}/questions?title=${Uri.encodeComponent(exam.title)}',
                     );

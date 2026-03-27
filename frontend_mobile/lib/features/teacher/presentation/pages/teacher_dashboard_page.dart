@@ -6,6 +6,9 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_error_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_event.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 import '../bloc/classes_bloc.dart';
 import '../widgets/class_card.dart';
 
@@ -14,217 +17,157 @@ class TeacherDashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final topInset = MediaQuery.paddingOf(context).top;
-
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        bottom: false,
-        child: RefreshIndicator(
-          color: AppColors.primary,
-          onRefresh: () async {
-            final bloc = context.read<ClassesBloc>();
-            bloc.add(const LoadClasses());
-            await bloc.stream.firstWhere((s) => s is! ClassesLoading);
-          },
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              SliverToBoxAdapter(
-                child: SizedBox(height: topInset > 0 ? AppSpacing.sm : AppSpacing.lg),
+      body: RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: () async {
+          final bloc = context.read<ClassesBloc>();
+          bloc.add(const LoadClasses());
+          await bloc.stream.firstWhere((s) => s is! ClassesLoading);
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            _buildSliverHeader(context),
+            const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenHorizontal,
               ),
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenHorizontal,
-                ),
-                sliver: SliverToBoxAdapter(child: _buildHeroCard(context)),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.md)),
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenHorizontal,
-                ),
-                sliver: SliverToBoxAdapter(child: _buildQuickActions(context)),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screenHorizontal,
-                  AppSpacing.xl,
-                  AppSpacing.screenHorizontal,
-                  120,
-                ),
-                sliver: BlocBuilder<ClassesBloc, ClassesState>(
-                  builder: (context, state) {
-                    if (state is ClassesLoading) {
-                      return const SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: ShimmerList(itemCount: 4, itemHeight: 160),
-                      );
-                    }
-                    if (state is ClassesError) {
-                      return SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: AppErrorWidget(
-                          message: state.message,
-                          onRetry: () =>
-                              context.read<ClassesBloc>().add(const LoadClasses()),
-                        ),
-                      );
-                    }
-                    if (state is ClassesLoaded) {
-                      if (state.classes.isEmpty) {
-                        return SliverFillRemaining(
-                          hasScrollBody: false,
-                          child: EmptyStateWidget(
-                            icon: Icons.school_rounded,
-                            title: 'Henüz sınıf yok',
-                            subtitle: 'İlk sınıfınızı oluşturarak başlayın.',
-                            actionLabel: 'Sınıf Oluştur',
-                            onAction: () => _navigateToCreateClassAndReload(context),
-                          ),
-                        );
-                      }
-
-                      final totalExams = state.classes.fold<int>(
-                        0,
-                        (sum, classItem) => sum + classItem.examCount,
-                      );
-
-                      return SliverList(
-                        delegate: SliverChildListDelegate(
-                          [
-                            _StatsRow(
-                              classCount: state.classes.length,
-                              examCount: totalExams,
-                            ),
-                            const SizedBox(height: AppSpacing.xl),
-                            _SectionTitle(
-                              title: 'Sınıflarım',
-                              subtitle: 'Toplam ${state.classes.length} aktif sınıf',
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            GridView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                mainAxisSpacing: AppSpacing.md,
-                                crossAxisSpacing: AppSpacing.md,
-                                childAspectRatio: 0.88,
-                              ),
-                              itemCount: state.classes.length,
-                              itemBuilder: (context, index) {
-                                final classEntity = state.classes[index];
-                                return ClassCard(
-                                  classEntity: classEntity,
-                                  onTap: () => _navigateToClassDetail(
-                                    context,
-                                    classEntity.classId,
-                                    classEntity.className,
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-                    return const SliverFillRemaining(
+              sliver: SliverToBoxAdapter(child: _buildOcrBanner(context)),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
+            BlocBuilder<ClassesBloc, ClassesState>(
+              builder: (context, state) {
+                if (state is ClassesLoading) {
+                  return SliverPadding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.screenHorizontal,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: ShimmerList(itemCount: 4, itemHeight: 160),
+                    ),
+                  );
+                }
+                if (state is ClassesError) {
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: AppErrorWidget(
+                      message: state.message,
+                      onRetry: () =>
+                          context.read<ClassesBloc>().add(const LoadClasses()),
+                    ),
+                  );
+                }
+                if (state is ClassesLoaded) {
+                  if (state.classes.isEmpty) {
+                    return SliverFillRemaining(
                       hasScrollBody: false,
-                      child: SizedBox(),
+                      child: EmptyStateWidget(
+                        icon: Icons.school_rounded,
+                        title: 'Henüz sınıf yok',
+                        subtitle: 'İlk sınıfınızı oluşturarak başlayın.',
+                        actionLabel: 'Sınıf Oluştur',
+                        onAction: () =>
+                            _navigateToCreateClassAndReload(context),
+                      ),
                     );
-                  },
-                ),
-              ),
-            ],
-          ),
+                  }
+
+                  final totalExams = state.classes.fold<int>(
+                    0,
+                    (sum, c) => sum + c.examCount,
+                  );
+
+                  return SliverMainAxisGroup(
+                    slivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.screenHorizontal,
+                        ),
+                        sliver: SliverToBoxAdapter(
+                          child: _StatsRow(
+                            classCount: state.classes.length,
+                            examCount: totalExams,
+                          ),
+                        ),
+                      ),
+                      const SliverToBoxAdapter(
+                          child: SizedBox(height: AppSpacing.xxl)),
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.screenHorizontal,
+                        ),
+                        sliver: SliverToBoxAdapter(
+                          child: _SectionHeader(
+                            title: 'Sınıflarım',
+                            count: state.classes.length,
+                            onAdd: () =>
+                                _navigateToCreateClassAndReload(context),
+                          ),
+                        ),
+                      ),
+                      const SliverToBoxAdapter(
+                          child: SizedBox(height: AppSpacing.md)),
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.screenHorizontal,
+                          0,
+                          AppSpacing.screenHorizontal,
+                          120,
+                        ),
+                        sliver: SliverGrid(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: AppSpacing.md,
+                            crossAxisSpacing: AppSpacing.md,
+                            childAspectRatio: 0.88,
+                          ),
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final classEntity = state.classes[index];
+                              return ClassCard(
+                                classEntity: classEntity,
+                                onTap: () => _navigateToClassDetail(
+                                  context,
+                                  classEntity.classId,
+                                  classEntity.className,
+                                ),
+                              );
+                            },
+                            childCount: state.classes.length,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                return const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: SizedBox(),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildHeroCard(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      decoration: BoxDecoration(
-        gradient: AppColors.headerGradient,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.18),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.24)),
-            ),
-            child: const Icon(
-              Icons.school_rounded,
-              color: Colors.white,
-              size: 26,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.lg),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Merhaba, Öğretmen',
-                  style: textTheme.titleLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Sınıflarınızı, sınavlarınızı ve OCR işlemlerinizi tek ekrandan yönetin.',
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+  Widget _buildSliverHeader(BuildContext context) {
+    return SliverToBoxAdapter(
+      child: _DashboardHeader(
+        onAddClass: () => _navigateToCreateClassAndReload(context),
+        onLogout: () =>
+            context.read<AuthBloc>().add(const AuthLogoutRequested()),
       ),
     );
   }
 
-  Widget _buildQuickActions(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _QuickActionCard(
-            icon: Icons.add_rounded,
-            title: 'Sınıf Ekle',
-            subtitle: 'Hızlıca yeni sınıf oluştur',
-            onTap: () => _navigateToCreateClassAndReload(context),
-          ),
-        ),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: _QuickActionCard(
-            icon: Icons.document_scanner_outlined,
-            title: 'OCR Laboratuvarı',
-            subtitle: 'Tarama akışına hızlı geçiş',
-            onTap: () => context.go('/teacher/ocr'),
-          ),
-        ),
-      ],
-    );
+  Widget _buildOcrBanner(BuildContext context) {
+    return _OcrBanner(onTap: () => context.go('/teacher/ocr'));
   }
 
   Future<void> _navigateToCreateClassAndReload(BuildContext context) async {
@@ -240,40 +183,211 @@ class TeacherDashboardPage extends StatelessWidget {
     int classId,
     String className,
   ) {
-    context.push('/teacher/classes/$classId?name=${Uri.encodeComponent(className)}');
+    context.push(
+        '/teacher/classes/$classId?name=${Uri.encodeComponent(className)}');
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({
-    required this.title,
-    required this.subtitle,
+// ─────────────────────────────────────────────────────────────────────────────
+// Dashboard Header — gradient hero with user greeting
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _DashboardHeader extends StatelessWidget {
+  const _DashboardHeader({
+    required this.onAddClass,
+    required this.onLogout,
   });
 
-  final String title;
-  final String subtitle;
+  final VoidCallback onAddClass;
+  final VoidCallback onLogout;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    final topPad = MediaQuery.paddingOf(context).top;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: AppColors.primaryGradient,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(AppSpacing.radiusSheet),
+          bottomRight: Radius.circular(AppSpacing.radiusSheet),
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          topPad + AppSpacing.lg,
+          AppSpacing.lg,
+          AppSpacing.xxl,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top action row
+            Row(
+              children: [
+                // Avatar circle
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.3), width: 1.5),
+                  ),
+                  child: const Icon(
+                    Icons.person_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
+                const Spacer(),
+                // Add class button
+                _HeaderIconButton(
+                  icon: Icons.add_rounded,
+                  tooltip: 'Sınıf oluştur',
+                  onTap: onAddClass,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                // More menu
+                _HeaderPopupMenu(onLogout: onLogout),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            // Greeting
+            BlocBuilder<AuthBloc, AuthState>(
+              builder: (context, authState) {
+                final email = authState is AuthAuthenticated
+                    ? authState.user.email
+                    : null;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hoş geldiniz 👋',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      email != null ? email.split('@').first : 'Öğretmen',
+                      style: textTheme.headlineMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.5,
+                        height: 1.1,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            // Tagline chip
+            Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(100),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.auto_awesome_rounded,
+                      size: 14, color: AppColors.accentLight),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Sınıf & sınav yönetim paneli',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HeaderIconButton extends StatelessWidget {
+  const _HeaderIconButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          child: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            ),
+            child: Icon(icon, color: Colors.white, size: 20),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeaderPopupMenu extends StatelessWidget {
+  const _HeaderPopupMenu({required this.onLogout});
+  final VoidCallback onLogout;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      onSelected: (value) {
+        if (value == 'logout') onLogout();
+      },
+      offset: const Offset(0, 48),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+        ),
+        child:
+            const Icon(Icons.more_vert_rounded, color: Colors.white, size: 20),
+      ),
+      itemBuilder: (context) => [
+        const PopupMenuItem<String>(
+          value: 'logout',
+          child: Row(
             children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-              ),
+              Icon(Icons.logout_rounded, size: 18),
+              SizedBox(width: 10),
+              Text('Çıkış yap'),
             ],
           ),
         ),
@@ -281,6 +395,52 @@ class _SectionTitle extends StatelessWidget {
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OCR Banner
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _OcrBanner extends StatelessWidget {
+  const _OcrBanner({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: AppColors.accentGradient,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.accent.withValues(alpha: 0.28),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            child: Text(
+              'OCR Laboratuvarı',
+              style: textTheme.titleMedium
+                  ?.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Stats Row
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _StatsRow extends StatelessWidget {
   const _StatsRow({
@@ -298,16 +458,20 @@ class _StatsRow extends StatelessWidget {
         Expanded(
           child: _StatCard(
             icon: Icons.grid_view_rounded,
-            label: 'Sınıf',
+            label: 'Toplam Sınıf',
             value: '$classCount',
+            accentColor: AppColors.primary,
+            bgColor: AppColors.primarySurface,
           ),
         ),
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: _StatCard(
-            icon: Icons.assignment_rounded,
+            icon: Icons.assignment_turned_in_rounded,
             label: 'Toplam Sınav',
             value: '$examCount',
+            accentColor: AppColors.accent,
+            bgColor: AppColors.accentSurface,
           ),
         ),
       ],
@@ -320,51 +484,60 @@ class _StatCard extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    required this.accentColor,
+    required this.bgColor,
   });
 
   final IconData icon;
   final String label;
   final String value;
+  final Color accentColor;
+  final Color bgColor;
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
         border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 38,
-            height: 38,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              color: AppColors.primarySurface,
+              color: bgColor,
               borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
             ),
-            child: Icon(icon, color: AppColors.primary, size: 20),
+            child: Icon(icon, color: accentColor, size: 20),
           ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        height: 1.05,
-                      ),
-                ),
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                ),
-              ],
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            value,
+            style: textTheme.headlineLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+              height: 1.0,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            label,
+            style: textTheme.bodySmall?.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -373,63 +546,76 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _QuickActionCard extends StatelessWidget {
-  const _QuickActionCard({
-    required this.icon,
+// ─────────────────────────────────────────────────────────────────────────────
+// Section Header
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
     required this.title,
-    required this.subtitle,
-    required this.onTap,
+    required this.count,
+    required this.onAdd,
   });
 
-  final IconData icon;
   final String title;
-  final String subtitle;
-  final VoidCallback onTap;
+  final int count;
+  final VoidCallback onAdd;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        child: Ink(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-            border: Border.all(color: AppColors.border),
-          ),
+    final textTheme = Theme.of(context).textTheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: AppColors.primarySurface,
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                ),
-                child: Icon(icon, color: AppColors.primary, size: 20),
-              ),
-              const SizedBox(height: AppSpacing.sm),
               Text(
                 title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.3,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+                '$count aktif sınıf',
+                style: textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
             ],
           ),
         ),
-      ),
+        GestureDetector(
+          onTap: onAdd,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.add_rounded, color: Colors.white, size: 16),
+                const SizedBox(width: 4),
+                Text(
+                  'Yeni Sınıf',
+                  style: textTheme.labelSmall?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

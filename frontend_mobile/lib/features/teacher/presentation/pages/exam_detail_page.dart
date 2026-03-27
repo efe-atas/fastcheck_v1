@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it/get_it.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_error_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
@@ -46,57 +45,53 @@ class _ExamDetailPageState extends State<ExamDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => GetIt.I<ExamBloc>()
-        ..add(LoadExamStatusEvent(widget.examId)),
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(
-          title: Text(widget.examTitle),
-          backgroundColor: AppColors.surface,
-          surfaceTintColor: Colors.transparent,
-          actions: [
-            BlocBuilder<ExamBloc, ExamState>(
-              builder: (context, state) {
-                return IconButton(
-                  icon: const Icon(Icons.refresh_rounded),
-                  onPressed: () => context
-                      .read<ExamBloc>()
-                      .add(LoadExamStatusEvent(widget.examId)),
-                );
-              },
-            ),
-          ],
-        ),
-        body: BlocConsumer<ExamBloc, ExamState>(
-          listener: (context, state) {
-            if (state is ExamStatusLoaded) {
-              final status = state.examStatus.examStatus.toUpperCase();
-              if (status == 'PROCESSING') {
-                _startPolling(context);
-              } else {
-                _stopPolling();
-              }
-            }
-          },
-          builder: (context, state) {
-            if (state is ExamStatusLoading) {
-              return const LoadingWidget(message: 'Sınav durumu yükleniyor...');
-            }
-            if (state is ExamError) {
-              return AppErrorWidget(
-                message: state.message,
-                onRetry: () => context
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: Text(widget.examTitle),
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        actions: [
+          BlocBuilder<ExamBloc, ExamState>(
+            builder: (context, state) {
+              return IconButton(
+                icon: const Icon(Icons.refresh_rounded),
+                onPressed: () => context
                     .read<ExamBloc>()
                     .add(LoadExamStatusEvent(widget.examId)),
               );
+            },
+          ),
+        ],
+      ),
+      body: BlocConsumer<ExamBloc, ExamState>(
+        listener: (context, state) {
+          if (state is ExamStatusLoaded) {
+            final status = state.examStatus.examStatus.toUpperCase();
+            if (status == 'PROCESSING') {
+              _startPolling(context);
+            } else {
+              _stopPolling();
             }
-            if (state is ExamStatusLoaded) {
-              return _buildContent(state.examStatus);
-            }
-            return const SizedBox();
-          },
-        ),
+          }
+        },
+        builder: (context, state) {
+          if (state is ExamStatusLoading) {
+            return const LoadingWidget(message: 'Sınav durumu yükleniyor...');
+          }
+          if (state is ExamError) {
+            return AppErrorWidget(
+              message: state.message,
+              onRetry: () => context
+                  .read<ExamBloc>()
+                  .add(LoadExamStatusEvent(widget.examId)),
+            );
+          }
+          if (state is ExamStatusLoaded) {
+            return _buildContent(state.examStatus);
+          }
+          return const SizedBox();
+        },
       ),
     );
   }
@@ -109,14 +104,71 @@ class _ExamDetailPageState extends State<ExamDetailPage> {
         children: [
           _buildStatusHeader(examStatus),
           const SizedBox(height: 20),
+          _buildNextStepCard(examStatus),
+          const SizedBox(height: 20),
           if (examStatus.examStatus.toUpperCase() == 'PROCESSING')
             _buildProgressSection(examStatus),
-          const SizedBox(height: 20),
+          if (examStatus.examStatus.toUpperCase() == 'PROCESSING')
+            const SizedBox(height: 20),
           _buildImagesSection(examStatus),
           if (examStatus.ocrJobs.isNotEmpty) ...[
             const SizedBox(height: 20),
-            _buildOcrJobsSection(examStatus),
+            _buildAdvancedDetailsCard(examStatus),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNextStepCard(ExamStatusEntity examStatus) {
+    final status = examStatus.examStatus.toUpperCase();
+    String message;
+
+    switch (status) {
+      case 'PROCESSING':
+      case 'IN_PROGRESS':
+        message =
+            'Sınav kağıtları işleniyor. Birkaç dakika sonra tekrar kontrol edin.';
+        break;
+      case 'READY':
+      case 'COMPLETED':
+      case 'DONE':
+        message = 'Sınav hazır. Öğrenciler soru detaylarını görüntüleyebilir.';
+        break;
+      case 'FAILED':
+      case 'ERROR':
+        message =
+            'İşlemde hata oluştu. Gelişmiş detaylardan hatayı kontrol edin.';
+        break;
+      default:
+        message =
+            'Sınav taslak durumda. İsterseniz görsel yükleyerek devam edin.';
+        break;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.lightbulb_outline_rounded, color: AppColors.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+                height: 1.35,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -300,14 +352,14 @@ class _ExamDetailPageState extends State<ExamDetailPage> {
             separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (_, index) {
               final image = examStatus.images[index];
-              return _buildImageTile(image);
+              return _buildImageTile(image, index);
             },
           ),
       ],
     );
   }
 
-  Widget _buildImageTile(ExamImageEntity image) {
+  Widget _buildImageTile(ExamImageEntity image, int index) {
     final imageStatus = image.status.toUpperCase();
     return Container(
       padding: const EdgeInsets.all(14),
@@ -345,9 +397,7 @@ class _ExamDetailPageState extends State<ExamDetailPage> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              image.imageUrl.isNotEmpty
-                  ? image.imageUrl.split('/').last
-                  : 'Görsel #${image.imageId}',
+              'Sayfa ${index + 1}',
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -468,6 +518,43 @@ class _ExamDetailPageState extends State<ExamDetailPage> {
           },
         ),
       ],
+    );
+  }
+
+  Widget _buildAdvancedDetailsCard(ExamStatusEntity examStatus) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+          title: const Text(
+            'Gelişmiş teknik detaylar',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          subtitle: const Text(
+            'OCR işleri ve hata kayıtları',
+            style: TextStyle(
+              fontSize: 12,
+              color: AppColors.textTertiary,
+            ),
+          ),
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+              child: _buildOcrJobsSection(examStatus),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -158,7 +158,7 @@ class AppRouter {
                 path: '/teacher/ocr',
                 builder: (context, state) => BlocProvider(
                   create: (_) => sl<OcrCubit>(),
-                  child: const OcrLabPage(),
+                  child: const OcrLabPage(requireExamSelection: true),
                 ),
               ),
             ],
