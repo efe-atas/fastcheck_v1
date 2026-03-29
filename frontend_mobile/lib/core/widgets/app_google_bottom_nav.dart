@@ -23,7 +23,7 @@ class AppGoogleBottomNav extends StatelessWidget {
     required this.items,
     required this.selectedIndex,
     required this.onSelected,
-    this.margin = const EdgeInsets.fromLTRB(12, 0, 12, 8),
+    this.margin = const EdgeInsets.fromLTRB(26, 0, 26, 8),
   });
 
   final List<AppGoogleNavItem> items;
@@ -46,18 +46,18 @@ class AppGoogleBottomNav extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(32),
           border: Border.all(color: AppColors.border),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.06),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
+              color: AppColors.primary.withValues(alpha: 0.035),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(6),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           child: Row(
             children: [
               for (var i = 0; i < items.length; i++)
@@ -98,8 +98,9 @@ class _NavItemButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fgColor = selected ? AppColors.primary : AppColors.textSecondary;
-    final bgColor = selected ? AppColors.primarySurface : Colors.transparent;
+    final fgColor =
+        selected ? const Color(0xFF3B4FD8) : const Color(0xFF7B89A8);
+    const bgColor = Colors.transparent;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -111,7 +112,7 @@ class _NavItemButton extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             curve: Curves.easeOutCubic,
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
             decoration: BoxDecoration(
               color: bgColor,
               borderRadius: BorderRadius.circular(12),
@@ -119,15 +120,15 @@ class _NavItemButton extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(item.icon, size: 20, color: fgColor),
-                const SizedBox(height: 2),
+                Icon(item.icon, size: 22, color: fgColor),
+                const SizedBox(height: 3),
                 Text(
                   item.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: (labelStyle ?? const TextStyle()).copyWith(
                     color: fgColor,
-                    fontSize: 11,
+                    fontSize: 10,
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     height: 1.15,
                   ),

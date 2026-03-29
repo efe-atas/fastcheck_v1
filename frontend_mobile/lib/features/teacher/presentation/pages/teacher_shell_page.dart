@@ -23,13 +23,18 @@ class TeacherShellPage extends StatelessWidget {
         ),
         items: [
           AppGoogleNavItem(
-            icon: Icons.grid_view_rounded,
-            label: 'Sınıflar',
+            icon: Icons.home_rounded,
+            label: 'Ana Sayfa',
             onTap: () {},
           ),
           AppGoogleNavItem(
-            icon: Icons.document_scanner_outlined,
-            label: 'OCR',
+            icon: Icons.article_outlined,
+            label: 'Sınavlar',
+            onTap: () {},
+          ),
+          AppGoogleNavItem(
+            icon: Icons.fact_check_rounded,
+            label: 'OCR Lab',
             onTap: () {},
           ),
         ],

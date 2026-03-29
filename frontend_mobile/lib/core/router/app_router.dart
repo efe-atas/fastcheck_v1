@@ -9,6 +9,7 @@ import '../../features/auth/presentation/pages/splash_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/teacher/presentation/pages/teacher_dashboard_page.dart';
+import '../../features/teacher/presentation/pages/teacher_exams_page.dart';
 import '../../features/teacher/presentation/pages/teacher_shell_page.dart';
 import '../../features/teacher/presentation/pages/class_detail_page.dart';
 import '../../features/teacher/presentation/pages/create_class_page.dart';
@@ -75,7 +76,7 @@ class AppRouter {
         builder: (context, state) => const RegisterPage(),
       ),
 
-      // Teacher shell (Sınıflar + OCR sekmeleri)
+      // Teacher shell (Ana Sayfa + Sınavlar + OCR sekmeleri)
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) => BlocProvider(
           create: (_) => sl<ClassesBloc>()..add(const LoadClasses()),
@@ -103,8 +104,8 @@ class AppRouter {
                       final className =
                           state.uri.queryParameters['name'] ?? 'Sınıf';
                       return BlocProvider(
-                        create: (_) =>
-                            sl<ClassDetailBloc>()..add(LoadClassDetail(classId)),
+                        create: (_) => sl<ClassDetailBloc>()
+                          ..add(LoadClassDetail(classId)),
                         child: ClassDetailPage(
                             classId: classId, className: className),
                       );
@@ -155,6 +156,14 @@ class AppRouter {
           StatefulShellBranch(
             routes: [
               GoRoute(
+                path: '/teacher/exams',
+                builder: (context, state) => const TeacherExamsPage(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: '/teacher/ocr',
                 builder: (context, state) => BlocProvider(
                   create: (_) => sl<OcrCubit>(),
@@ -169,8 +178,7 @@ class AppRouter {
       // Student shell (Sınavlar sekmesi)
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) => BlocProvider(
-          create: (_) =>
-              sl<StudentExamsBloc>()..add(const LoadStudentExams()),
+          create: (_) => sl<StudentExamsBloc>()..add(const LoadStudentExams()),
           child: StudentShellPage(navigationShell: navigationShell),
         ),
         branches: [
@@ -190,8 +198,8 @@ class AppRouter {
                       return BlocProvider(
                         create: (_) => sl<ExamQuestionsBloc>()
                           ..add(LoadExamQuestions(examId: examId)),
-                        child: ExamQuestionsPage(
-                            examId: examId, examTitle: title),
+                        child:
+                            ExamQuestionsPage(examId: examId, examTitle: title),
                       );
                     },
                   ),

@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/widgets/app_error_widget.dart';
-import '../../../../core/widgets/empty_state_widget.dart';
-import '../../../../core/widgets/loading_widget.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
-import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../domain/entities/teacher_entities.dart';
 import '../bloc/classes_bloc.dart';
-import '../widgets/class_card.dart';
 
 class TeacherDashboardPage extends StatelessWidget {
   const TeacherDashboardPage({super.key});
@@ -18,156 +14,181 @@ class TeacherDashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF3F5FB),
       body: RefreshIndicator(
-        color: AppColors.primary,
+        color: const Color(0xFF3B4FD8),
         onRefresh: () async {
           final bloc = context.read<ClassesBloc>();
           bloc.add(const LoadClasses());
           await bloc.stream.firstWhere((s) => s is! ClassesLoading);
         },
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            _buildSliverHeader(context),
-            const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenHorizontal,
-              ),
-              sliver: SliverToBoxAdapter(child: _buildOcrBanner(context)),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
-            BlocBuilder<ClassesBloc, ClassesState>(
-              builder: (context, state) {
-                if (state is ClassesLoading) {
-                  return SliverPadding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.screenHorizontal,
-                    ),
-                    sliver: SliverToBoxAdapter(
-                      child: ShimmerList(itemCount: 4, itemHeight: 160),
-                    ),
-                  );
-                }
-                if (state is ClassesError) {
-                  return SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: AppErrorWidget(
-                      message: state.message,
-                      onRetry: () =>
-                          context.read<ClassesBloc>().add(const LoadClasses()),
-                    ),
-                  );
-                }
-                if (state is ClassesLoaded) {
-                  if (state.classes.isEmpty) {
-                    return SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: EmptyStateWidget(
-                        icon: Icons.school_rounded,
-                        title: 'Henüz sınıf yok',
-                        subtitle: 'İlk sınıfınızı oluşturarak başlayın.',
-                        actionLabel: 'Sınıf Oluştur',
-                        onAction: () =>
-                            _navigateToCreateClassAndReload(context),
-                      ),
-                    );
-                  }
+        child: BlocBuilder<ClassesBloc, ClassesState>(
+          builder: (context, state) {
+            final classes =
+                state is ClassesLoaded ? state.classes : <ClassEntity>[];
+            final classCount = classes.length;
+            final examCount =
+                classes.fold<int>(0, (sum, item) => sum + item.examCount);
 
-                  final totalExams = state.classes.fold<int>(
-                    0,
-                    (sum, c) => sum + c.examCount,
-                  );
-
-                  return SliverMainAxisGroup(
-                    slivers: [
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.screenHorizontal,
-                        ),
-                        sliver: SliverToBoxAdapter(
-                          child: _StatsRow(
-                            classCount: state.classes.length,
-                            examCount: totalExams,
-                          ),
-                        ),
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
+              children: [
+                _DashboardHero(
+                  classes: classCount,
+                  exams: examCount,
+                  onLogout: () =>
+                      context.read<AuthBloc>().add(const AuthLogoutRequested()),
+                ),
+                if (state is ClassesError)
+                  _DashboardErrorCard(
+                    message: state.message,
+                    onRetry: () =>
+                        context.read<ClassesBloc>().add(const LoadClasses()),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: _SectionTitle(
+                    title: 'Yaklaşan Sınavlar',
+                    onTapAll: () => context.go('/teacher/exams'),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: [
+                      _UpcomingExamTile(
+                        title: 'Matematik Yazılı',
+                        classCode: '9-A',
+                        dateLabel: '15 Ocak 2024',
+                        badgeText: 'Planlandı',
+                        badgeColor: Color(0xFF3B4FD8),
+                        badgeBgColor: Color(0xFFE9EEFF),
+                        iconColor: Color(0xFF5168F5),
                       ),
-                      const SliverToBoxAdapter(
-                          child: SizedBox(height: AppSpacing.xxl)),
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.screenHorizontal,
-                        ),
-                        sliver: SliverToBoxAdapter(
-                          child: _SectionHeader(
-                            title: 'Sınıflarım',
-                            count: state.classes.length,
-                            onAdd: () =>
-                                _navigateToCreateClassAndReload(context),
-                          ),
-                        ),
+                      SizedBox(height: 10),
+                      _UpcomingExamTile(
+                        title: 'Türkçe Yazılı',
+                        classCode: '10-B',
+                        dateLabel: '17 Ocak 2024',
+                        badgeText: 'OCR Bekleniyor',
+                        badgeColor: Color(0xFF0BBFB0),
+                        badgeBgColor: Color(0xFFE3F8F5),
+                        iconColor: Color(0xFF14C6B7),
                       ),
-                      const SliverToBoxAdapter(
-                          child: SizedBox(height: AppSpacing.md)),
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.screenHorizontal,
-                          0,
-                          AppSpacing.screenHorizontal,
-                          120,
-                        ),
-                        sliver: SliverGrid(
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            mainAxisSpacing: AppSpacing.md,
-                            crossAxisSpacing: AppSpacing.md,
-                            childAspectRatio: 0.88,
-                          ),
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final classEntity = state.classes[index];
-                              return ClassCard(
-                                classEntity: classEntity,
-                                onTap: () => _navigateToClassDetail(
-                                  context,
-                                  classEntity.classId,
-                                  classEntity.className,
-                                ),
-                              );
-                            },
-                            childCount: state.classes.length,
-                          ),
-                        ),
+                      SizedBox(height: 10),
+                      _UpcomingExamTile(
+                        title: 'Fen Bilimleri',
+                        classCode: '8-C',
+                        dateLabel: '18 Ocak 2024',
+                        badgeText: 'Tamamlandı',
+                        badgeColor: Color(0xFF19A56E),
+                        badgeBgColor: Color(0xFFE7F7EF),
+                        iconColor: Color(0xFF31B580),
                       ),
                     ],
-                  );
-                }
-                return const SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: SizedBox(),
-                );
-              },
-            ),
-          ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+                  child: _SectionTitle(
+                    title: 'Son OCR İşlemleri',
+                    onTapAll: () => context.go('/teacher/ocr'),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 205,
+                  child: ListView(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      _OcrPreviewCard(
+                        title: 'Matematik 9-A',
+                        students: '28 öğrenci',
+                        progress: 0.67,
+                        progressText: '%67 tamamlandı',
+                        status: 'İşleniyor',
+                        statusColor: Color(0xFF0BBFB0),
+                        imageUrl:
+                            'https://www.figma.com/api/mcp/asset/e7c9e96d-f0a2-4878-b694-6d46113b9171',
+                      ),
+                      SizedBox(width: 12),
+                      _OcrPreviewCard(
+                        title: 'Türkçe 10-B',
+                        students: '32 öğrenci',
+                        progress: 0.20,
+                        progressText: '%20 tamamlandı',
+                        status: 'Kuyrukta',
+                        statusColor: Color(0xFF3D50DA),
+                        imageUrl:
+                            'https://www.figma.com/api/mcp/asset/b041ebc8-6cfc-4b5f-9a6d-9210f18baf92',
+                      ),
+                    ],
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 18, 16, 0),
+                  child: Text(
+                    'Hızlı İşlemler',
+                    style: TextStyle(
+                      color: Color(0xFF0F1729),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _QuickActionButton(
+                        icon: Icons.apartment_rounded,
+                        label: 'Sınıf Oluştur',
+                        onTap: () => _navigateToCreateClassAndReload(context),
+                      ),
+                      _QuickActionButton(
+                        icon: Icons.note_alt_outlined,
+                        label: 'Sınav Ekle',
+                        onTap: () {
+                          if (classes.isNotEmpty) {
+                            context.push(
+                                '/teacher/classes/${classes.first.classId}/exams/create');
+                            return;
+                          }
+                          _navigateToCreateClassAndReload(context);
+                        },
+                      ),
+                      _QuickActionButton(
+                        icon: Icons.upload_rounded,
+                        label: 'Kağıt Yükle',
+                        selected: true,
+                        onTap: () => context.go('/teacher/ocr'),
+                      ),
+                      _QuickActionButton(
+                        icon: Icons.person_add_alt_1_rounded,
+                        label: 'Öğrenci Ekle',
+                        onTap: () {
+                          if (classes.isNotEmpty) {
+                            context.push(
+                                '/teacher/classes/${classes.first.classId}/students/add');
+                            return;
+                          }
+                          _navigateToCreateClassAndReload(context);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 96 + MediaQuery.paddingOf(context).bottom),
+              ],
+            );
+          },
         ),
       ),
     );
-  }
-
-  Widget _buildSliverHeader(BuildContext context) {
-    return SliverToBoxAdapter(
-      child: _DashboardHeader(
-        onAddClass: () => _navigateToCreateClassAndReload(context),
-        onLogout: () =>
-            context.read<AuthBloc>().add(const AuthLogoutRequested()),
-      ),
-    );
-  }
-
-  Widget _buildOcrBanner(BuildContext context) {
-    return _OcrBanner(onTap: () => context.go('/teacher/ocr'));
   }
 
   Future<void> _navigateToCreateClassAndReload(BuildContext context) async {
@@ -177,140 +198,643 @@ class TeacherDashboardPage extends StatelessWidget {
       context.read<ClassesBloc>().add(const LoadClasses());
     }
   }
-
-  void _navigateToClassDetail(
-    BuildContext context,
-    int classId,
-    String className,
-  ) {
-    context.push(
-        '/teacher/classes/$classId?name=${Uri.encodeComponent(className)}');
-  }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Dashboard Header — gradient hero with user greeting
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _DashboardHeader extends StatelessWidget {
-  const _DashboardHeader({
-    required this.onAddClass,
+class _DashboardHero extends StatelessWidget {
+  const _DashboardHero({
+    required this.classes,
+    required this.exams,
     required this.onLogout,
   });
 
-  final VoidCallback onAddClass;
+  final int classes;
+  final int exams;
   final VoidCallback onLogout;
 
   @override
   Widget build(BuildContext context) {
-    final topPad = MediaQuery.paddingOf(context).top;
-    final textTheme = Theme.of(context).textTheme;
+    final formatted =
+        DateFormat('EEEE, d MMMM y', 'tr_TR').format(DateTime.now());
+    final top = MediaQuery.paddingOf(context).top;
 
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(AppSpacing.radiusSheet),
-          bottomRight: Radius.circular(AppSpacing.radiusSheet),
-        ),
-      ),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          topPad + AppSpacing.lg,
-          AppSpacing.lg,
-          AppSpacing.xxl,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    const metricCardHeight = 131.5;
+    const overlapAmount = 65.5;
+
+    return Column(
+      children: [
+        Stack(
+          clipBehavior: Clip.none,
           children: [
-            // Top action row
-            Row(
-              children: [
-                // Avatar circle
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.3), width: 1.5),
-                  ),
-                  child: const Icon(
-                    Icons.person_rounded,
-                    color: Colors.white,
-                    size: 22,
-                  ),
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF3B4FD8),
+                    Color(0xFF2D3DB8),
+                    Color(0xFF1A2A9E)
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                const Spacer(),
-                // Add class button
-                _HeaderIconButton(
-                  icon: Icons.add_rounded,
-                  tooltip: 'Sınıf oluştur',
-                  onTap: onAddClass,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                // More menu
-                _HeaderPopupMenu(onLogout: onLogout),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            // Greeting
-            BlocBuilder<AuthBloc, AuthState>(
-              builder: (context, authState) {
-                final email = authState is AuthAuthenticated
-                    ? authState.user.email
-                    : null;
-                return Column(
+              ),
+              child: Padding(
+                padding:
+                    EdgeInsets.fromLTRB(16, top + 12, 16, overlapAmount + 16),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Hoş geldiniz 👋',
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.7),
-                        letterSpacing: 0.2,
+                    SizedBox(
+                      height: 80.5,
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            left: 0,
+                            top: 5.5,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Merhaba, Ayşe',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.02,
+                                  ),
+                                ),
+                                const Text(
+                                  'Öğretmen 👋',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.02,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  _capitalizeFirst(formatted),
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.65),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            child: Column(
+                              children: [
+                                InkWell(
+                                  onTap: onLogout,
+                                  borderRadius: BorderRadius.circular(18),
+                                  child: Ink(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      color:
+                                          Colors.white.withValues(alpha: 0.16),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.notifications_none_rounded,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Container(
+                                  height: 30,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 11),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0x400BBFB0),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: const Text(
+                                    'OGRETMEN',
+                                    style: TextStyle(
+                                      color: Color(0xFF0BBFB0),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.1,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      email != null ? email.split('@').first : 'Öğretmen',
-                      style: textTheme.headlineMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.5,
-                        height: 1.1,
+                    const SizedBox(height: 14),
+                    Container(
+                      width: double.infinity,
+                      height: 112,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: SizedBox.expand(
+                              child: Image.network(
+                                'https://www.figma.com/api/mcp/asset/577ed5ac-0be7-4457-aae3-aa419800500a',
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: const Color(0xFF4B5EDC),
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.image_not_supported_outlined,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              color: Colors.black.withValues(alpha: 0.10),
+                            ),
+                          ),
+                          const Positioned(
+                            left: 12,
+                            bottom: 28,
+                            child: Text(
+                              'FastCheck AI ile',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          const Positioned(
+                            left: 12,
+                            bottom: 12,
+                            child: Text(
+                              'Kağıtları saniyeler içinde dijitalleştir',
+                              style: TextStyle(
+                                color: Color(0xC9FFFFFF),
+                                fontSize: 10,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
-                );
-              },
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            // Tagline chip
-            Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(100),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                ),
               ),
+            ),
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: -overlapAmount,
               child: Row(
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.auto_awesome_rounded,
-                      size: 14, color: AppColors.accentLight),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Sınıf & sınav yönetim paneli',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.85),
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.1,
+                  Expanded(
+                    child: SizedBox(
+                      height: metricCardHeight,
+                      child: _HeroMetric(
+                        icon: Icons.apartment_rounded,
+                        value: '$classes',
+                        label: 'Aktif Sınıflar',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: SizedBox(
+                      height: metricCardHeight,
+                      child: _HeroMetric(
+                        icon: Icons.timelapse_rounded,
+                        value: '${(exams / 2).ceil()}',
+                        label: 'Bekleyen OCR',
+                        badgeDot: true,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: SizedBox(
+                      height: metricCardHeight,
+                      child: _HeroMetric(
+                        icon: Icons.calendar_month_rounded,
+                        value: '${(exams / 3).ceil()}',
+                        label: 'Bu Hafta Sınavlar',
+                      ),
                     ),
                   ),
                 ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: overlapAmount + 12),
+      ],
+    );
+  }
+
+  static String _capitalizeFirst(String value) {
+    if (value.isEmpty) return value;
+    return '${value[0].toUpperCase()}${value.substring(1)}';
+  }
+}
+
+class _HeroMetric extends StatelessWidget {
+  const _HeroMetric({
+    required this.icon,
+    required this.value,
+    required this.label,
+    this.badgeDot = false,
+  });
+
+  final IconData icon;
+  final String value;
+  final String label;
+  final bool badgeDot;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFF),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFD9DFF2)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x100F1729),
+            blurRadius: 8,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: const Color(0xFF5068F3), size: 18),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Color(0xFF0F1729),
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  height: 0.95,
+                ),
+              ),
+              if (badgeDot) ...[
+                const SizedBox(width: 2),
+                const Icon(Icons.circle, size: 8, color: Color(0xFF0BBFB0)),
+              ],
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+                color: Color(0xFF6B7A99), fontSize: 11, height: 1.2),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.title, required this.onTapAll});
+  final String title;
+  final VoidCallback onTapAll;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFF0F1729),
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            height: 1.02,
+          ),
+        ),
+        const Spacer(),
+        InkWell(
+          onTap: onTapAll,
+          child: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+            child: Row(
+              children: [
+                Text('Tümü',
+                    style: TextStyle(color: Color(0xFF3B4FD8), fontSize: 14)),
+                SizedBox(width: 4),
+                Icon(Icons.chevron_right_rounded,
+                    color: Color(0xFF3B4FD8), size: 16),
+              ],
+            ),
+          ),
+        )
+      ],
+    );
+  }
+}
+
+class _UpcomingExamTile extends StatelessWidget {
+  const _UpcomingExamTile({
+    required this.title,
+    required this.classCode,
+    required this.dateLabel,
+    required this.badgeText,
+    required this.badgeColor,
+    required this.badgeBgColor,
+    required this.iconColor,
+  });
+
+  final String title;
+  final String classCode;
+  final String dateLabel;
+  final String badgeText;
+  final Color badgeColor;
+  final Color badgeBgColor;
+  final Color iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFDDE3F0)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x120F1729),
+            blurRadius: 8,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.note_alt_outlined, color: iconColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFF0F1729),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          height: 1.1,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8EDF6),
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      child: Text(classCode,
+                          style: const TextStyle(
+                              color: Color(0xFF8A96B2), fontSize: 10)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.calendar_today_outlined,
+                        size: 12, color: Color(0xFF8A96B2)),
+                    const SizedBox(width: 6),
+                    Text(dateLabel,
+                        style: const TextStyle(
+                            color: Color(0xFF6B7A99), fontSize: 11)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+                color: badgeBgColor, borderRadius: BorderRadius.circular(999)),
+            child: Text(
+              badgeText,
+              style: TextStyle(
+                  color: badgeColor, fontSize: 10, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OcrPreviewCard extends StatelessWidget {
+  const _OcrPreviewCard({
+    required this.title,
+    required this.students,
+    required this.progress,
+    required this.progressText,
+    required this.status,
+    required this.statusColor,
+    required this.imageUrl,
+  });
+
+  final String title;
+  final String students;
+  final double progress;
+  final String progressText;
+  final String status;
+  final Color statusColor;
+  final String imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 178,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFDDE3F0)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x120F1729),
+            blurRadius: 8,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            child: Stack(
+              children: [
+                SizedBox(
+                  width: 178,
+                  height: 95,
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: const Color(0xFFE9EEF8),
+                      child: const Center(
+                        child: Icon(
+                          Icons.image_not_supported_outlined,
+                          color: Color(0xFF8A96B2),
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: statusColor,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      status,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        color: Color(0xFF0F1729),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        height: 1)),
+                const SizedBox(height: 6),
+                Text(students,
+                    style: const TextStyle(
+                        color: Color(0xFF6B7A99), fontSize: 11)),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 6,
+                    backgroundColor: const Color(0xFFDCE2EE),
+                    valueColor:
+                        const AlwaysStoppedAnimation<Color>(Color(0xFF0BBFB0)),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(progressText,
+                    style: const TextStyle(
+                        color: Color(0xFF6B7A99), fontSize: 11)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickActionButton extends StatelessWidget {
+  const _QuickActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.selected = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: SizedBox(
+        width: 78,
+        child: Column(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: selected ? const Color(0xFFDFF6F5) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFD9DFF2)),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x100F1729),
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(icon,
+                  color: selected
+                      ? const Color(0xFF0BBFB0)
+                      : const Color(0xFF3B4FD8),
+                  size: 22),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFF6B7A99),
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                height: 1.2,
               ),
             ),
           ],
@@ -320,302 +844,34 @@ class _DashboardHeader extends StatelessWidget {
   }
 }
 
-class _HeaderIconButton extends StatelessWidget {
-  const _HeaderIconButton({
-    required this.icon,
-    required this.tooltip,
-    required this.onTap,
-  });
+class _DashboardErrorCard extends StatelessWidget {
+  const _DashboardErrorCard({required this.message, required this.onRetry});
 
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback onTap;
+  final String message;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: Colors.white.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-          child: Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-            ),
-            child: Icon(icon, color: Colors.white, size: 20),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HeaderPopupMenu extends StatelessWidget {
-  const _HeaderPopupMenu({required this.onLogout});
-  final VoidCallback onLogout;
-
-  @override
-  Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
-      onSelected: (value) {
-        if (value == 'logout') onLogout();
-      },
-      offset: const Offset(0, 48),
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-        ),
-        child:
-            const Icon(Icons.more_vert_rounded, color: Colors.white, size: 20),
-      ),
-      itemBuilder: (context) => [
-        const PopupMenuItem<String>(
-          value: 'logout',
-          child: Row(
-            children: [
-              Icon(Icons.logout_rounded, size: 18),
-              SizedBox(width: 10),
-              Text('Çıkış yap'),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// OCR Banner
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _OcrBanner extends StatelessWidget {
-  const _OcrBanner({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
-        child: Ink(
-          decoration: BoxDecoration(
-            gradient: AppColors.accentGradient,
-            borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.accent.withValues(alpha: 0.28),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.xl),
-            child: Text(
-              'OCR Laboratuvarı',
-              style: textTheme.titleMedium
-                  ?.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Stats Row
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _StatsRow extends StatelessWidget {
-  const _StatsRow({
-    required this.classCount,
-    required this.examCount,
-  });
-
-  final int classCount;
-  final int examCount;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _StatCard(
-            icon: Icons.grid_view_rounded,
-            label: 'Toplam Sınıf',
-            value: '$classCount',
-            accentColor: AppColors.primary,
-            bgColor: AppColors.primarySurface,
-          ),
-        ),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: _StatCard(
-            icon: Icons.assignment_turned_in_rounded,
-            label: 'Toplam Sınav',
-            value: '$examCount',
-            accentColor: AppColors.accent,
-            bgColor: AppColors.accentSurface,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.accentColor,
-    required this.bgColor,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color accentColor;
-  final Color bgColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: AppColors.errorLight,
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-            ),
-            child: Icon(icon, color: accentColor, size: 20),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            value,
-            style: textTheme.headlineLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-              height: 1.0,
+          const Icon(Icons.error_outline, color: AppColors.error),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: AppColors.error),
             ),
           ),
-          const SizedBox(height: 3),
-          Text(
-            label,
-            style: textTheme.bodySmall?.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          TextButton(onPressed: onRetry, child: const Text('Yenile')),
         ],
       ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Section Header
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({
-    required this.title,
-    required this.count,
-    required this.onAdd,
-  });
-
-  final String title;
-  final int count;
-  final VoidCallback onAdd;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                  letterSpacing: -0.3,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '$count aktif sınıf',
-                style: textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-        GestureDetector(
-          onTap: onAdd,
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.add_rounded, color: Colors.white, size: 16),
-                const SizedBox(width: 4),
-                Text(
-                  'Yeni Sınıf',
-                  style: textTheme.labelSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
