@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_surface_card.dart';
 import '../../domain/entities/teacher_entities.dart';
 
 class StudentTile extends StatelessWidget {
@@ -26,7 +26,8 @@ class StudentTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        child: ShadCard(
+        borderRadius: BorderRadius.circular(14),
+        child: AppSurfaceCard(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [

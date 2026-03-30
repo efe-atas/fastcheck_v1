@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/gradient_dashboard_header.dart';
 import '../../../../core/widgets/app_error_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
+import '../../../../core/widgets/app_surface_card.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../bloc/parent_bloc.dart';
@@ -108,9 +108,9 @@ class _StudentCard extends StatelessWidget {
             // Navigate to student exam view
           },
           borderRadius: BorderRadius.circular(16),
-          child: ShadCard(
+          child: AppSurfaceCard(
             padding: const EdgeInsets.all(16),
-            radius: BorderRadius.circular(16),
+            radius: 16,
             child: Row(
               children: [
                 Container(

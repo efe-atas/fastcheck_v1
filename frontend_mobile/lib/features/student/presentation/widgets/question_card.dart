@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_surface_card.dart';
 import '../../domain/entities/student_entities.dart';
 
 class QuestionCard extends StatefulWidget {
@@ -44,15 +44,13 @@ class _QuestionCardState extends State<QuestionCard>
       child: InkWell(
         onTap: () => setState(() => _expanded = !_expanded),
         borderRadius: BorderRadius.circular(16),
-        child: ShadCard(
+        child: AppSurfaceCard(
           padding: const EdgeInsets.all(16),
-          radius: BorderRadius.circular(16),
-          border: ShadBorder.all(
-            color: _expanded
-                ? AppColors.primary.withValues(alpha: 0.3)
-                : AppColors.border,
-            width: _expanded ? 1.5 : 1,
-          ),
+          radius: 16,
+          borderColor: _expanded
+              ? AppColors.primary.withValues(alpha: 0.3)
+              : AppColors.border,
+          borderWidth: _expanded ? 1.5 : 1,
           child: AnimatedSize(
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeInOut,

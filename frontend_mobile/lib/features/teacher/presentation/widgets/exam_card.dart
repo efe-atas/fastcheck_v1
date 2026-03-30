@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/widgets/app_surface_card.dart';
 import '../../domain/entities/teacher_entities.dart';
 
 class ExamCard extends StatelessWidget {
@@ -21,10 +22,9 @@ class ExamCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: AppSpacing.borderRadiusMd,
-        child: ShadCard(
+        child: AppSurfaceCard(
           padding: AppSpacing.cardPadding,
-          radius: AppSpacing.borderRadiusMd,
-          border: ShadBorder.all(color: AppColors.border, width: 1),
+          radius: AppSpacing.radiusMd,
           child: Row(
             children: [
               Container(
@@ -46,10 +46,7 @@ class ExamCard extends StatelessWidget {
                   children: [
                     Text(
                       exam.title,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: AppColors.textPrimary,
                           ),

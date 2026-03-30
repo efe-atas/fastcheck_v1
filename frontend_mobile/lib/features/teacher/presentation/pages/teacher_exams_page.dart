@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/usecase/usecase.dart';
+import '../../../../core/widgets/app_inline_cta.dart';
 import '../../domain/entities/teacher_entities.dart';
 import '../../domain/usecases/teacher_usecases.dart';
 
@@ -121,7 +122,10 @@ class _TeacherExamsPageState extends State<TeacherExamsPage> {
               ],
             ),
             const SizedBox(height: 12),
-            _CreateExamCta(
+            AppInlineCta(
+              title: 'Yeni Sınav Oluştur',
+              subtitle: 'Sınıf seçip hızlıca sınav ekleyin',
+              icon: Icons.add_rounded,
               onTap: () => context.go('/teacher'),
             ),
             const SizedBox(height: 12),
@@ -177,82 +181,6 @@ class _TeacherExamsPageState extends State<TeacherExamsPage> {
   bool _isDraft(String status) {
     final normalized = status.toUpperCase();
     return normalized == 'DRAFT' || normalized == 'PENDING';
-  }
-}
-
-class _CreateExamCta extends StatelessWidget {
-  const _CreateExamCta({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFDDE3F0)),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x100F1729),
-              blurRadius: 8,
-              offset: Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE9EEFF),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.add_rounded,
-                size: 20,
-                color: Color(0xFF3B4FD8),
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Yeni Sınav Oluştur',
-                    style: TextStyle(
-                      color: Color(0xFF0F1729),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Sınıf seçip hızlıca sınav ekleyin',
-                    style: TextStyle(
-                      color: Color(0xFF6B7A99),
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(
-              Icons.chevron_right_rounded,
-              size: 20,
-              color: Color(0xFF8A96B2),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_surface_card.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/app_toast.dart';
 import '../bloc/auth_bloc.dart';
@@ -47,6 +48,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthError) {
@@ -67,10 +69,17 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   const SizedBox(height: 60),
                   _buildHeader(),
-                  const SizedBox(height: 48),
-                  _buildForm(),
-                  const SizedBox(height: 32),
-                  _buildLoginButton(),
+                  const SizedBox(height: 36),
+                  AppSurfaceCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        _buildForm(),
+                        const SizedBox(height: 24),
+                        _buildLoginButton(),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 24),
                   _buildRegisterLink(),
                   if (kDebugMode) ...[

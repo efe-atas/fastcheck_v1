@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_error_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
+import '../../../../core/widgets/app_surface_card.dart';
 import '../bloc/exam_questions_bloc.dart';
 import '../widgets/question_card.dart';
 
@@ -144,13 +145,10 @@ class ExamQuestionsPage extends StatelessWidget {
   }
 
   Widget _buildSummaryBar(int count) {
-    return Container(
+    return AppSurfaceCard(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.primarySurface,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      backgroundColor: AppColors.primarySurface,
       child: Row(
         children: [
           const Icon(Icons.quiz_rounded, size: 20, color: AppColors.primary),

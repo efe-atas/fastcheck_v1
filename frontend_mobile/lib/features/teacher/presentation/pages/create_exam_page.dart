@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_surface_card.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/app_toast.dart';
 import '../bloc/exam_bloc.dart';
@@ -69,12 +70,9 @@ class _CreateExamPageState extends State<CreateExamPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
+        AppSurfaceCard(
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.primarySurface,
-            borderRadius: BorderRadius.circular(16),
-          ),
+          backgroundColor: AppColors.primarySurface,
           child: Row(
             children: [
               Container(

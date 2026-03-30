@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'app_design_tokens.dart';
 import 'app_colors.dart';
 
 class AppTheme {
@@ -108,7 +109,7 @@ class AppTheme {
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppDesignTokens.radiusMd),
           side: const BorderSide(color: AppColors.border, width: 1),
         ),
         color: AppColors.surface,
@@ -118,7 +119,7 @@ class AppTheme {
         backgroundColor: AppColors.surface,
         elevation: 3,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppDesignTokens.radiusMd),
         ),
         titleTextStyle: GoogleFonts.inter(
           fontSize: 20,
@@ -135,7 +136,9 @@ class AppTheme {
         backgroundColor: AppColors.surface,
         elevation: 4,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppDesignTokens.radiusLg),
+          ),
         ),
         showDragHandle: true,
         dragHandleColor: AppColors.border,
@@ -161,7 +164,7 @@ class AppTheme {
           elevation: 0,
           minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppDesignTokens.radiusSm),
           ),
           textStyle: GoogleFonts.inter(
             fontSize: 16,
@@ -175,7 +178,7 @@ class AppTheme {
           elevation: 0,
           minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppDesignTokens.radiusSm),
           ),
           side: const BorderSide(color: AppColors.primary),
           textStyle: GoogleFonts.inter(
@@ -200,11 +203,11 @@ class AppTheme {
             const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -232,7 +235,7 @@ class AppTheme {
         foregroundColor: AppColors.textOnPrimary,
         elevation: 2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppDesignTokens.radiusLg),
         ),
       ),
       dividerTheme: const DividerThemeData(

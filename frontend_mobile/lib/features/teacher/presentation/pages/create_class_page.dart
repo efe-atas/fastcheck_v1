@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/usecase/usecase.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_surface_card.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/app_toast.dart';
 import '../../domain/usecases/teacher_usecases.dart';
@@ -64,12 +65,9 @@ class _CreateClassPageState extends State<CreateClassPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
+              AppSurfaceCard(
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.primarySurface,
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                backgroundColor: AppColors.primarySurface,
                 child: Row(
                   children: [
                     Container(
@@ -112,15 +110,10 @@ class _CreateClassPageState extends State<CreateClassPage> {
                 ),
               ),
               const SizedBox(height: 28),
-              Container(
-                width: double.infinity,
+              AppSurfaceCard(
                 padding: const EdgeInsets.all(14),
                 margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
-                ),
+                backgroundColor: AppColors.surfaceVariant,
                 child: const Text(
                   'Okul ID, yöneticinin sizi bir okula atadığı kayıttaki numaradır. '
                   'Zaten sınıfınız varsa aşağıdaki alan genelde otomatik dolar; '

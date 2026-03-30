@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_error_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/authenticated_image.dart';
+import '../../../../core/widgets/app_surface_card.dart';
 import '../../domain/entities/teacher_entities.dart';
 import '../bloc/exam_bloc.dart';
 
@@ -146,14 +147,8 @@ class _ExamDetailPageState extends State<ExamDetailPage> {
         break;
     }
 
-    return Container(
-      width: double.infinity,
+    return AppSurfaceCard(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -176,14 +171,11 @@ class _ExamDetailPageState extends State<ExamDetailPage> {
 
   Widget _buildStatusHeader(ExamStatusEntity examStatus) {
     final status = examStatus.examStatus.toUpperCase();
-    return Container(
-      width: double.infinity,
+    return AppSurfaceCard(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: _statusBgColor(status),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _statusColor(status).withValues(alpha: 0.3)),
-      ),
+      radius: 16,
+      backgroundColor: _statusBgColor(status),
+      borderColor: _statusColor(status).withValues(alpha: 0.3),
       child: Row(
         children: [
           Container(
@@ -243,13 +235,9 @@ class _ExamDetailPageState extends State<ExamDetailPage> {
         .length;
     final progress = total > 0 ? processed / total : 0.0;
 
-    return Container(
+    return AppSurfaceCard(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
+      radius: 16,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -456,13 +444,9 @@ class _ExamDetailPageState extends State<ExamDetailPage> {
           itemBuilder: (_, index) {
             final job = examStatus.ocrJobs[index];
             final jobStatus = job.status.toUpperCase();
-            return Container(
+            return AppSurfaceCard(
               padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
-              ),
+              radius: 12,
               child: Row(
                 children: [
                   Icon(
@@ -522,12 +506,8 @@ class _ExamDetailPageState extends State<ExamDetailPage> {
   }
 
   Widget _buildAdvancedDetailsCard(ExamStatusEntity examStatus) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
+    return AppSurfaceCard(
+      radius: 12,
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(

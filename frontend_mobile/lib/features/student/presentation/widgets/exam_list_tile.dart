@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_surface_card.dart';
 import '../../domain/entities/student_entities.dart';
 
 class ExamListTile extends StatelessWidget {
@@ -20,10 +21,9 @@ class ExamListTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        child: ShadCard(
+        child: AppSurfaceCard(
           padding: const EdgeInsets.all(16),
-          radius: BorderRadius.circular(16),
-          border: ShadBorder.all(color: AppColors.border, width: 1),
+          radius: 16,
           child: Row(
             children: [
               Container(
@@ -66,7 +66,8 @@ class ExamListTile extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          DateFormat('dd MMM yyyy', 'tr').format(exam.createdAt),
+                          DateFormat('dd MMM yyyy', 'tr')
+                              .format(exam.createdAt),
                           style: const TextStyle(
                             fontSize: 12,
                             color: AppColors.textTertiary,

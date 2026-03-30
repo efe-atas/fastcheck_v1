@@ -2,11 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_error_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
+import '../../../../core/widgets/app_inline_cta.dart';
 import '../../../../core/widgets/loading_widget.dart';
+import '../../../../core/widgets/app_text_field.dart';
 import '../bloc/class_detail_bloc.dart';
 import '../widgets/exam_card.dart';
 import '../widgets/student_tile.dart';
@@ -31,17 +32,11 @@ class _ClassDetailPageState extends State<ClassDetailPage>
   final TextEditingController _studentSearchController =
       TextEditingController();
   Timer? _searchDebounce;
-  int _currentTab = 0;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) {
-        setState(() => _currentTab = _tabController.index);
-      }
-    });
   }
 
   @override
@@ -107,26 +102,6 @@ class _ClassDetailPageState extends State<ClassDetailPage>
           return const SizedBox();
         },
       ),
-      floatingActionButton: Builder(
-        builder: (context) {
-          return FloatingActionButton.extended(
-            onPressed: () => _currentTab == 0
-                ? _navigateToCreateExam(context)
-                : _navigateToAddStudent(context),
-            backgroundColor: AppColors.primary,
-            foregroundColor: AppColors.textOnPrimary,
-            icon: Icon(
-              _currentTab == 0
-                  ? Icons.note_add_rounded
-                  : Icons.person_add_rounded,
-            ),
-            label: Text(
-              _currentTab == 0 ? 'Sınav Ekle' : 'Öğrenci Ekle',
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-          );
-        },
-      ),
     );
   }
 
@@ -144,18 +119,27 @@ class _ClassDetailPageState extends State<ClassDetailPage>
       onRefresh: () async {
         context.read<ClassDetailBloc>().add(RefreshExams(widget.classId));
       },
-      child: ListView.separated(
+      child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-        itemCount: state.exams.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 10),
-        itemBuilder: (context, index) {
-          final exam = state.exams[index];
-          return ExamCard(
-            exam: exam,
-            onTap: () =>
-                _navigateToExamDetail(context, exam.examId, exam.title),
-          );
-        },
+        children: [
+          AppInlineCta(
+            title: 'Yeni Sınav Ekle',
+            subtitle: 'Bu sınıfa yeni bir sınav oluşturun',
+            icon: Icons.note_add_rounded,
+            onTap: () => _navigateToCreateExam(context),
+          ),
+          const SizedBox(height: 12),
+          ...state.exams.map(
+            (exam) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: ExamCard(
+                exam: exam,
+                onTap: () =>
+                    _navigateToExamDetail(context, exam.examId, exam.title),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -174,18 +158,20 @@ class _ClassDetailPageState extends State<ClassDetailPage>
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: ShadInput(
-                    controller: _studentSearchController,
-                    textInputAction: TextInputAction.search,
-                    placeholder: const Text('Ad / soyad ile ara'),
-                    onChanged: _onStudentSearchChanged,
-                    onSubmitted: _onStudentSearchChanged,
-                  ),
-                ),
-              ],
+            child: AppTextField(
+              controller: _studentSearchController,
+              hint: 'Ad / soyad ile ara',
+              prefixIcon: Icons.search_rounded,
+              onChanged: _onStudentSearchChanged,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            child: AppInlineCta(
+              title: 'Yeni Öğrenci Ekle',
+              subtitle: 'Sınıfa öğrenci davet edin',
+              icon: Icons.person_add_rounded,
+              onTap: () => _navigateToAddStudent(context),
             ),
           ),
           Container(

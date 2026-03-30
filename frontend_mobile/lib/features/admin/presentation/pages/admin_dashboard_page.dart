@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_section_header.dart';
+import '../../../../core/widgets/app_surface_card.dart';
 import '../../../../core/widgets/app_toast.dart';
 import '../../domain/entities/admin_entities.dart';
 import '../cubit/admin_cubit.dart';
@@ -103,8 +105,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   _buildBulkLinkSection(context, state),
                 ],
               ),
-              if (state.isLoading)
-                const LinearProgressIndicator(minHeight: 3),
+              if (state.isLoading) const LinearProgressIndicator(minHeight: 3),
             ],
           );
         },
@@ -167,7 +168,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           const SizedBox(height: 8),
           _resultList<AdminUserSummaryEntity>(
             items: state.assignableUsers,
-            onTap: (item) => context.read<AdminCubit>().selectAssignableUser(item),
+            onTap: (item) =>
+                context.read<AdminCubit>().selectAssignableUser(item),
             itemBuilder: (e) => '${e.fullName} · ${e.email} · ${e.role}',
           ),
           const SizedBox(height: 10),
@@ -212,7 +214,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Widget _buildLinkParentStudentSection(BuildContext context, AdminState state) {
+  Widget _buildLinkParentStudentSection(
+      BuildContext context, AdminState state) {
     return _section(
       title: 'Veli — öğrenci bağla (ID’siz)',
       child: Column(
@@ -267,7 +270,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ShadButton(
             onPressed: state.isLoading
                 ? null
-                : () => context.read<AdminCubit>().onLinkSelectedParentStudent(),
+                : () =>
+                    context.read<AdminCubit>().onLinkSelectedParentStudent(),
             child: const Text('Seçili veli-öğrenciyi bağla'),
           ),
         ],
@@ -275,7 +279,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Widget _buildListParentStudentsSection(BuildContext context, AdminState state) {
+  Widget _buildListParentStudentsSection(
+      BuildContext context, AdminState state) {
     return _section(
       title: 'Veliye bağlı öğrencileri listele',
       child: Column(
@@ -429,7 +434,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Widget _buildBulkResult(BuildContext context, AdminBulkOperationEntity result) {
+  Widget _buildBulkResult(
+      BuildContext context, AdminBulkOperationEntity result) {
     return ShadCard(
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -442,14 +448,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           if (result.errors.isNotEmpty) ...[
             const SizedBox(height: 8),
             ...result.errors.take(5).map(
-              (e) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  'Satır ${e.rowNumber}: ${e.message}',
-                  style: ShadTheme.of(context).textTheme.muted,
+                  (e) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      'Satır ${e.rowNumber}: ${e.message}',
+                      style: ShadTheme.of(context).textTheme.muted,
+                    ),
+                  ),
                 ),
-              ),
-            ),
           ],
         ],
       ),
@@ -487,8 +493,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Future<void> _pickCsvAndUpload(
-      {required Future<void> Function(List<int> bytes, String fileName) onPicked,
+  Future<void> _pickCsvAndUpload({
+    required Future<void> Function(List<int> bytes, String fileName) onPicked,
   }) async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -549,24 +555,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   Widget _section({required String title, required Widget child}) {
-    return Container(
+    return AppSurfaceCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
+          AppSectionHeader(title: title),
           const SizedBox(height: 12),
           child,
         ],

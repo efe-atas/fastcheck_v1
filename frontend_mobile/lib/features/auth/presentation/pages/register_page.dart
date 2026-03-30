@@ -4,6 +4,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../../core/constants/auth_roles.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_surface_card.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/app_toast.dart';
 import '../bloc/auth_bloc.dart';
@@ -50,6 +51,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
@@ -76,10 +78,18 @@ class _RegisterPageState extends State<RegisterPage> {
                 children: [
                   const SizedBox(height: 20),
                   _buildHeader(),
-                  const SizedBox(height: 40),
-                  _buildForm(),
-                  const SizedBox(height: 32),
-                  _buildRegisterButton(),
+                  const SizedBox(height: 24),
+                  AppSurfaceCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildForm(),
+                        const SizedBox(height: 24),
+                        _buildRegisterButton(),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 24),
                   _buildLoginLink(),
                   const SizedBox(height: 32),

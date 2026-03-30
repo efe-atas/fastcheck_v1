@@ -1,54 +1,49 @@
 import 'package:flutter/material.dart';
 
-/// Taş (Stone) + Amber tabanlı tek sıcak nötr palet.
-/// Semantik renkler aynı sıcaklıkta, Tailwind ölçeğiyle uyumludur.
 class AppColors {
   AppColors._();
 
-  // Primary — Stone
-  static const Color primary = Color(0xFF1C1917); // 950
-  static const Color primaryDark = Color(0xFF0C0A09);
-  static const Color primaryLight = Color(0xFF44403C); // 700
-  static const Color primarySurface = Color(0xFFF5F5F4); // 100
+  // Figma referans palette (dashboard/exams/ocr lab)
+  static const Color primary = Color(0xFF3B4FD8);
+  static const Color primaryDark = Color(0xFF1A2A9E);
+  static const Color primaryLight = Color(0xFF5168F5);
+  static const Color primarySurface = Color(0xFFE9EEFF);
 
-  // Accent — Amber
-  static const Color accent = Color(0xFFD97706); // 600
-  static const Color accentDark = Color(0xFFB45309); // 700
-  static const Color accentLight = Color(0xFFFBBF24); // 400
-  static const Color accentSurface = Color(0xFFFEF3C7); // 100
+  static const Color accent = Color(0xFF0BBFB0);
+  static const Color accentDark = Color(0xFF099A8F);
+  static const Color accentLight = Color(0xFF14C6B7);
+  static const Color accentSurface = Color(0xFFE3F8F5);
 
-  // Semantic — emerald / amber / kırmızı aynı “sıcak” ailede
-  static const Color success = Color(0xFF047857); // Emerald 700
-  static const Color successLight = Color(0xFFECFDF5); // Emerald 50
-  static const Color warning = accent;
-  static const Color warningLight = accentSurface;
-  static const Color error = Color(0xFFB91C1C); // Red 700
-  static const Color errorLight = Color(0xFFFFF1F2); // Rose-50 benzeri sıcak zemin
+  static const Color success = Color(0xFF19A56E);
+  static const Color successLight = Color(0xFFE7F7EF);
+  static const Color warning = Color(0xFFF59E0B);
+  static const Color warningLight = Color(0xFFFEF3C7);
+  static const Color error = Color(0xFFDE3F4D);
+  static const Color errorLight = Color(0xFFFFF1F2);
 
   // Backgrounds & Surfaces
-  static const Color background = Color(0xFFFAFAF9); // Stone 50
+  static const Color background = Color(0xFFF3F5FB);
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceVariant = primarySurface;
-  static const Color surfaceWarm = Color(0xFFFAF8F5); // krem-taş, background ile aynı aile
-  static const Color border = Color(0xFFE7E5E4); // Stone 200
-  static const Color divider = primarySurface;
+  static const Color surfaceVariant = Color(0xFFF0F3FA);
+  static const Color surfaceWarm = Color(0xFFF9FAFF);
+  static const Color border = Color(0xFFDDE3F0);
+  static const Color divider = Color(0xFFE2E7F3);
 
   // Text
-  static const Color textPrimary = primary;
-  static const Color textSecondary = Color(0xFF78716C); // Stone 500
-  static const Color textTertiary = Color(0xFFA8A29E); // Stone 400
-  static const Color textOnPrimary = background;
+  static const Color textPrimary = Color(0xFF0F1729);
+  static const Color textSecondary = Color(0xFF6B7A99);
+  static const Color textTertiary = Color(0xFF8A96B2);
+  static const Color textOnPrimary = Colors.white;
   static const Color textOnAccent = Color(0xFFFFFFFF);
 
-  /// İkincil vurgu (ikonlar, bölüm başlıkları) — [textSecondary] ile aynı taş tonu.
-  static const Color secondary = textSecondary;
+  static const Color secondary = Color(0xFF3A4864);
 
-  // Shimmer — border / arka plan ile aynı taş tonları
+  // Shimmer
   static const Color shimmerBase = border;
-  static const Color shimmerHighlight = background;
+  static const Color shimmerHighlight = surfaceWarm;
 
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [primary, primaryLight],
+    colors: [Color(0xFF3B4FD8), Color(0xFF2D3DB8), Color(0xFF1A2A9E)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -59,6 +54,5 @@ class AppColors {
     end: Alignment.bottomRight,
   );
 
-  /// Splash, Sliver başlık, sınıf kartı şeridi vb. üst yüzeyler.
   static const LinearGradient headerGradient = primaryGradient;
 }
