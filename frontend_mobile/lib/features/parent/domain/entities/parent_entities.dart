@@ -52,3 +52,55 @@ class ParentQuestionEntity extends Equatable {
         questionText, studentAnswer, confidence,
       ];
 }
+
+class ParentStudentSummaryEntity extends Equatable {
+  final int studentId;
+  final String fullName;
+  final String email;
+  final int? classId;
+  final int totalExams;
+  final int readyExams;
+  final String? latestExamTitle;
+  final String? latestExamStatus;
+  final DateTime? latestExamCreatedAt;
+
+  const ParentStudentSummaryEntity({
+    required this.studentId,
+    required this.fullName,
+    required this.email,
+    this.classId,
+    required this.totalExams,
+    required this.readyExams,
+    this.latestExamTitle,
+    this.latestExamStatus,
+    this.latestExamCreatedAt,
+  });
+
+  @override
+  List<Object?> get props => [
+        studentId,
+        fullName,
+        email,
+        classId,
+        totalExams,
+        readyExams,
+        latestExamTitle,
+        latestExamStatus,
+        latestExamCreatedAt,
+      ];
+}
+
+class ParentDashboardSummaryEntity extends Equatable {
+  final int linkedStudents;
+  final List<ParentStudentSummaryEntity> students;
+
+  const ParentDashboardSummaryEntity({
+    required this.linkedStudents,
+    required this.students,
+  });
+
+  bool get hasStudents => linkedStudents > 0;
+
+  @override
+  List<Object?> get props => [linkedStudents, students];
+}

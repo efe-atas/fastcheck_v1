@@ -7,6 +7,7 @@ import '../models/teacher_models.dart';
 
 abstract class TeacherRemoteDataSource {
   Future<List<ClassModel>> getClasses();
+  Future<TeacherDashboardSummaryModel> getDashboardSummary();
   Future<List<ExamModel>> getClassExams(int classId);
   Future<PagedResponseDto<StudentModel>> getClassStudents(
     int classId, {
@@ -15,7 +16,6 @@ abstract class TeacherRemoteDataSource {
     String? name,
   });
   Future<ClassModel> createClass({
-    required int schoolId,
     required String className,
   });
   Future<ExamModel> createExam({required int classId, required String title});
@@ -45,6 +45,21 @@ class TeacherRemoteDataSourceImpl implements TeacherRemoteDataSource {
       return list
           .map((e) => ClassModel.fromJson(e as Map<String, dynamic>))
           .toList();
+    } on DioException catch (e) {
+      throw ServerException(
+        message: e.response?.data?['message']?.toString() ?? 'Sunucu hatası',
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
+
+  @override
+  Future<TeacherDashboardSummaryModel> getDashboardSummary() async {
+    try {
+      final response = await dio.get(ApiConstants.teacherDashboard);
+      return TeacherDashboardSummaryModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
     } on DioException catch (e) {
       throw ServerException(
         message: e.response?.data?['message']?.toString() ?? 'Sunucu hatası',
@@ -99,13 +114,12 @@ class TeacherRemoteDataSourceImpl implements TeacherRemoteDataSource {
 
   @override
   Future<ClassModel> createClass({
-    required int schoolId,
     required String className,
   }) async {
     try {
       final response = await dio.post(
         ApiConstants.teacherClasses,
-        data: {'schoolId': schoolId, 'className': className},
+        data: {'className': className},
       );
       return ClassModel.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {

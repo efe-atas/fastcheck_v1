@@ -14,6 +14,8 @@ import com.fastcheck.fastcheck.education.SchoolRepository;
 import com.fastcheck.fastcheck.ocr.OcrJob;
 import com.fastcheck.fastcheck.ocr.OcrJobRepository;
 import com.fastcheck.fastcheck.ocr.OcrJobStatus;
+import com.fastcheck.fastcheck.education.ParentStudentLink;
+import com.fastcheck.fastcheck.education.ParentStudentLinkRepository;
 import com.fastcheck.fastcheck.user.Role;
 import com.fastcheck.fastcheck.user.UserAccount;
 import com.fastcheck.fastcheck.user.UserRepository;
@@ -61,6 +63,9 @@ class EducationControllerIntegrationTests {
 
     @Autowired
     private OcrJobRepository ocrJobRepository;
+
+    @Autowired
+    private ParentStudentLinkRepository parentStudentLinkRepository;
 
     @Test
     void adminCanCreateParentStudentLink() throws Exception {
@@ -387,6 +392,79 @@ class EducationControllerIntegrationTests {
             .andExpect(jsonPath("$.items[0].status").value("READY"));
     }
 
+    @Test
+    void studentDashboardSummariesReturnCountsAndLatestExams() throws Exception {
+        UserAccount teacher = saveUser("teacher-dashboard@fastcheck.local", "Teacher Dash", Role.ROLE_TEACHER);
+        UserAccount student = saveUser("student-dashboard@fastcheck.local", "Student Dash", Role.ROLE_STUDENT);
+
+        School school = new School();
+        school.setName("Dashboard School");
+        school = schoolRepository.save(school);
+        teacher.setSchool(school);
+        teacher = userRepository.save(teacher);
+
+        SchoolClass schoolClass = new SchoolClass();
+        schoolClass.setName("11-A");
+        schoolClass.setSchool(school);
+        schoolClass.setTeacher(teacher);
+        schoolClass = schoolClassRepository.save(schoolClass);
+
+        student.setSchool(school);
+        student.setSchoolClass(schoolClass);
+        student = userRepository.save(student);
+
+        createExamWithStatus("History Ready", ExamStatus.READY, teacher, schoolClass);
+        createExamWithStatus("Geometry Processing", ExamStatus.PROCESSING, teacher, schoolClass);
+        createExamWithStatus("Physics Draft", ExamStatus.DRAFT, teacher, schoolClass);
+
+        mockMvc.perform(get("/v1/student/dashboard")
+                        .header("Authorization", bearerToken(student)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalExams").value(3))
+                .andExpect(jsonPath("$.readyExams").value(1))
+                .andExpect(jsonPath("$.processingExams").value(1))
+                .andExpect(jsonPath("$.draftExams").value(1))
+                .andExpect(jsonPath("$.latestExams[0].title").value("Physics Draft"));
+    }
+
+    @Test
+    void parentDashboardIncludesLinkedStudentSummaries() throws Exception {
+        UserAccount teacher = saveUser("teacher-parentdash@fastcheck.local", "Teacher Parent Dash", Role.ROLE_TEACHER);
+        UserAccount parent = saveUser("parent-dash@fastcheck.local", "Parent Dash", Role.ROLE_PARENT);
+        UserAccount student = saveUser("student-linked@fastcheck.local", "Linked Student", Role.ROLE_STUDENT);
+
+        School school = new School();
+        school.setName("Parent Dash School");
+        school = schoolRepository.save(school);
+        teacher.setSchool(school);
+        teacher = userRepository.save(teacher);
+
+        SchoolClass schoolClass = new SchoolClass();
+        schoolClass.setName("12-C");
+        schoolClass.setSchool(school);
+        schoolClass.setTeacher(teacher);
+        schoolClass = schoolClassRepository.save(schoolClass);
+
+        student.setSchool(school);
+        student.setSchoolClass(schoolClass);
+        student = userRepository.save(student);
+
+        ParentStudentLink link = new ParentStudentLink();
+        link.setParent(parent);
+        link.setStudent(student);
+        parentStudentLinkRepository.save(link);
+
+        createExamWithStatus("Chemistry Ready", ExamStatus.READY, teacher, schoolClass);
+
+        mockMvc.perform(get("/v1/parent/dashboard")
+                        .header("Authorization", bearerToken(parent)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.linkedStudents").value(1))
+                .andExpect(jsonPath("$.students[0].studentId").value(student.getId()))
+                .andExpect(jsonPath("$.students[0].readyExams").value(1))
+                .andExpect(jsonPath("$.students[0].latestExamTitle").value("Chemistry Ready"));
+    }
+
     private UserAccount saveUser(String email, String fullName, Role role) {
         UserAccount user = new UserAccount();
         user.setEmail(email);
@@ -398,5 +476,14 @@ class EducationControllerIntegrationTests {
 
     private String bearerToken(UserAccount user) {
         return "Bearer " + jwtTokenProvider.createAccessToken(user.getId(), user.getEmail(), user.getRole().name());
+    }
+
+    private Exam createExamWithStatus(String title, ExamStatus status, UserAccount teacher, SchoolClass schoolClass) {
+        Exam exam = new Exam();
+        exam.setTitle(title);
+        exam.setTeacher(teacher);
+        exam.setSchoolClass(schoolClass);
+        exam.setStatus(status);
+        return examRepository.save(exam);
     }
 }

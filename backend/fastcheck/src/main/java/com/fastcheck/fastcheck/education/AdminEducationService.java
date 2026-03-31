@@ -327,6 +327,9 @@ public class AdminEducationService {
         }
         try {
             String content = new String(file.getBytes(), StandardCharsets.UTF_8);
+            if (content.startsWith("\uFEFF")) {
+                content = content.substring(1);
+            }
             return List.of(content.split("\\r?\\n"));
         } catch (IOException e) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "cannot read csv file");
@@ -367,8 +370,12 @@ public class AdminEducationService {
 
     @Transactional(readOnly = true)
     public List<EducationDtos.ParentStudentView> listParentStudents(Long parentUserId) {
-        accessService.requireRole(Role.ROLE_ADMIN);
-
+        UserAccount current = accessService.currentUser();
+        boolean isAdmin = current.getRole() == Role.ROLE_ADMIN;
+        boolean isSelfParent = current.getRole() == Role.ROLE_PARENT && current.getId().equals(parentUserId);
+        if (!isAdmin && !isSelfParent) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "forbidden");
+        }
         UserAccount parent = userRepository.findById(parentUserId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "parent user not found"));
         if (parent.getRole() != Role.ROLE_PARENT) {

@@ -13,6 +13,21 @@ class TeacherRepositoryImpl implements TeacherRepository {
   const TeacherRepositoryImpl({required this.remoteDataSource});
 
   @override
+  Future<Either<Failure, TeacherDashboardSummaryEntity>>
+      getDashboardSummary() async {
+    try {
+      final model = await remoteDataSource.getDashboardSummary();
+      return Right(model.toEntity());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.statusCode));
+    } on NetworkException {
+      return const Left(NetworkFailure());
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, List<ClassEntity>>> getClasses() async {
     try {
       final models = await remoteDataSource.getClasses();
@@ -68,12 +83,10 @@ class TeacherRepositoryImpl implements TeacherRepository {
 
   @override
   Future<Either<Failure, ClassEntity>> createClass({
-    required int schoolId,
     required String className,
   }) async {
     try {
       final model = await remoteDataSource.createClass(
-        schoolId: schoolId,
         className: className,
       );
       return Right(model.toEntity());

@@ -7,6 +7,7 @@ abstract class ParentRemoteDataSource {
   Future<List<LinkedStudentModel>> getLinkedStudents(int parentUserId);
   Future<List<ParentQuestionModel>> getStudentExamQuestions(
       int studentId, int examId);
+  Future<ParentDashboardSummaryModel> getDashboardSummary();
 }
 
 class ParentRemoteDataSourceImpl implements ParentRemoteDataSource {
@@ -37,6 +38,21 @@ class ParentRemoteDataSourceImpl implements ParentRemoteDataSource {
           .get(ApiConstants.parentStudentExamQuestions(studentId, examId));
       final list = response.data as List;
       return list.map((e) => ParentQuestionModel.fromJson(e)).toList();
+    } on DioException catch (e) {
+      throw ServerException(
+        message: _extractError(e),
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
+
+  @override
+  Future<ParentDashboardSummaryModel> getDashboardSummary() async {
+    try {
+      final response = await dio.get(ApiConstants.parentDashboard);
+      return ParentDashboardSummaryModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
     } on DioException catch (e) {
       throw ServerException(
         message: _extractError(e),

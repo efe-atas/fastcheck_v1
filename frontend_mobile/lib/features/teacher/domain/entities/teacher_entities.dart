@@ -62,6 +62,8 @@ class ExamImageEntity extends Equatable {
   final String imageUrl;
   final String status;
   final String? errorMessage;
+  final DateTime? processingStartedAt;
+  final DateTime? processingCompletedAt;
 
   const ExamImageEntity({
     required this.imageId,
@@ -70,11 +72,22 @@ class ExamImageEntity extends Equatable {
     required this.imageUrl,
     required this.status,
     this.errorMessage,
+    this.processingStartedAt,
+    this.processingCompletedAt,
   });
 
   @override
   List<Object?> get props =>
-      [imageId, examId, pageOrder, imageUrl, status, errorMessage];
+      [
+        imageId,
+        examId,
+        pageOrder,
+        imageUrl,
+        status,
+        errorMessage,
+        processingStartedAt,
+        processingCompletedAt,
+      ];
 }
 
 class OcrJobEntity extends Equatable {
@@ -118,4 +131,32 @@ class ExamStatusEntity extends Equatable {
 
   @override
   List<Object?> get props => [examId, classId, title, examStatus, images, ocrJobs];
+}
+
+class TeacherDashboardSummaryEntity extends Equatable {
+  final int totalClasses;
+  final int totalExams;
+  final int processingExams;
+  final int readyExams;
+  final List<ExamEntity> latestExams;
+  final List<OcrJobEntity> recentOcrJobs;
+
+  const TeacherDashboardSummaryEntity({
+    required this.totalClasses,
+    required this.totalExams,
+    required this.processingExams,
+    required this.readyExams,
+    required this.latestExams,
+    required this.recentOcrJobs,
+  });
+
+  @override
+  List<Object?> get props => [
+        totalClasses,
+        totalExams,
+        processingExams,
+        readyExams,
+        latestExams,
+        recentOcrJobs,
+      ];
 }

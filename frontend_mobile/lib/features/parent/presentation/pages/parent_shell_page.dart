@@ -4,8 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/app_google_bottom_nav.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
-import '../../../auth/presentation/bloc/auth_state.dart';
-import '../bloc/parent_bloc.dart';
+import '../cubit/parent_dashboard_cubit.dart';
 
 class ParentShellPage extends StatelessWidget {
   const ParentShellPage({
@@ -36,14 +35,8 @@ class ParentShellPage extends StatelessWidget {
             icon: Icons.refresh_rounded,
             label: 'Yenile',
             persistSelection: false,
-            onTap: () {
-              final auth = context.read<AuthBloc>().state;
-              if (auth is AuthAuthenticated) {
-                context
-                    .read<ParentBloc>()
-                    .add(LoadLinkedStudents(auth.user.id));
-              }
-            },
+            onTap: () =>
+                context.read<ParentDashboardCubit>().refreshDashboard(),
           ),
           AppGoogleNavItem(
             icon: Icons.logout_rounded,

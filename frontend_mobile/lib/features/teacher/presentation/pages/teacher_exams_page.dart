@@ -3,7 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/usecase/usecase.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_inline_cta.dart';
+import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../../domain/entities/teacher_entities.dart';
 import '../../domain/usecases/teacher_usecases.dart';
 
@@ -19,11 +23,24 @@ class _TeacherExamsPageState extends State<TeacherExamsPage> {
   String? _error;
   List<_ExamListItem> _allExams = const [];
   int _activeTab = 0;
+  final _quickTitleController = TextEditingController();
+  final _quickSubjectController = TextEditingController();
+  final Map<String, int> _classNameToId = {};
+  String? _quickClass;
+  DateTime _quickPlannedDate = DateTime.now();
+  bool _isQuickCreating = false;
 
   @override
   void initState() {
     super.initState();
     _loadExams();
+  }
+
+  @override
+  void dispose() {
+    _quickTitleController.dispose();
+    _quickSubjectController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadExams() async {
@@ -39,16 +56,20 @@ class _TeacherExamsPageState extends State<TeacherExamsPage> {
         return <_ExamListItem>[];
       },
       (classes) async {
+        _classNameToId.clear();
         final getClassExams = sl<GetClassExams>();
         final list = <_ExamListItem>[];
         for (final classEntity in classes) {
+          _classNameToId[classEntity.className] = classEntity.classId;
           final examsResult = await getClassExams(classEntity.classId);
           examsResult.fold(
             (_) => null,
             (exams) {
               list.addAll(
                 exams.map((exam) => _ExamListItem(
-                    exam: exam, className: classEntity.className)),
+                      exam: exam,
+                      className: classEntity.className,
+                    )),
               );
             },
           );
@@ -62,6 +83,8 @@ class _TeacherExamsPageState extends State<TeacherExamsPage> {
     setState(() {
       _allExams = loaded;
       _isLoading = false;
+      _quickClass ??=
+          (_classNameToId.isNotEmpty ? _classNameToId.keys.first : null);
     });
   }
 
@@ -126,7 +149,7 @@ class _TeacherExamsPageState extends State<TeacherExamsPage> {
               title: 'Yeni Sınav Oluştur',
               subtitle: 'Sınıf seçip hızlıca sınav ekleyin',
               icon: Icons.add_rounded,
-              onTap: () => context.go('/teacher'),
+              onTap: _openQuickCreateSheet,
             ),
             const SizedBox(height: 12),
             if (_error != null)
@@ -181,6 +204,311 @@ class _TeacherExamsPageState extends State<TeacherExamsPage> {
   bool _isDraft(String status) {
     final normalized = status.toUpperCase();
     return normalized == 'DRAFT' || normalized == 'PENDING';
+  }
+
+  List<String> _classOptions() {
+    if (_classNameToId.isNotEmpty) {
+      final list = _classNameToId.keys.toList()..sort();
+      return list;
+    }
+    return const [];
+  }
+
+  void _openQuickCreateSheet() {
+    if (_classNameToId.isEmpty) {
+      showAppToast(
+        context,
+        message: 'Önce bir sınıf oluşturmalısınız.',
+        destructive: true,
+      );
+      return;
+    }
+    final classes = _classOptions();
+    _quickClass ??= classes.first;
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, modalSetState) {
+            final plannedDateLabel =
+                DateFormat('d MMM yyyy', 'tr_TR').format(_quickPlannedDate);
+            final keyboardInset = MediaQuery.viewInsetsOf(ctx).bottom;
+            final safeBottom = MediaQuery.viewPaddingOf(ctx).bottom;
+            return Padding(
+              padding: EdgeInsets.only(bottom: keyboardInset),
+              child: SafeArea(
+                top: false,
+                minimum: const EdgeInsets.only(bottom: 12),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 46,
+                            height: 46,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE5EAFE),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Icon(
+                              Icons.flash_on_rounded,
+                              color: Color(0xFF3B4FD8),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Hızlı sınav oluştur',
+                                  style: TextStyle(
+                                    color: Color(0xFF0F1729),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Başlığı yazın, sınıfı seçin; sınav taslak olarak listeye insin.',
+                                  style: TextStyle(
+                                    color: Color(0xFF6B7A99),
+                                    fontSize: 12,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 22),
+                      AppTextField(
+                        controller: _quickTitleController,
+                        label: 'Sınav başlığı',
+                        hint: 'Örn. Matematik quiz',
+                        prefixIcon: Icons.title_rounded,
+                      ),
+                      const SizedBox(height: 14),
+                      AppTextField(
+                        controller: _quickSubjectController,
+                        label: 'Ders türü',
+                        hint: 'Örn. Fizik',
+                        prefixIcon: Icons.menu_book_outlined,
+                      ),
+                      const SizedBox(height: 14),
+                      const Text(
+                        'Sınıf',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF4E5E7C),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceVariant,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _quickClass,
+                            borderRadius: BorderRadius.circular(16),
+                            icon: const Icon(Icons.expand_more_rounded),
+                            items: classes
+                                .map(
+                                  (item) => DropdownMenuItem(
+                                    value: item,
+                                    child: Text(
+                                      item,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (value) {
+                              if (value == null) return;
+                              setState(() => _quickClass = value);
+                              modalSetState(() {});
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      const Text(
+                        'Planlanan tarih',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF4E5E7C),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      InkWell(
+                        onTap: () => _selectPlannedDate(ctx, modalSetState),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          height: 54,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceVariant,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.event_available_outlined,
+                                  color: Color(0xFF6B7A99)),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  plannedDateLabel,
+                                  style: const TextStyle(
+                                    color: Color(0xFF0F1729),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              const Icon(Icons.edit_calendar_rounded,
+                                  color: Color(0xFF6B7A99)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      AppGradientButton(
+                        text: 'Oluştur',
+                        isLoading: _isQuickCreating,
+                        onPressed: _isQuickCreating
+                            ? null
+                            : () async {
+                                final title = _quickTitleController.text.trim();
+                                if (title.isEmpty) {
+                                  showAppToast(
+                                    context,
+                                    message: 'Başlık gerekli',
+                                    destructive: true,
+                                  );
+                                  return;
+                                }
+                                final navigator = Navigator.of(ctx);
+                                final success = await _createQuickExam(
+                                  title,
+                                  _quickClass ?? classes.first,
+                                  _quickSubjectController.text.trim(),
+                                  _quickPlannedDate,
+                                  modalSetState,
+                                );
+                                if (!mounted || !success) return;
+                                if (navigator.canPop()) {
+                                  navigator.pop();
+                                }
+                              },
+                      ),
+                      SizedBox(height: safeBottom + 12),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _selectPlannedDate(
+    BuildContext context, [
+    void Function(void Function())? onSheetState,
+  ]) async {
+    final now = DateTime.now();
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: _quickPlannedDate,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 2),
+      helpText: 'Planlanan tarih',
+      locale: const Locale('tr', 'TR'),
+    );
+    if (selected != null) {
+      if (!mounted) return;
+      setState(() => _quickPlannedDate = selected);
+      onSheetState?.call(() {});
+    }
+  }
+
+  Future<bool> _createQuickExam(
+    String title,
+    String className,
+    String subject,
+    DateTime plannedDate,
+    void Function(void Function())? onSheetState,
+  ) async {
+    final classId = _classNameToId[className];
+    if (classId == null) {
+      showAppToast(
+        context,
+        message:
+            'Sınıf bulunamadı. Lütfen sınıf listesi yüklendikten sonra deneyin.',
+        destructive: true,
+      );
+      return false;
+    }
+
+    if (!mounted) return false;
+    setState(() => _isQuickCreating = true);
+    onSheetState?.call(() {});
+
+    final result = await sl<CreateExam>()(
+      CreateExamParams(classId: classId, title: title),
+    );
+
+    bool success = false;
+    result.fold(
+      (failure) {
+        showAppToast(
+          context,
+          message: failure.message,
+          destructive: true,
+        );
+      },
+      (exam) {
+        if (!mounted) return;
+        setState(() {
+          _allExams = [
+            _ExamListItem(
+              exam: exam,
+              className: className,
+              subject: subject.isEmpty ? null : subject,
+              plannedDate: plannedDate,
+            ),
+            ..._allExams,
+          ];
+          _quickTitleController.clear();
+          _quickSubjectController.clear();
+          _quickPlannedDate = DateTime.now();
+        });
+        success = true;
+        showAppToast(
+          context,
+          message: 'Sınav oluşturuldu',
+        );
+      },
+    );
+
+    if (!mounted) return success;
+    setState(() => _isQuickCreating = false);
+    onSheetState?.call(() {});
+    return success;
   }
 }
 
@@ -254,6 +582,9 @@ class _ExamOverviewCard extends StatelessWidget {
     final count = (item.exam.examId % 30) + 2;
     final total = count + 10;
     final date = DateFormat('d MMM', 'tr_TR').format(item.exam.createdAt);
+    final plannedFor = item.plannedDate != null
+        ? DateFormat('d MMM', 'tr_TR').format(item.plannedDate!)
+        : null;
 
     return InkWell(
       onTap: onTap,
@@ -314,6 +645,26 @@ class _ExamOverviewCard extends StatelessWidget {
                               fontWeight: FontWeight.w600),
                         ),
                       ),
+                      if (item.subject != null && item.subject!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 6),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEEF3FF),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              item.subject!,
+                              style: const TextStyle(
+                                color: Color(0xFF3B4FD8),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -338,6 +689,19 @@ class _ExamOverviewCard extends StatelessWidget {
                           style: const TextStyle(
                               color: Color(0xFF6B7A99), fontSize: 11)),
                       const SizedBox(width: 12),
+                      if (plannedFor != null) ...[
+                        const Icon(Icons.event_available_outlined,
+                            size: 12, color: Color(0xFF8A96B2)),
+                        const SizedBox(width: 6),
+                        Text(
+                          plannedFor,
+                          style: const TextStyle(
+                            color: Color(0xFF6B7A99),
+                            fontSize: 11,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
                       const Icon(Icons.groups_rounded,
                           size: 14, color: Color(0xFF8A96B2)),
                       const SizedBox(width: 4),
@@ -486,8 +850,12 @@ class _ExamListItem {
   const _ExamListItem({
     required this.exam,
     required this.className,
+    this.subject,
+    this.plannedDate,
   });
 
   final ExamEntity exam;
   final String className;
+  final String? subject;
+  final DateTime? plannedDate;
 }

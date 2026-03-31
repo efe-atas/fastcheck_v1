@@ -38,6 +38,33 @@ class AssignUserToSchoolEntity extends Equatable {
       [userId, fullName, email, role, classId, initialPassword];
 }
 
+class AdminProvisionedUserEntity extends Equatable {
+  final int userId;
+  final String fullName;
+  final String email;
+  final String role;
+  final int? schoolId;
+  final int? classId;
+  final String? initialPassword;
+
+  const AdminProvisionedUserEntity({
+    required this.userId,
+    required this.fullName,
+    required this.email,
+    required this.role,
+    this.schoolId,
+    this.classId,
+    this.initialPassword,
+  });
+
+  bool get hasInitialPassword =>
+      initialPassword != null && initialPassword!.isNotEmpty;
+
+  @override
+  List<Object?> get props =>
+      [userId, fullName, email, role, schoolId, classId, initialPassword];
+}
+
 class ParentStudentLinkEntity extends Equatable {
   final int linkId;
   final int parentUserId;
@@ -52,8 +79,7 @@ class ParentStudentLinkEntity extends Equatable {
   });
 
   @override
-  List<Object?> get props =>
-      [linkId, parentUserId, studentUserId, createdAt];
+  List<Object?> get props => [linkId, parentUserId, studentUserId, createdAt];
 }
 
 class AdminParentStudentViewEntity extends Equatable {

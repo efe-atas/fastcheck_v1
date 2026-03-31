@@ -99,6 +99,44 @@ public class StudentEducationService {
     }
 
     @Transactional(readOnly = true)
+    public EducationDtos.StudentDashboardSummary getStudentDashboardSummary() {
+        UserAccount student = accessService.requireRole(Role.ROLE_STUDENT);
+        if (student.getSchoolClass() == null) {
+            return new EducationDtos.StudentDashboardSummary(0, 0, 0, 0, List.of());
+        }
+        Long classId = student.getSchoolClass().getId();
+        long total = examRepository.countBySchoolClass_Id(classId);
+        long ready = examRepository.countBySchoolClass_IdAndStatus(classId, ExamStatus.READY);
+        long processing = examRepository.countBySchoolClass_IdAndStatus(classId, ExamStatus.PROCESSING);
+        long draft = examRepository.countBySchoolClass_IdAndStatus(classId, ExamStatus.DRAFT);
+
+        List<EducationDtos.StudentExamListItem> latest = examRepository
+                .findTop5BySchoolClass_IdOrderByCreatedAtDesc(classId)
+                .stream()
+                .map(this::toStudentExamList)
+                .toList();
+
+        return new EducationDtos.StudentDashboardSummary(
+                total,
+                ready,
+                processing,
+                draft,
+                latest
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public EducationDtos.ParentDashboardSummary getParentDashboardSummary() {
+        UserAccount parent = accessService.requireRole(Role.ROLE_PARENT);
+        List<EducationDtos.ParentStudentSummary> summaries = parentStudentLinkRepository
+                .findByParent_IdOrderByCreatedAtDesc(parent.getId())
+                .stream()
+                .map(link -> buildParentStudentSummary(link.getStudent()))
+                .toList();
+        return new EducationDtos.ParentDashboardSummary(summaries.size(), summaries);
+    }
+
+    @Transactional(readOnly = true)
     public List<EducationDtos.QuestionResponse> getQuestionsForParent(Long studentId, Long examId) {
         UserAccount parent = accessService.requireRole(Role.ROLE_PARENT);
         boolean linked = parentStudentLinkRepository.findByParent_Id(parent.getId())
@@ -133,5 +171,35 @@ public class StudentEducationService {
                         q.getConfidence()
                 ))
                 .toList();
+    }
+
+    private EducationDtos.StudentExamListItem toStudentExamList(Exam exam) {
+        return new EducationDtos.StudentExamListItem(
+                exam.getId(),
+                exam.getSchoolClass().getId(),
+                exam.getTitle(),
+                exam.getStatus().name(),
+                exam.getCreatedAt()
+        );
+    }
+
+    private EducationDtos.ParentStudentSummary buildParentStudentSummary(UserAccount student) {
+        Long classId = student.getSchoolClass() == null ? null : student.getSchoolClass().getId();
+        long total = classId == null ? 0 : examRepository.countBySchoolClass_Id(classId);
+        long ready = classId == null ? 0 : examRepository.countBySchoolClass_IdAndStatus(classId, ExamStatus.READY);
+        Exam latest = classId == null
+                ? null
+                : examRepository.findTop1BySchoolClass_IdOrderByCreatedAtDesc(classId).orElse(null);
+        return new EducationDtos.ParentStudentSummary(
+                student.getId(),
+                student.getFullName(),
+                student.getEmail(),
+                classId,
+                total,
+                ready,
+                latest == null ? null : latest.getTitle(),
+                latest == null ? null : latest.getStatus().name(),
+                latest == null ? null : latest.getCreatedAt()
+        );
     }
 }

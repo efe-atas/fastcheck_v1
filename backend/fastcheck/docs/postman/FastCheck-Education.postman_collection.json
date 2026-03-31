@@ -188,6 +188,16 @@
           }
         },
         {
+          "name": "Teacher Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{teacherToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/teacher/dashboard"
+          }
+        },
+        {
           "name": "Create Student In Class",
           "request": {
             "method": "POST",
@@ -287,6 +297,16 @@
       "name": "Student",
       "item": [
         {
+          "name": "Get Student Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{studentToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/student/dashboard"
+          }
+        },
+        {
           "name": "List Student Exams (Paged + Status Filter)",
           "request": {
             "method": "GET",
@@ -320,6 +340,16 @@
     {
       "name": "Parent",
       "item": [
+        {
+          "name": "Get Parent Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{parentToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/parent/dashboard"
+          }
+        },
         {
           "name": "Get Linked Student Exam Questions",
           "request": {

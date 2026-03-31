@@ -11,4 +11,6 @@ public interface OcrJobRepository extends JpaRepository<OcrJob, UUID> {
     Optional<OcrJob> findByJobIdAndUser_Id(UUID jobId, Long userId);
 
     List<OcrJob> findByExamImage_Exam_IdOrderByCreatedAtAsc(Long examId);
+
+    List<OcrJob> findTop5ByUser_IdOrderByCreatedAtDesc(Long userId);
 }

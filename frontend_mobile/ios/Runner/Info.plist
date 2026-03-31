@@ -28,6 +28,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Belge taramak ve OCR için kameraya erişim gerekir.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Uygulama, aynı ağdaki Fastcheck sunucusuna bağlanabilmek için yerel ağ erişimine ihtiyaç duyar.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

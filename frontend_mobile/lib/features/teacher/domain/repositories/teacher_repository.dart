@@ -5,6 +5,8 @@ import '../../../../core/error/failures.dart';
 import '../entities/teacher_entities.dart';
 
 abstract class TeacherRepository {
+  Future<Either<Failure, TeacherDashboardSummaryEntity>> getDashboardSummary();
+
   Future<Either<Failure, List<ClassEntity>>> getClasses();
 
   Future<Either<Failure, List<ExamEntity>>> getClassExams(int classId);
@@ -17,7 +19,6 @@ abstract class TeacherRepository {
   });
 
   Future<Either<Failure, ClassEntity>> createClass({
-    required int schoolId,
     required String className,
   });
 

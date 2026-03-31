@@ -18,20 +18,20 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class OcrProcessingService {
 
-    private final FastApiOcrClient fastApiOcrClient;
+    private final OcrClient ocrClient;
     private final ServiceTokenProvider serviceTokenProvider;
     private final UserRepository userRepository;
     private final OcrJobRepository ocrJobRepository;
     private final ObjectMapper objectMapper;
 
     public OcrProcessingService(
-            FastApiOcrClient fastApiOcrClient,
+            OcrClient ocrClient,
             ServiceTokenProvider serviceTokenProvider,
             UserRepository userRepository,
             OcrJobRepository ocrJobRepository,
             ObjectMapper objectMapper
     ) {
-        this.fastApiOcrClient = fastApiOcrClient;
+        this.ocrClient = ocrClient;
         this.serviceTokenProvider = serviceTokenProvider;
         this.userRepository = userRepository;
         this.ocrJobRepository = ocrJobRepository;
@@ -46,7 +46,7 @@ public class OcrProcessingService {
 
         String serviceJwt = serviceTokenProvider.createServiceToken();
 
-        OcrDtos.FastApiResponse apiResponse = fastApiOcrClient.extract(
+        OcrDtos.FastApiResponse apiResponse = ocrClient.extract(
                 new OcrDtos.FastApiRequest(request.imageUrl(), request.sourceId(), request.languageHint()),
                 serviceJwt,
                 user.getId(),

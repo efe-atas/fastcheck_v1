@@ -6,6 +6,20 @@ import '../../../../core/usecase/usecase.dart';
 import '../entities/student_entities.dart';
 import '../repositories/student_repository.dart';
 
+class GetStudentDashboardSummary
+    implements UseCase<StudentDashboardSummaryEntity, NoParams> {
+  final StudentRepository repository;
+
+  GetStudentDashboardSummary(this.repository);
+
+  @override
+  Future<Either<Failure, StudentDashboardSummaryEntity>> call(
+    NoParams params,
+  ) {
+    return repository.getDashboardSummary();
+  }
+}
+
 class GetStudentExams
     implements UseCase<PagedResult<StudentExamEntity>, GetStudentExamsParams> {
   final StudentRepository repository;

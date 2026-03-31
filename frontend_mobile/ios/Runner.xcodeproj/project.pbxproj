@@ -192,6 +192,7 @@
 			buildConfigurationList = 97C147051CF9000F007C117D /* Build configuration list for PBXNativeTarget "Runner" */;
 			buildPhases = (
 				FC576510C356A48578A1D67A /* [CP] Check Pods Manifest.lock */,
+				E0F4B56D2E23A0B6007FABCD /* Fastcheck | Dev IP */,
 				9740EEB61CF901F6004384FC /* Run Script */,
 				97C146EA1CF9000F007C117D /* Sources */,
 				97C146EB1CF9000F007C117D /* Frameworks */,
@@ -302,6 +303,21 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" embed_and_thin";
+		};
+		E0F4B56D2E23A0B6007FABCD /* Fastcheck | Dev IP */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Fastcheck | Dev IP";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -euo pipefail\ncd \"$PROJECT_DIR/..\"\nif [ -n \"${FLUTTER_ROOT:-}\" ]; then\n  FLUTTER_BIN=\"$FLUTTER_ROOT/bin/flutter\"\nelse\n  FLUTTER_BIN=\"`command -v flutter`\"\nfi\nif [ ! -x \"$FLUTTER_BIN\" ]; then\n  echo \"error: Could not locate flutter binary\" >&2\n  exit 1\nfi\n\"$FLUTTER_BIN\" pub get >/dev/null\n\"$FLUTTER_BIN\" pub run tool/update_dev_machine_ip.dart --platform=ios\n";
 		};
 		9740EEB61CF901F6004384FC /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;

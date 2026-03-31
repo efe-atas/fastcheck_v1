@@ -2,13 +2,14 @@ package com.fastcheck.fastcheck.education;
 
 import com.fastcheck.fastcheck.auth.ServiceTokenProvider;
 import com.fastcheck.fastcheck.common.ApiException;
-import com.fastcheck.fastcheck.ocr.FastApiOcrClient;
+import com.fastcheck.fastcheck.ocr.OcrClient;
 import com.fastcheck.fastcheck.ocr.OcrDtos;
 import com.fastcheck.fastcheck.ocr.OcrJob;
 import com.fastcheck.fastcheck.ocr.OcrJobRepository;
 import com.fastcheck.fastcheck.ocr.OcrJobStatus;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -23,26 +24,29 @@ public class ExamOcrQueueService {
     private final ExamImageRepository examImageRepository;
     private final OcrJobRepository ocrJobRepository;
     private final QuestionRepository questionRepository;
-    private final FastApiOcrClient fastApiOcrClient;
+    private final OcrClient ocrClient;
     private final ServiceTokenProvider serviceTokenProvider;
     private final ObjectMapper objectMapper;
+    private final ExamOcrEventPublisher eventPublisher;
 
     public ExamOcrQueueService(
             ExamRepository examRepository,
             ExamImageRepository examImageRepository,
             OcrJobRepository ocrJobRepository,
             QuestionRepository questionRepository,
-            FastApiOcrClient fastApiOcrClient,
+            OcrClient ocrClient,
             ServiceTokenProvider serviceTokenProvider,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            ExamOcrEventPublisher eventPublisher
     ) {
         this.examRepository = examRepository;
         this.examImageRepository = examImageRepository;
         this.ocrJobRepository = ocrJobRepository;
         this.questionRepository = questionRepository;
-        this.fastApiOcrClient = fastApiOcrClient;
+        this.ocrClient = ocrClient;
         this.serviceTokenProvider = serviceTokenProvider;
         this.objectMapper = objectMapper;
+        this.eventPublisher = eventPublisher;
     }
 
     @Async("ocrExecutor")
@@ -62,23 +66,28 @@ public class ExamOcrQueueService {
 
         questionRepository.deleteByExam_Id(examId);
         exam.setStatus(ExamStatus.PROCESSING);
+        publishEvent(exam, "QUEUED", "Exam queued for OCR");
 
         for (ExamImage image : images) {
             processImage(exam, image);
             if (image.getStatus() == ExamImageStatus.FAILED) {
                 exam.setStatus(ExamStatus.FAILED);
                 examRepository.save(exam);
+                publishEvent(exam, "FAILED", "OCR failed on page " + image.getPageOrder());
                 return;
             }
         }
 
         exam.setStatus(ExamStatus.READY);
         examRepository.save(exam);
+        publishEvent(exam, "COMPLETED", "OCR finished successfully");
     }
 
     private void processImage(Exam exam, ExamImage image) {
         image.setStatus(ExamImageStatus.PROCESSING);
         image.setErrorMessage(null);
+        image.setProcessingStartedAt(Instant.now());
+        image.setProcessingCompletedAt(null);
         examImageRepository.save(image);
 
         OcrJob job = new OcrJob();
@@ -94,7 +103,7 @@ public class ExamOcrQueueService {
         int maxRetries = 3;
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-                OcrDtos.FastApiResponse response = fastApiOcrClient.extract(
+                OcrDtos.FastApiResponse response = ocrClient.extract(
                         new OcrDtos.FastApiRequest(image.getImageUrl(), job.getSourceId(), "tr"),
                         serviceJwt,
                         exam.getTeacher().getId(),
@@ -106,7 +115,9 @@ public class ExamOcrQueueService {
                 ocrJobRepository.save(job);
                 persistQuestions(exam, image.getPageOrder(), response.result());
                 image.setStatus(ExamImageStatus.COMPLETED);
+                image.setProcessingCompletedAt(Instant.now());
                 examImageRepository.save(image);
+                publishEvent(exam, "PAGE_COMPLETED", "Page " + image.getPageOrder() + " completed");
                 return;
             } catch (ApiException exc) {
                 if (exc.getStatus() == HttpStatus.BAD_GATEWAY && attempt < maxRetries) {
@@ -127,6 +138,7 @@ public class ExamOcrQueueService {
     private void markFailed(ExamImage image, OcrJob job, String message, int retryCount) {
         image.setStatus(ExamImageStatus.FAILED);
         image.setErrorMessage(message.length() > 500 ? message.substring(0, 500) : message);
+        image.setProcessingCompletedAt(Instant.now());
         examImageRepository.save(image);
 
         job.setStatus(OcrJobStatus.FAILED);
@@ -169,5 +181,18 @@ public class ExamOcrQueueService {
                 questionRepository.save(question);
             }
         }
+    }
+
+    private void publishEvent(Exam exam, String type, String message) {
+        if (eventPublisher == null) {
+            return;
+        }
+        eventPublisher.publish(new ExamOcrEventPublisher.ExamOcrEvent(
+                exam.getId(),
+                exam.getTeacher().getId(),
+                type,
+                message,
+                Instant.now()
+        ));
     }
 }

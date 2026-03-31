@@ -12,6 +12,8 @@ abstract class StudentRemoteDataSource {
   });
 
   Future<List<QuestionModel>> getExamQuestions({required int examId});
+
+  Future<StudentDashboardSummaryModel> getDashboardSummary();
 }
 
 class StudentRemoteDataSourceImpl implements StudentRemoteDataSource {
@@ -62,6 +64,21 @@ class StudentRemoteDataSourceImpl implements StudentRemoteDataSource {
       return list
           .map((e) => QuestionModel.fromJson(e as Map<String, dynamic>))
           .toList();
+    } on DioException catch (e) {
+      throw ServerException(
+        message: _extractErrorMessage(e),
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
+
+  @override
+  Future<StudentDashboardSummaryModel> getDashboardSummary() async {
+    try {
+      final response = await dio.get(ApiConstants.studentDashboard);
+      return StudentDashboardSummaryModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
     } on DioException catch (e) {
       throw ServerException(
         message: _extractErrorMessage(e),

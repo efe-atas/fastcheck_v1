@@ -4,6 +4,15 @@ import '../../../../core/error/failures.dart';
 import '../entities/admin_entities.dart';
 
 abstract class AdminRepository {
+  Future<Either<Failure, AdminProvisionedUserEntity>> createUser({
+    required String fullName,
+    required String email,
+    required String role,
+    String? password,
+    int? schoolId,
+    int? classId,
+  });
+
   Future<Either<Failure, SchoolEntity>> createSchool(String schoolName);
 
   Future<Either<Failure, AssignUserToSchoolEntity>> assignUserToSchool(
@@ -39,7 +48,8 @@ abstract class AdminRepository {
     required String fileName,
   });
 
-  Future<Either<Failure, List<AdminParentStudentViewEntity>>> listParentStudents(
+  Future<Either<Failure, List<AdminParentStudentViewEntity>>>
+      listParentStudents(
     int parentUserId,
   );
 }

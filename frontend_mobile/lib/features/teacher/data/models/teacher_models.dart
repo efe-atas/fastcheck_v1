@@ -111,6 +111,8 @@ class ExamImageModel {
   final String imageUrl;
   final String status;
   final String? errorMessage;
+  final DateTime? processingStartedAt;
+  final DateTime? processingCompletedAt;
 
   const ExamImageModel({
     required this.imageId,
@@ -119,6 +121,8 @@ class ExamImageModel {
     required this.imageUrl,
     required this.status,
     this.errorMessage,
+    this.processingStartedAt,
+    this.processingCompletedAt,
   });
 
   factory ExamImageModel.fromJson(
@@ -135,6 +139,12 @@ class ExamImageModel {
           '',
       status: json['status'] as String? ?? 'PENDING',
       errorMessage: json['errorMessage'] as String?,
+      processingStartedAt: json['processingStartedAt'] != null
+          ? DateTime.tryParse(json['processingStartedAt'].toString())
+          : null,
+      processingCompletedAt: json['processingCompletedAt'] != null
+          ? DateTime.tryParse(json['processingCompletedAt'].toString())
+          : null,
     );
   }
 
@@ -146,6 +156,8 @@ class ExamImageModel {
       imageUrl: imageUrl,
       status: status,
       errorMessage: errorMessage,
+      processingStartedAt: processingStartedAt,
+      processingCompletedAt: processingCompletedAt,
     );
   }
 }
@@ -216,7 +228,8 @@ class ExamStatusModel {
       examId: json['examId'] as int,
       classId: json['classId'] as int,
       title: json['title'] as String,
-      examStatus: json['examStatus'] as String? ?? json['status'] as String? ?? 'DRAFT',
+      examStatus:
+          json['examStatus'] as String? ?? json['status'] as String? ?? 'DRAFT',
       images: (json['images'] as List<dynamic>?)
               ?.map(
                 (e) => ExamImageModel.fromJson(
@@ -241,6 +254,64 @@ class ExamStatusModel {
       examStatus: examStatus,
       images: images.map((e) => e.toEntity(parentExamId: examId)).toList(),
       ocrJobs: ocrJobs.map((e) => e.toEntity()).toList(),
+    );
+  }
+}
+
+class TeacherDashboardSummaryModel {
+  final int totalClasses;
+  final int totalExams;
+  final int processingExams;
+  final int readyExams;
+  final List<ExamModel> latestExams;
+  final List<OcrJobModel> recentOcrJobs;
+
+  const TeacherDashboardSummaryModel({
+    required this.totalClasses,
+    required this.totalExams,
+    required this.processingExams,
+    required this.readyExams,
+    required this.latestExams,
+    required this.recentOcrJobs,
+  });
+
+  factory TeacherDashboardSummaryModel.fromJson(Map<String, dynamic> json) {
+    List<dynamic> readList(String key) {
+      final raw = json[key];
+      if (raw is List<dynamic>) return raw;
+      return const [];
+    }
+
+    int readInt(String key) {
+      final value = json[key];
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      if (value is String) return int.tryParse(value) ?? 0;
+      return 0;
+    }
+
+    return TeacherDashboardSummaryModel(
+      totalClasses: readInt('totalClasses'),
+      totalExams: readInt('totalExams'),
+      processingExams: readInt('processingExams'),
+      readyExams: readInt('readyExams'),
+      latestExams: readList('latestExams')
+          .map((e) => ExamModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      recentOcrJobs: readList('recentOcrJobs')
+          .map((e) => OcrJobModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  TeacherDashboardSummaryEntity toEntity() {
+    return TeacherDashboardSummaryEntity(
+      totalClasses: totalClasses,
+      totalExams: totalExams,
+      processingExams: processingExams,
+      readyExams: readyExams,
+      latestExams: latestExams.map((e) => e.toEntity()).toList(),
+      recentOcrJobs: recentOcrJobs.map((e) => e.toEntity()).toList(),
     );
   }
 }

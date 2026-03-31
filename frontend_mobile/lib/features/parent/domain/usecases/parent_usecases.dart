@@ -16,6 +16,20 @@ class GetLinkedStudents extends UseCase<List<LinkedStudentEntity>, int> {
   }
 }
 
+class GetParentDashboardSummary
+    extends UseCase<ParentDashboardSummaryEntity, NoParams> {
+  final ParentRepository repository;
+
+  GetParentDashboardSummary(this.repository);
+
+  @override
+  Future<Either<Failure, ParentDashboardSummaryEntity>> call(
+    NoParams params,
+  ) {
+    return repository.getDashboardSummary();
+  }
+}
+
 class GetStudentExamQuestions
     extends UseCase<List<ParentQuestionEntity>, StudentExamParams> {
   final ParentRepository repository;

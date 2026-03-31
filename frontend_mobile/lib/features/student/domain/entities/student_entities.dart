@@ -49,3 +49,23 @@ class QuestionEntity extends Equatable {
         confidence,
       ];
 }
+
+class StudentDashboardSummaryEntity extends Equatable {
+  final int totalExams;
+  final int readyExams;
+  final int processingExams;
+  final int draftExams;
+  final List<StudentExamEntity> latestExams;
+
+  const StudentDashboardSummaryEntity({
+    required this.totalExams,
+    required this.readyExams,
+    required this.processingExams,
+    required this.draftExams,
+    required this.latestExams,
+  });
+
+  @override
+  List<Object?> get props =>
+      [totalExams, readyExams, processingExams, draftExams, latestExams];
+}

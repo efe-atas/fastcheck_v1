@@ -17,6 +17,7 @@ class AdminState extends Equatable {
   final AdminUserSummaryEntity? selectedParent;
   final AdminUserSummaryEntity? selectedStudent;
   final AdminBulkOperationEntity? lastBulkResult;
+  final AdminProvisionedUserEntity? lastProvisionedUser;
 
   const AdminState({
     this.isLoading = false,
@@ -32,6 +33,7 @@ class AdminState extends Equatable {
     this.selectedParent,
     this.selectedStudent,
     this.lastBulkResult,
+    this.lastProvisionedUser,
   });
 
   AdminState copyWith({
@@ -48,10 +50,12 @@ class AdminState extends Equatable {
     AdminUserSummaryEntity? selectedParent,
     AdminUserSummaryEntity? selectedStudent,
     AdminBulkOperationEntity? lastBulkResult,
+    AdminProvisionedUserEntity? lastProvisionedUser,
     bool clearError = false,
     bool clearSuccess = false,
     bool clearList = false,
     bool clearBulkResult = false,
+    bool clearProvisionedUser = false,
   }) {
     return AdminState(
       isLoading: isLoading ?? this.isLoading,
@@ -70,12 +74,14 @@ class AdminState extends Equatable {
       selectedStudent: selectedStudent ?? this.selectedStudent,
       lastBulkResult:
           clearBulkResult ? null : (lastBulkResult ?? this.lastBulkResult),
+      lastProvisionedUser: clearProvisionedUser
+          ? null
+          : (lastProvisionedUser ?? this.lastProvisionedUser),
     );
   }
 
   @override
-  List<Object?> get props =>
-      [
+  List<Object?> get props => [
         isLoading,
         errorMessage,
         lastSuccessMessage,
@@ -89,12 +95,14 @@ class AdminState extends Equatable {
         selectedParent,
         selectedStudent,
         lastBulkResult,
+        lastProvisionedUser,
       ];
 }
 
 class AdminCubit extends Cubit<AdminState> {
   final CreateSchool createSchool;
   final AssignUserToSchoolUc assignUserToSchool;
+  final CreateAdminUserUc createAdminUser;
   final LinkParentStudentUc linkParentStudent;
   final ListParentStudentsAdmin listParentStudents;
   final SearchAdminUsers searchAdminUsers;
@@ -105,6 +113,7 @@ class AdminCubit extends Cubit<AdminState> {
   AdminCubit({
     required this.createSchool,
     required this.assignUserToSchool,
+    required this.createAdminUser,
     required this.linkParentStudent,
     required this.listParentStudents,
     required this.searchAdminUsers,
@@ -118,6 +127,7 @@ class AdminCubit extends Cubit<AdminState> {
       clearError: true,
       clearSuccess: true,
       clearBulkResult: true,
+      clearProvisionedUser: true,
     ));
   }
 
@@ -138,8 +148,14 @@ class AdminCubit extends Cubit<AdminState> {
   }
 
   Future<void> onCreateSchool(String schoolName) async {
-    emit(state.copyWith(isLoading: true, clearError: true, clearSuccess: true));
-    final result = await createSchool(CreateSchoolParams(schoolName: schoolName));
+    emit(state.copyWith(
+      isLoading: true,
+      clearError: true,
+      clearSuccess: true,
+      clearProvisionedUser: true,
+    ));
+    final result =
+        await createSchool(CreateSchoolParams(schoolName: schoolName));
     result.fold(
       (f) => emit(state.copyWith(
         isLoading: false,
@@ -150,6 +166,45 @@ class AdminCubit extends Cubit<AdminState> {
         lastSuccessMessage:
             'Okul oluşturuldu: ${school.schoolName} (id: ${school.schoolId})',
       )),
+    );
+  }
+
+  Future<void> onCreateUser({
+    required String fullName,
+    required String email,
+    required String role,
+    String? password,
+    int? schoolId,
+    int? classId,
+  }) async {
+    emit(state.copyWith(
+      isLoading: true,
+      clearError: true,
+      clearSuccess: true,
+      clearProvisionedUser: true,
+    ));
+    final result = await createAdminUser(
+      CreateAdminUserParams(
+        fullName: fullName,
+        email: email,
+        role: role,
+        password: password?.isEmpty == true ? null : password,
+        schoolId: schoolId,
+        classId: classId,
+      ),
+    );
+    result.fold(
+      (f) => emit(state.copyWith(isLoading: false, errorMessage: f.message)),
+      (user) {
+        final message = user.hasInitialPassword
+            ? 'Kullanıcı oluşturuldu: ${user.fullName} • Geçici şifre: ${user.initialPassword}'
+            : 'Kullanıcı oluşturuldu: ${user.fullName}';
+        emit(state.copyWith(
+          isLoading: false,
+          lastProvisionedUser: user,
+          lastSuccessMessage: message,
+        ));
+      },
     );
   }
 
@@ -174,7 +229,12 @@ class AdminCubit extends Cubit<AdminState> {
   }
 
   Future<void> onAssignUser(int userId, int schoolId) async {
-    emit(state.copyWith(isLoading: true, clearError: true, clearSuccess: true));
+    emit(state.copyWith(
+      isLoading: true,
+      clearError: true,
+      clearSuccess: true,
+      clearProvisionedUser: true,
+    ));
     final result = await assignUserToSchool(
       AssignUserToSchoolParams(userId: userId, schoolId: schoolId),
     );
@@ -229,7 +289,12 @@ class AdminCubit extends Cubit<AdminState> {
   }
 
   Future<void> onLinkParentStudent(int parentUserId, int studentUserId) async {
-    emit(state.copyWith(isLoading: true, clearError: true, clearSuccess: true));
+    emit(state.copyWith(
+      isLoading: true,
+      clearError: true,
+      clearSuccess: true,
+      clearProvisionedUser: true,
+    ));
     final result = await linkParentStudent(
       LinkParentStudentParams(
         parentUserId: parentUserId,
@@ -240,8 +305,7 @@ class AdminCubit extends Cubit<AdminState> {
       (f) => emit(state.copyWith(isLoading: false, errorMessage: f.message)),
       (link) => emit(state.copyWith(
         isLoading: false,
-        lastSuccessMessage:
-            'Bağlantı oluşturuldu (linkId: ${link.linkId})',
+        lastSuccessMessage: 'Bağlantı oluşturuldu (linkId: ${link.linkId})',
       )),
     );
   }
@@ -265,6 +329,7 @@ class AdminCubit extends Cubit<AdminState> {
       clearError: true,
       clearSuccess: true,
       clearBulkResult: true,
+      clearProvisionedUser: true,
     ));
     final result = await bulkAssignUsersToSchools(
       BulkCsvUploadParams(fileBytes: fileBytes, fileName: fileName),
@@ -289,6 +354,7 @@ class AdminCubit extends Cubit<AdminState> {
       clearError: true,
       clearSuccess: true,
       clearBulkResult: true,
+      clearProvisionedUser: true,
     ));
     final result = await bulkLinkParentStudents(
       BulkCsvUploadParams(fileBytes: fileBytes, fileName: fileName),
@@ -310,6 +376,7 @@ class AdminCubit extends Cubit<AdminState> {
       clearError: true,
       clearSuccess: true,
       clearList: true,
+      clearProvisionedUser: true,
     ));
     final result = await listParentStudents(parentUserId);
     result.fold(

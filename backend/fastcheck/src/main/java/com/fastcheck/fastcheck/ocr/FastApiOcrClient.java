@@ -1,6 +1,7 @@
 package com.fastcheck.fastcheck.ocr;
 
 import com.fastcheck.fastcheck.common.ApiException;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -8,7 +9,8 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClient;
 
 @Component
-public class FastApiOcrClient {
+@Profile("!mock-ocr")
+public class FastApiOcrClient implements OcrClient {
 
     private final RestClient restClient;
 
@@ -16,6 +18,7 @@ public class FastApiOcrClient {
         this.restClient = fastApiRestClient;
     }
 
+    @Override
     public OcrDtos.FastApiResponse extract(OcrDtos.FastApiRequest request, String serviceJwt, Long userId, String requestId) {
         try {
             return restClient.post()

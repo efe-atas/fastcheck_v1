@@ -15,6 +15,18 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
 
     long countBySchoolClass_Id(Long classId);
 
+    long countBySchoolClass_IdAndStatus(Long classId, ExamStatus status);
+
+    long countByTeacher_Id(Long teacherId);
+
+    long countByTeacher_IdAndStatus(Long teacherId, ExamStatus status);
+
+    List<Exam> findTop5ByTeacher_IdOrderByCreatedAtDesc(Long teacherId);
+
+    List<Exam> findTop5BySchoolClass_IdOrderByCreatedAtDesc(Long classId);
+
+    Optional<Exam> findTop1BySchoolClass_IdOrderByCreatedAtDesc(Long classId);
+
     Page<Exam> findBySchoolClass_IdOrderByCreatedAtDesc(Long classId, Pageable pageable);
 
     Page<Exam> findBySchoolClass_IdAndStatusOrderByCreatedAtDesc(Long classId, ExamStatus status, Pageable pageable);

@@ -12,6 +12,19 @@ class StudentRepositoryImpl implements StudentRepository {
   StudentRepositoryImpl({required this.remoteDataSource});
 
   @override
+  Future<Either<Failure, StudentDashboardSummaryEntity>>
+      getDashboardSummary() async {
+    try {
+      final model = await remoteDataSource.getDashboardSummary();
+      return Right(model.toEntity());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.statusCode));
+    } catch (e) {
+      return const Left(ServerFailure('Özet bilgileri alınamadı'));
+    }
+  }
+
+  @override
   Future<Either<Failure, PagedResult<StudentExamEntity>>> getStudentExams({
     required int page,
     required int size,

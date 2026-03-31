@@ -4,6 +4,8 @@ import '../../../../core/error/failures.dart';
 import '../entities/student_entities.dart';
 
 abstract class StudentRepository {
+  Future<Either<Failure, StudentDashboardSummaryEntity>> getDashboardSummary();
+
   Future<Either<Failure, PagedResult<StudentExamEntity>>> getStudentExams({
     required int page,
     required int size,

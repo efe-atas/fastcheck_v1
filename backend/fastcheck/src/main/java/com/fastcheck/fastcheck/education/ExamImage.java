@@ -45,6 +45,10 @@ public class ExamImage {
     @Column(nullable = false)
     private Instant createdAt = Instant.now();
 
+    private Instant processingStartedAt;
+
+    private Instant processingCompletedAt;
+
     public Long getId() {
         return id;
     }
@@ -91,5 +95,21 @@ public class ExamImage {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public Instant getProcessingStartedAt() {
+        return processingStartedAt;
+    }
+
+    public void setProcessingStartedAt(Instant processingStartedAt) {
+        this.processingStartedAt = processingStartedAt;
+    }
+
+    public Instant getProcessingCompletedAt() {
+        return processingCompletedAt;
+    }
+
+    public void setProcessingCompletedAt(Instant processingCompletedAt) {
+        this.processingCompletedAt = processingCompletedAt;
     }
 }

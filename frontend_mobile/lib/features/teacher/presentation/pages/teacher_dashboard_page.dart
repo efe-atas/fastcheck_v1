@@ -7,6 +7,7 @@ import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../domain/entities/teacher_entities.dart';
 import '../bloc/classes_bloc.dart';
+import '../bloc/teacher_dashboard_cubit.dart';
 
 class TeacherDashboardPage extends StatelessWidget {
   const TeacherDashboardPage({super.key});
@@ -18,172 +19,218 @@ class TeacherDashboardPage extends StatelessWidget {
       body: RefreshIndicator(
         color: const Color(0xFF3B4FD8),
         onRefresh: () async {
-          final bloc = context.read<ClassesBloc>();
-          bloc.add(const LoadClasses());
-          await bloc.stream.firstWhere((s) => s is! ClassesLoading);
+          final classesBloc = context.read<ClassesBloc>();
+          final dashboardCubit = context.read<TeacherDashboardCubit>();
+          classesBloc.add(const LoadClasses());
+          await Future.wait([
+            classesBloc.stream.firstWhere((s) => s is! ClassesLoading),
+            dashboardCubit.refreshDashboard(),
+          ]);
         },
-        child: BlocBuilder<ClassesBloc, ClassesState>(
-          builder: (context, state) {
-            final classes =
-                state is ClassesLoaded ? state.classes : <ClassEntity>[];
-            final classCount = classes.length;
-            final examCount =
-                classes.fold<int>(0, (sum, item) => sum + item.examCount);
+        child: BlocBuilder<TeacherDashboardCubit, TeacherDashboardState>(
+          builder: (context, dashboardState) {
+            return BlocBuilder<ClassesBloc, ClassesState>(
+              builder: (context, classesState) {
+                final classes = classesState is ClassesLoaded
+                    ? classesState.classes
+                    : <ClassEntity>[];
+                final summary = dashboardState is TeacherDashboardLoaded
+                    ? dashboardState.summary
+                    : null;
+                final isDashboardLoading =
+                    dashboardState is TeacherDashboardLoading ||
+                        dashboardState is TeacherDashboardInitial;
+                final dashboardError = dashboardState is TeacherDashboardError
+                    ? dashboardState.message
+                    : null;
+                final latestExams =
+                    summary?.latestExams ?? const <ExamEntity>[];
+                final recentJobs =
+                    summary?.recentOcrJobs ?? const <OcrJobEntity>[];
+                final visibleExams = latestExams.take(3).toList();
+                final visibleJobs = recentJobs.take(5).toList();
 
-            return ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.zero,
-              children: [
-                _DashboardHero(
-                  classes: classCount,
-                  exams: examCount,
-                  onLogout: () =>
-                      context.read<AuthBloc>().add(const AuthLogoutRequested()),
-                ),
-                if (state is ClassesError)
-                  _DashboardErrorCard(
-                    message: state.message,
-                    onRetry: () =>
-                        context.read<ClassesBloc>().add(const LoadClasses()),
-                  ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                  child: _SectionTitle(
-                    title: 'Yaklaşan Sınavlar',
-                    onTapAll: () => context.go('/teacher/exams'),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    children: [
-                      _UpcomingExamTile(
-                        title: 'Matematik Yazılı',
-                        classCode: '9-A',
-                        dateLabel: '15 Ocak 2024',
-                        badgeText: 'Planlandı',
-                        badgeColor: Color(0xFF3B4FD8),
-                        badgeBgColor: Color(0xFFE9EEFF),
-                        iconColor: Color(0xFF5168F5),
-                      ),
-                      SizedBox(height: 10),
-                      _UpcomingExamTile(
-                        title: 'Türkçe Yazılı',
-                        classCode: '10-B',
-                        dateLabel: '17 Ocak 2024',
-                        badgeText: 'OCR Bekleniyor',
-                        badgeColor: Color(0xFF0BBFB0),
-                        badgeBgColor: Color(0xFFE3F8F5),
-                        iconColor: Color(0xFF14C6B7),
-                      ),
-                      SizedBox(height: 10),
-                      _UpcomingExamTile(
-                        title: 'Fen Bilimleri',
-                        classCode: '8-C',
-                        dateLabel: '18 Ocak 2024',
-                        badgeText: 'Tamamlandı',
-                        badgeColor: Color(0xFF19A56E),
-                        badgeBgColor: Color(0xFFE7F7EF),
-                        iconColor: Color(0xFF31B580),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-                  child: _SectionTitle(
-                    title: 'Son OCR İşlemleri',
-                    onTapAll: () => context.go('/teacher/ocr'),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  height: 205,
-                  child: ListView(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      _OcrPreviewCard(
-                        title: 'Matematik 9-A',
-                        students: '28 öğrenci',
-                        progress: 0.67,
-                        progressText: '%67 tamamlandı',
-                        status: 'İşleniyor',
-                        statusColor: Color(0xFF0BBFB0),
-                        imageUrl:
-                            'https://www.figma.com/api/mcp/asset/e7c9e96d-f0a2-4878-b694-6d46113b9171',
-                      ),
-                      SizedBox(width: 12),
-                      _OcrPreviewCard(
-                        title: 'Türkçe 10-B',
-                        students: '32 öğrenci',
-                        progress: 0.20,
-                        progressText: '%20 tamamlandı',
-                        status: 'Kuyrukta',
-                        statusColor: Color(0xFF3D50DA),
-                        imageUrl:
-                            'https://www.figma.com/api/mcp/asset/b041ebc8-6cfc-4b5f-9a6d-9210f18baf92',
-                      ),
-                    ],
-                  ),
-                ),
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 18, 16, 0),
-                  child: Text(
-                    'Hızlı İşlemler',
-                    style: TextStyle(
-                      color: Color(0xFF0F1729),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                return ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  children: [
+                    _DashboardHero(
+                      classesValue: summary != null
+                          ? '${summary.totalClasses}'
+                          : (isDashboardLoading ? '—' : '0'),
+                      processingValue: summary != null
+                          ? '${summary.processingExams}'
+                          : (isDashboardLoading ? '—' : '0'),
+                      readyValue: summary != null
+                          ? '${summary.readyExams}'
+                          : (isDashboardLoading ? '—' : '0'),
+                      onLogout: () => context
+                          .read<AuthBloc>()
+                          .add(const AuthLogoutRequested()),
                     ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _QuickActionButton(
-                        icon: Icons.apartment_rounded,
-                        label: 'Sınıf Oluştur',
-                        onTap: () => _navigateToCreateClassAndReload(context),
+                    if (dashboardError != null)
+                      _DashboardErrorCard(
+                        message: dashboardError,
+                        onRetry: () => context
+                            .read<TeacherDashboardCubit>()
+                            .loadDashboard(),
                       ),
-                      _QuickActionButton(
-                        icon: Icons.note_alt_outlined,
-                        label: 'Sınav Ekle',
-                        onTap: () {
-                          if (classes.isNotEmpty) {
-                            context.push(
-                                '/teacher/classes/${classes.first.classId}/exams/create');
-                            return;
-                          }
-                          _navigateToCreateClassAndReload(context);
-                        },
+                    if (classesState is ClassesError)
+                      _DashboardErrorCard(
+                        message: classesState.message,
+                        onRetry: () => context
+                            .read<ClassesBloc>()
+                            .add(const LoadClasses()),
                       ),
-                      _QuickActionButton(
-                        icon: Icons.upload_rounded,
-                        label: 'Kağıt Yükle',
-                        selected: true,
-                        onTap: () => context.go('/teacher/ocr'),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: _SectionTitle(
+                        title: 'Yaklaşan Sınavlar',
+                        onTapAll: () => context.go('/teacher/exams'),
                       ),
-                      _QuickActionButton(
-                        icon: Icons.person_add_alt_1_rounded,
-                        label: 'Öğrenci Ekle',
-                        onTap: () {
-                          if (classes.isNotEmpty) {
-                            context.push(
-                                '/teacher/classes/${classes.first.classId}/students/add');
-                            return;
-                          }
-                          _navigateToCreateClassAndReload(context);
-                        },
+                    ),
+                    const SizedBox(height: 10),
+                    if (isDashboardLoading)
+                      const _SectionLoadingIndicator()
+                    else if (visibleExams.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: _DashboardEmptyCard(
+                          message: 'Henüz planlanmış sınav bulunmuyor.',
+                        ),
+                      )
+                    else
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(
+                          children: visibleExams.map(
+                            (exam) {
+                              final statusUi = _mapExamStatus(exam.status);
+                              return Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 5),
+                                child: _UpcomingExamTile(
+                                  title: exam.title,
+                                  classCode: 'Sınıf #${exam.classId}',
+                                  dateLabel: DateFormat('d MMMM y', 'tr_TR')
+                                      .format(exam.createdAt),
+                                  badgeText: statusUi.label,
+                                  badgeColor: statusUi.color,
+                                  badgeBgColor: statusUi.background,
+                                  iconColor: statusUi.iconColor,
+                                ),
+                              );
+                            },
+                          ).toList(),
+                        ),
                       ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 96 + MediaQuery.paddingOf(context).bottom),
-              ],
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+                      child: _SectionTitle(
+                        title: 'Son OCR İşlemleri',
+                        onTapAll: () => context.go('/teacher/ocr'),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    if (isDashboardLoading)
+                      const SizedBox(
+                        height: 120,
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (visibleJobs.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: _DashboardEmptyCard(
+                          message:
+                              'Hiç OCR kaydı yok. İlk sınavını yüklemeyi deneyebilirsin.',
+                        ),
+                      )
+                    else
+                      SizedBox(
+                        height: 205,
+                        child: ListView.separated(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          scrollDirection: Axis.horizontal,
+                          itemBuilder: (context, index) {
+                            final job = visibleJobs[index];
+                            final statusUi = _mapOcrStatus(job.status);
+                            final subtitle = job.createdAt != null
+                                ? 'Oluşturma: ${DateFormat('d MMM HH:mm', 'tr_TR').format(job.createdAt!)}'
+                                : 'Tekrar sayısı: ${job.retryCount}';
+                            return _OcrPreviewCard(
+                              title: 'İş ${_shortenId(job.jobId)}',
+                              subtitle: subtitle,
+                              progress: statusUi.progress,
+                              progressText: statusUi.progressLabel,
+                              status: statusUi.label,
+                              statusColor: statusUi.color,
+                              imageUrl: statusUi.imageUrl,
+                            );
+                          },
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(width: 12),
+                          itemCount: visibleJobs.length,
+                        ),
+                      ),
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(16, 18, 16, 0),
+                      child: Text(
+                        'Hızlı İşlemler',
+                        style: TextStyle(
+                          color: Color(0xFF0F1729),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _QuickActionButton(
+                            icon: Icons.apartment_rounded,
+                            label: 'Sınıf Oluştur',
+                            onTap: () =>
+                                _navigateToCreateClassAndReload(context),
+                          ),
+                          _QuickActionButton(
+                            icon: Icons.note_alt_outlined,
+                            label: 'Sınav Ekle',
+                            onTap: () {
+                              if (classes.isNotEmpty) {
+                                context.push(
+                                    '/teacher/classes/${classes.first.classId}/exams/create');
+                                return;
+                              }
+                              _navigateToCreateClassAndReload(context);
+                            },
+                          ),
+                          _QuickActionButton(
+                            icon: Icons.upload_rounded,
+                            label: 'Kağıt Yükle',
+                            selected: true,
+                            onTap: () => context.go('/teacher/ocr'),
+                          ),
+                          _QuickActionButton(
+                            icon: Icons.person_add_alt_1_rounded,
+                            label: 'Öğrenci Ekle',
+                            onTap: () {
+                              if (classes.isNotEmpty) {
+                                context.push(
+                                    '/teacher/classes/${classes.first.classId}/students/add');
+                                return;
+                              }
+                              _navigateToCreateClassAndReload(context);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 96 + MediaQuery.paddingOf(context).bottom),
+                  ],
+                );
+              },
             );
           },
         ),
@@ -202,13 +249,15 @@ class TeacherDashboardPage extends StatelessWidget {
 
 class _DashboardHero extends StatelessWidget {
   const _DashboardHero({
-    required this.classes,
-    required this.exams,
+    required this.classesValue,
+    required this.processingValue,
+    required this.readyValue,
     required this.onLogout,
   });
 
-  final int classes;
-  final int exams;
+  final String classesValue;
+  final String processingValue;
+  final String readyValue;
   final VoidCallback onLogout;
 
   @override
@@ -405,7 +454,7 @@ class _DashboardHero extends StatelessWidget {
                       height: metricCardHeight,
                       child: _HeroMetric(
                         icon: Icons.apartment_rounded,
-                        value: '$classes',
+                        value: classesValue,
                         label: 'Aktif Sınıflar',
                       ),
                     ),
@@ -416,7 +465,7 @@ class _DashboardHero extends StatelessWidget {
                       height: metricCardHeight,
                       child: _HeroMetric(
                         icon: Icons.timelapse_rounded,
-                        value: '${(exams / 2).ceil()}',
+                        value: processingValue,
                         label: 'Bekleyen OCR',
                         badgeDot: true,
                       ),
@@ -428,7 +477,7 @@ class _DashboardHero extends StatelessWidget {
                       height: metricCardHeight,
                       child: _HeroMetric(
                         icon: Icons.calendar_month_rounded,
-                        value: '${(exams / 3).ceil()}',
+                        value: readyValue,
                         label: 'Bu Hafta Sınavlar',
                       ),
                     ),
@@ -665,7 +714,7 @@ class _UpcomingExamTile extends StatelessWidget {
 class _OcrPreviewCard extends StatelessWidget {
   const _OcrPreviewCard({
     required this.title,
-    required this.students,
+    required this.subtitle,
     required this.progress,
     required this.progressText,
     required this.status,
@@ -674,7 +723,7 @@ class _OcrPreviewCard extends StatelessWidget {
   });
 
   final String title;
-  final String students;
+  final String subtitle;
   final double progress;
   final String progressText;
   final String status;
@@ -707,20 +756,13 @@ class _OcrPreviewCard extends StatelessWidget {
                 SizedBox(
                   width: 178,
                   height: 95,
-                  child: Image.network(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: const Color(0xFFE9EEF8),
-                      child: const Center(
-                        child: Icon(
-                          Icons.image_not_supported_outlined,
-                          color: Color(0xFF8A96B2),
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ),
+                  child: imageUrl.isNotEmpty
+                      ? Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _imageFallback(),
+                        )
+                      : _imageFallback(),
                 ),
                 Positioned(
                   right: 8,
@@ -756,7 +798,7 @@ class _OcrPreviewCard extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         height: 1)),
                 const SizedBox(height: 6),
-                Text(students,
+                Text(subtitle,
                     style: const TextStyle(
                         color: Color(0xFF6B7A99), fontSize: 11)),
                 const SizedBox(height: 10),
@@ -778,6 +820,19 @@ class _OcrPreviewCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _imageFallback() {
+    return Container(
+      color: const Color(0xFFE9EEF8),
+      child: const Center(
+        child: Icon(
+          Icons.image_not_supported_outlined,
+          color: Color(0xFF8A96B2),
+          size: 20,
+        ),
       ),
     );
   }
@@ -874,4 +929,170 @@ class _DashboardErrorCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _DashboardEmptyCard extends StatelessWidget {
+  const _DashboardEmptyCard({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFDDE3F0)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline, color: Color(0xFF6B7A99)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: Color(0xFF6B7A99),
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionLoadingIndicator extends StatelessWidget {
+  const _SectionLoadingIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      height: 90,
+      child: Center(
+        child: CircularProgressIndicator(
+          strokeWidth: 2.5,
+          color: Color(0xFF3B4FD8),
+        ),
+      ),
+    );
+  }
+}
+
+_ExamStatusUi _mapExamStatus(String? raw) {
+  final status = raw?.toUpperCase() ?? '';
+  switch (status) {
+    case 'READY':
+      return const _ExamStatusUi(
+        label: 'Hazır',
+        color: Color(0xFF19A56E),
+        background: Color(0xFFE7F7EF),
+        iconColor: Color(0xFF31B580),
+      );
+    case 'PROCESSING':
+      return const _ExamStatusUi(
+        label: 'OCR Sürüyor',
+        color: Color(0xFF0BBFB0),
+        background: Color(0xFFE3F8F5),
+        iconColor: Color(0xFF14C6B7),
+      );
+    case 'FAILED':
+      return const _ExamStatusUi(
+        label: 'Hata',
+        color: AppColors.error,
+        background: AppColors.errorLight,
+        iconColor: AppColors.error,
+      );
+    case 'DRAFT':
+    default:
+      return const _ExamStatusUi(
+        label: 'Planlandı',
+        color: Color(0xFF3B4FD8),
+        background: Color(0xFFE9EEFF),
+        iconColor: Color(0xFF5168F5),
+      );
+  }
+}
+
+class _ExamStatusUi {
+  final String label;
+  final Color color;
+  final Color background;
+  final Color iconColor;
+
+  const _ExamStatusUi({
+    required this.label,
+    required this.color,
+    required this.background,
+    required this.iconColor,
+  });
+}
+
+const _ocrCompletedImage =
+    'https://www.figma.com/api/mcp/asset/e7c9e96d-f0a2-4878-b694-6d46113b9171';
+const _ocrProcessingImage =
+    'https://www.figma.com/api/mcp/asset/b041ebc8-6cfc-4b5f-9a6d-9210f18baf92';
+const _ocrPendingImage =
+    'https://www.figma.com/api/mcp/asset/577ed5ac-0be7-4457-aae3-aa419800500a';
+
+_OcrStatusUi _mapOcrStatus(String? raw) {
+  final status = raw?.toUpperCase() ?? '';
+  switch (status) {
+    case 'COMPLETED':
+      return const _OcrStatusUi(
+        label: 'Tamamlandı',
+        color: Color(0xFF19A56E),
+        progress: 1,
+        progressLabel: '%100 tamamlandı',
+        imageUrl: _ocrCompletedImage,
+      );
+    case 'PROCESSING':
+      return const _OcrStatusUi(
+        label: 'İşleniyor',
+        color: Color(0xFF0BBFB0),
+        progress: 0.65,
+        progressLabel: '%65 tamamlandı',
+        imageUrl: _ocrProcessingImage,
+      );
+    case 'FAILED':
+      return const _OcrStatusUi(
+        label: 'Hata',
+        color: AppColors.error,
+        progress: 1,
+        progressLabel: 'İşleme hatası',
+        imageUrl: _ocrProcessingImage,
+      );
+    case 'PENDING':
+    default:
+      return const _OcrStatusUi(
+        label: 'Kuyrukta',
+        color: Color(0xFF3B4FD8),
+        progress: 0.15,
+        progressLabel: '%15 sırada',
+        imageUrl: _ocrPendingImage,
+      );
+  }
+}
+
+class _OcrStatusUi {
+  final String label;
+  final Color color;
+  final double progress;
+  final String progressLabel;
+  final String imageUrl;
+
+  const _OcrStatusUi({
+    required this.label,
+    required this.color,
+    required this.progress,
+    required this.progressLabel,
+    required this.imageUrl,
+  });
+}
+
+String _shortenId(String value) {
+  if (value.isEmpty) return '---';
+  return value.length <= 8 ? value : value.substring(0, 8);
 }

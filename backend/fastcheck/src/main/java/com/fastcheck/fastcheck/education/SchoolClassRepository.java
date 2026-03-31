@@ -7,4 +7,6 @@ public interface SchoolClassRepository extends JpaRepository<SchoolClass, Long> 
     List<SchoolClass> findByTeacher_Id(Long teacherId);
 
     List<SchoolClass> findBySchool_Id(Long schoolId);
+
+    java.util.Optional<SchoolClass> findByIdAndSchool_Id(Long classId, Long schoolId);
 }

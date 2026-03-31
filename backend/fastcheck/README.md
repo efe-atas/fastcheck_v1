@@ -41,6 +41,8 @@ Bu dokuman son eklenen egitim akis endpointlerini ozetler.
   - Sinav goruntulerini yukler, asenkron OCR tetikler.
 - `GET /v1/teacher/exams/{examId}`
   - Sinav status + image status + OCR job status izleme.
+- `GET /v1/teacher/dashboard`
+  - Ogretmenin sinif/sinav toplamlari, son OCR durumlari ve eylem onerilerini dondurur.
 
 ## Student Endpoints
 
@@ -49,11 +51,17 @@ Bu dokuman son eklenen egitim akis endpointlerini ozetler.
   - Query: `page` (default `0`), `size` (default `20`), `examStatus` (opsiyonel: `DRAFT|PROCESSING|READY|FAILED`).
 - `GET /v1/student/exams/{examId}/questions`
   - Sinav sorulari.
+- `GET /v1/student/dashboard`
+  - Toplam/durum bazli sinav sayilari ile son 5 sinavin basligi.
 
 ## Parent Endpoints
 
 - `GET /v1/parent/students/{studentId}/exams/{examId}/questions`
   - Bagli ogrencinin sinav sorulari.
+- `GET /v1/admin/parents/{parentUserId}/students`
+  - `ROLE_PARENT` kendi `parentUserId` degeri ile cagirdiginda kendi ogrencilerini gorebilir.
+- `GET /v1/parent/dashboard`
+  - Veliye bagli ogrencilerin ozet bilgisi (sinav toplamlari, son sinav durumu) ve kart listesi.
 
 ## File Endpoint
 
@@ -65,6 +73,8 @@ Bu dokuman son eklenen egitim akis endpointlerini ozetler.
 - OCR akisi asenkron calisir ve `ExamStatus` ile takip edilir.
 - `GET /v1/teacher/exams/{examId}` endpointi OCR job retry/error durumlarini da dondurur.
 - Varsayilan local upload yolu: `app.files.storage-path` (`uploads/exams`).
+- `mock-ocr` Spring profili ile (`SPRING_PROFILES_ACTIVE=mock-ocr`) FastAPI baglantisi olmadan demo OCR sonucu uretebilirsiniz.
+- H2 demo verisi icin `docs/seeds/h2-demo-data.sql` dosyasini uygulayabilirsiniz.
 
 ## API Collections
 

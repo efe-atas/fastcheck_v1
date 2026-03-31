@@ -19,6 +19,7 @@ import '../../features/teacher/domain/usecases/teacher_usecases.dart';
 import '../../features/teacher/presentation/bloc/classes_bloc.dart';
 import '../../features/teacher/presentation/bloc/class_detail_bloc.dart';
 import '../../features/teacher/presentation/bloc/exam_bloc.dart';
+import '../../features/teacher/presentation/bloc/teacher_dashboard_cubit.dart';
 
 // Student
 import '../../features/student/data/datasources/student_remote_datasource.dart';
@@ -27,6 +28,7 @@ import '../../features/student/domain/repositories/student_repository.dart';
 import '../../features/student/domain/usecases/student_usecases.dart';
 import '../../features/student/presentation/bloc/student_exams_bloc.dart';
 import '../../features/student/presentation/bloc/exam_questions_bloc.dart';
+import '../../features/student/presentation/cubit/student_dashboard_cubit.dart';
 
 // OCR
 import '../../features/ocr/data/datasources/ocr_remote_datasource.dart';
@@ -48,6 +50,7 @@ import '../../features/parent/data/repositories/parent_repository_impl.dart';
 import '../../features/parent/domain/repositories/parent_repository.dart';
 import '../../features/parent/domain/usecases/parent_usecases.dart';
 import '../../features/parent/presentation/bloc/parent_bloc.dart';
+import '../../features/parent/presentation/cubit/parent_dashboard_cubit.dart';
 
 final sl = GetIt.instance;
 
@@ -84,6 +87,7 @@ Future<void> initDependencies() async {
     () => TeacherRepositoryImpl(remoteDataSource: sl()),
   );
   sl.registerLazySingleton(() => GetClasses(sl()));
+  sl.registerLazySingleton(() => GetTeacherDashboardSummary(sl()));
   sl.registerLazySingleton(() => GetClassExams(sl()));
   sl.registerLazySingleton(() => GetClassStudents(sl()));
   sl.registerLazySingleton(() => CreateClass(sl()));
@@ -93,6 +97,9 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton(() => AddStudentToClass(sl()));
 
   sl.registerFactory(() => ClassesBloc(getClasses: sl()));
+  sl.registerFactory(
+    () => TeacherDashboardCubit(getTeacherDashboardSummary: sl()),
+  );
   sl.registerFactory(
     () => ClassDetailBloc(getClassExams: sl(), getClassStudents: sl()),
   );
@@ -111,11 +118,15 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<StudentRepository>(
     () => StudentRepositoryImpl(remoteDataSource: sl()),
   );
+  sl.registerLazySingleton(() => GetStudentDashboardSummary(sl()));
   sl.registerLazySingleton(() => GetStudentExams(sl()));
   sl.registerLazySingleton(() => GetExamQuestions(sl()));
 
   sl.registerFactory(() => StudentExamsBloc(getStudentExams: sl()));
   sl.registerFactory(() => ExamQuestionsBloc(getExamQuestions: sl()));
+  sl.registerFactory(
+    () => StudentDashboardCubit(getStudentDashboardSummary: sl()),
+  );
 
   // ── Parent Feature ───────────────────────────────────────────────────────
   sl.registerLazySingleton<ParentRemoteDataSource>(
@@ -126,12 +137,16 @@ Future<void> initDependencies() async {
   );
   sl.registerLazySingleton(() => GetLinkedStudents(sl()));
   sl.registerLazySingleton(() => GetStudentExamQuestions(sl()));
+  sl.registerLazySingleton(() => GetParentDashboardSummary(sl()));
 
   sl.registerFactory(
     () => ParentBloc(
       getLinkedStudents: sl(),
       getStudentExamQuestions: sl(),
     ),
+  );
+  sl.registerFactory(
+    () => ParentDashboardCubit(getParentDashboardSummary: sl()),
   );
 
   // ── Admin Feature ────────────────────────────────────────────────────────
@@ -143,6 +158,7 @@ Future<void> initDependencies() async {
   );
   sl.registerLazySingleton(() => CreateSchool(sl()));
   sl.registerLazySingleton(() => AssignUserToSchoolUc(sl()));
+  sl.registerLazySingleton(() => CreateAdminUserUc(sl()));
   sl.registerLazySingleton(() => LinkParentStudentUc(sl()));
   sl.registerLazySingleton(() => ListParentStudentsAdmin(sl()));
   sl.registerLazySingleton(() => SearchAdminUsers(sl()));
@@ -154,6 +170,7 @@ Future<void> initDependencies() async {
     () => AdminCubit(
       createSchool: sl(),
       assignUserToSchool: sl(),
+      createAdminUser: sl(),
       linkParentStudent: sl(),
       listParentStudents: sl(),
       searchAdminUsers: sl(),

@@ -79,3 +79,42 @@ class QuestionModel {
     );
   }
 }
+
+class StudentDashboardSummaryModel {
+  final int totalExams;
+  final int readyExams;
+  final int processingExams;
+  final int draftExams;
+  final List<StudentExamModel> latestExams;
+
+  const StudentDashboardSummaryModel({
+    required this.totalExams,
+    required this.readyExams,
+    required this.processingExams,
+    required this.draftExams,
+    required this.latestExams,
+  });
+
+  factory StudentDashboardSummaryModel.fromJson(Map<String, dynamic> json) {
+    List<dynamic> latest = json['latestExams'] as List<dynamic>? ?? const [];
+    return StudentDashboardSummaryModel(
+      totalExams: (json['totalExams'] as num?)?.toInt() ?? 0,
+      readyExams: (json['readyExams'] as num?)?.toInt() ?? 0,
+      processingExams: (json['processingExams'] as num?)?.toInt() ?? 0,
+      draftExams: (json['draftExams'] as num?)?.toInt() ?? 0,
+      latestExams: latest
+          .map((e) => StudentExamModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  StudentDashboardSummaryEntity toEntity() {
+    return StudentDashboardSummaryEntity(
+      totalExams: totalExams,
+      readyExams: readyExams,
+      processingExams: processingExams,
+      draftExams: draftExams,
+      latestExams: latestExams.map((e) => e.toEntity()).toList(),
+    );
+  }
+}

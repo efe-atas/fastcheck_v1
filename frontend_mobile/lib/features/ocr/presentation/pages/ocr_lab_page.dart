@@ -1,12 +1,16 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/usecase/usecase.dart';
 import '../../../../core/widgets/app_toast.dart';
 import '../../../teacher/domain/entities/teacher_entities.dart';
 import '../../../teacher/domain/usecases/teacher_usecases.dart';
+import '../../domain/entities/ocr_entities.dart';
 import '../cubit/ocr_cubit.dart';
 
 class OcrLabPage extends StatefulWidget {
@@ -22,6 +26,9 @@ class OcrLabPage extends StatefulWidget {
 }
 
 class _OcrLabPageState extends State<OcrLabPage> {
+  final DateFormat _dateFormatter = DateFormat('d MMM y • HH:mm', 'tr_TR');
+  final JsonEncoder _jsonEncoder = const JsonEncoder.withIndent('  ');
+
   bool _isLoadingExamOptions = false;
   String? _examLoadError;
   List<_ExamOption> _examOptions = const [];
@@ -247,9 +254,50 @@ class _OcrLabPageState extends State<OcrLabPage> {
         child: BlocBuilder<OcrCubit, OcrState>(
           builder: (context, state) {
             final previewRows = _buildPreviewRows(state);
-            final progress = state.totalCount > 0
-                ? state.processedCount / state.totalCount
-                : 0.0;
+            final highlightedResult = _resolveReferenceResult(state);
+            final resultStats = highlightedResult != null
+                ? _resultStats(highlightedResult.result)
+                : const _ResultStats();
+            final bool showProcessingProgress =
+                state.isLoading && state.totalCount > 0;
+            final double progress = showProcessingProgress
+                ? (state.totalCount == 0
+                    ? 0
+                    : state.processedCount / state.totalCount)
+                : resultStats.accuracy;
+            final double normalizedProgress =
+                progress.isFinite ? progress.clamp(0.0, 1.0) : 0.0;
+            final String trailingLabel = showProcessingProgress
+                ? '${(normalizedProgress * 100).toStringAsFixed(0)}% tamamlandı'
+                : resultStats.total > 0
+                    ? '${(normalizedProgress * 100).toStringAsFixed(0)}% doğruluk'
+                    : 'Sonuç bekleniyor';
+            final String progressLabel = showProcessingProgress
+                ? '${state.processedCount}/${state.totalCount} sayfa işlendi'
+                : resultStats.total > 0
+                    ? '${resultStats.correct}/${resultStats.total} doğru cevap'
+                    : 'Henüz sonuç yok';
+            final String titleText = highlightedResult != null
+                ? _resultTitle(highlightedResult)
+                : (selectedExam?.exam.title ?? 'Yeni OCR işlemi başlat');
+            final String subtitleText = highlightedResult != null
+                ? _resultSubtitle(highlightedResult)
+                : (selectedExam != null
+                    ? selectedExam.className
+                    : 'Sınav kağıdı yükleyerek başlayın');
+            final bool hasAnyResult = highlightedResult?.result != null;
+            final bool hasValues = resultStats.total > 0;
+            final bool isCompleted = hasValues && !state.isLoading;
+            final bool hasUploaded =
+                state.processedCount > 0 || hasAnyResult;
+            final int successValue = showProcessingProgress
+                ? state.successCount
+                : resultStats.correct;
+            final int failedValue = showProcessingProgress
+                ? state.failedCount
+                : (resultStats.total - resultStats.correct);
+            final bool showStatusBadges =
+                showProcessingProgress || resultStats.total > 0;
 
             return RefreshIndicator(
               color: const Color(0xFF3B4FD8),
@@ -462,7 +510,7 @@ class _OcrLabPageState extends State<OcrLabPage> {
                         onPressed: state.isLoading
                             ? null
                             : () => context.read<OcrCubit>().refreshList(),
-                        child: const Text('Tümünü Durdur'),
+                        child: const Text('Yenile'),
                       ),
                     ],
                   ),
@@ -487,10 +535,7 @@ class _OcrLabPageState extends State<OcrLabPage> {
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: Image.network(
-                                (state.results != null &&
-                                            state.results!.isNotEmpty
-                                        ? state.results!.first.imageUrl
-                                        : null) ??
+                                highlightedResult?.imageUrl ??
                                     'https://www.figma.com/api/mcp/asset/f2d7b0e8-69e2-477c-bd80-836b5a7f0120',
                                 width: 64,
                                 height: 80,
@@ -515,9 +560,11 @@ class _OcrLabPageState extends State<OcrLabPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Ahmet Yılmaz',
-                                    style: TextStyle(
+                                  Text(
+                                    titleText,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
                                       color: Color(0xFF0F1729),
                                       fontSize: 14,
                                       fontWeight: FontWeight.w700,
@@ -525,34 +572,69 @@ class _OcrLabPageState extends State<OcrLabPage> {
                                   ),
                                   const SizedBox(height: 3),
                                   Text(
-                                    selectedExam == null
-                                        ? 'Matematik 1. Yazılı - 9-A'
-                                        : '${selectedExam.exam.title} - ${selectedExam.className}',
+                                    subtitleText,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
-                                        color: Color(0xFF6B7A99), fontSize: 14),
+                                      color: Color(0xFF6B7A99),
+                                      fontSize: 14,
+                                    ),
                                   ),
                                   const SizedBox(height: 10),
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(4),
                                     child: LinearProgressIndicator(
-                                      value: progress,
+                                      value: normalizedProgress,
                                       minHeight: 6,
                                       backgroundColor: const Color(0xFFDCE2EE),
                                       valueColor:
                                           const AlwaysStoppedAnimation<Color>(
-                                              Color(0xFF0BBFB0)),
+                                        Color(0xFF0BBFB0),
+                                      ),
                                     ),
                                   ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    progressLabel,
+                                    style: const TextStyle(
+                                      color: Color(0xFF3A4864),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  if (showStatusBadges) ...[
+                                    const SizedBox(height: 8),
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 6,
+                                      children: [
+                                        _MetricBadge(
+                                          label: 'Başarılı',
+                                          value: '$successValue',
+                                          color: const Color(0xFF0BBFB0),
+                                          background:
+                                              const Color(0xFFDFF5F2),
+                                        ),
+                                        _MetricBadge(
+                                          label: 'Hatalı',
+                                          value: '$failedValue',
+                                          color: const Color(0xFFDE3F4D),
+                                          background:
+                                              const Color(0xFFFCE8EA),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              '${(progress * 100).toStringAsFixed(1)}% güven',
-                              style: const TextStyle(
-                                color: Color(0xFF0BBFB0),
+                              trailingLabel,
+                              style: TextStyle(
+                                color: showProcessingProgress
+                                    ? const Color(0xFF0BBFB0)
+                                    : const Color(0xFF3B4FD8),
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -562,20 +644,35 @@ class _OcrLabPageState extends State<OcrLabPage> {
                         const SizedBox(height: 12),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: const [
-                            _StepLabel(label: 'Yüklendi', active: true),
-                            _StepLabel(label: 'İşleniyor', active: true),
-                            _StepLabel(label: 'Metin', active: false),
-                            _StepLabel(label: 'Değer', active: false),
-                            _StepLabel(label: 'Tamam', active: false),
+                          children: [
+                            _StepLabel(
+                              label: 'Yüklendi',
+                              active: hasUploaded,
+                            ),
+                            _StepLabel(
+                              label: 'İşleniyor',
+                              active: showProcessingProgress,
+                            ),
+                            _StepLabel(
+                              label: 'Metin',
+                              active: hasAnyResult,
+                            ),
+                            _StepLabel(
+                              label: 'Değer',
+                              active: hasValues,
+                            ),
+                            _StepLabel(
+                              label: 'Tamam',
+                              active: isCompleted,
+                            ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: state.results?.isNotEmpty == true
-                                ? () {}
+                            onPressed: highlightedResult != null
+                                ? () => _showResultDetails(highlightedResult)
                                 : null,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFE4E9F4),
@@ -583,7 +680,8 @@ class _OcrLabPageState extends State<OcrLabPage> {
                               elevation: 0,
                               padding: const EdgeInsets.symmetric(vertical: 11),
                               shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10)),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
                             child: const Text('Sonucu Gör'),
                           ),
@@ -669,67 +767,96 @@ class _OcrLabPageState extends State<OcrLabPage> {
                             ],
                           ),
                         ),
-                        ...previewRows.map(
-                          (row) => Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
-                            decoration: const BoxDecoration(
-                              border: Border(
-                                  top: BorderSide(color: Color(0xFFE2E7F3))),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    '${row.index}',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF0F1729)),
-                                  ),
+                        if (previewRows.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 20),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Önizlenecek veri yok. Yeni bir tarama başlatın.',
+                                style: TextStyle(
+                                  color: Color(0xFF6B7A99),
                                 ),
-                                Expanded(
-                                  child: Container(
-                                    width: 32,
-                                    height: 32,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFE9EEFF),
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
+                              ),
+                            ),
+                          )
+                        else
+                          ...previewRows.map(
+                            (row) => Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                              decoration: const BoxDecoration(
+                                border: Border(
+                                  top: BorderSide(color: Color(0xFFE2E7F3)),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
                                     child: Text(
-                                      row.detected,
+                                      '${row.index}',
                                       style: const TextStyle(
-                                        color: Color(0xFF3B4FD8),
                                         fontWeight: FontWeight.w700,
+                                        color: Color(0xFF0F1729),
                                       ),
                                     ),
                                   ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    row.expected,
-                                    style: const TextStyle(
-                                        color: Color(0xFF3A4864)),
+                                  Expanded(
+                                    child: Container(
+                                      width: 32,
+                                      height: 32,
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFE9EEFF),
+                                        borderRadius:
+                                            BorderRadius.circular(16),
+                                      ),
+                                      child: Text(
+                                        row.detected,
+                                        style: const TextStyle(
+                                          color: Color(0xFF3B4FD8),
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                                Expanded(
-                                  child: Icon(
-                                    row.correct
-                                        ? Icons.check_circle
-                                        : Icons.cancel,
-                                    color: row.correct
-                                        ? const Color(0xFF19A56E)
-                                        : const Color(0xFFDE3F4D),
-                                    size: 18,
+                                  Expanded(
+                                    child: Text(
+                                      row.expected,
+                                      style: const TextStyle(
+                                          color: Color(0xFF3A4864)),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  Expanded(
+                                    child: Icon(
+                                      row.correct
+                                          ? Icons.check_circle
+                                          : Icons.cancel,
+                                      color: row.correct
+                                          ? const Color(0xFF19A56E)
+                                          : const Color(0xFFDE3F4D),
+                                      size: 18,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'İşlem Geçmişi',
+                    style: TextStyle(
+                      color: Color(0xFF0F1729),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _buildHistorySection(state),
                   const SizedBox(height: 16),
                   Container(
                     height: 128,
@@ -823,56 +950,494 @@ class _OcrLabPageState extends State<OcrLabPage> {
     );
   }
 
-  List<_PreviewRow> _buildPreviewRows(OcrState state) {
-    final dynamic result = state.lastExtract?.result;
-    if (result is List && result.isNotEmpty) {
-      return result.take(4).toList().asMap().entries.map((entry) {
-        final idx = entry.key + 1;
-        final row = entry.value;
-        if (row is Map<String, dynamic>) {
-          final detected = (row['detected'] ?? row['answer'] ?? 'A').toString();
-          final expected =
-              (row['expected'] ?? row['correct'] ?? detected).toString();
-          final correct = detected.toUpperCase() == expected.toUpperCase();
-          return _PreviewRow(
-              index: idx,
-              detected: detected,
-              expected: expected,
-              correct: correct);
-        }
-        return _PreviewRow(
-            index: idx, detected: 'A', expected: 'A', correct: true);
-      }).toList();
+  Widget _buildHistorySection(OcrState state) {
+    final results = state.results;
+    if (results == null) {
+      if (state.isLoading) {
+        return Container(
+          height: 120,
+          alignment: Alignment.center,
+          decoration: _historyCardDecoration(),
+          child: const CircularProgressIndicator(),
+        );
+      }
+      return _historyEmptyCard(
+        'Sonuçlar henüz yüklenemedi.',
+        action: TextButton(
+          onPressed: () => context.read<OcrCubit>().refreshList(),
+          child: const Text('Yeniden Dene'),
+        ),
+      );
     }
-    if (result is Map<String, dynamic>) {
-      final answers = result['answers'];
-      if (answers is List && answers.isNotEmpty) {
-        return answers.take(4).toList().asMap().entries.map((entry) {
-          final idx = entry.key + 1;
-          final row = entry.value;
-          if (row is Map<String, dynamic>) {
-            final detected =
-                (row['detected'] ?? row['student'] ?? 'A').toString();
-            final expected =
-                (row['expected'] ?? row['correct'] ?? detected).toString();
-            final correct = detected.toUpperCase() == expected.toUpperCase();
-            return _PreviewRow(
-                index: idx,
-                detected: detected,
-                expected: expected,
-                correct: correct);
-          }
-          return _PreviewRow(
-              index: idx, detected: 'A', expected: 'A', correct: true);
-        }).toList();
+    if (results.isEmpty) {
+      return _historyEmptyCard(
+        'Henüz tamamlanan OCR işlemi yok.',
+      );
+    }
+    final visible = results.take(10).toList();
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemBuilder: (context, index) => _buildHistoryCard(visible[index]),
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemCount: visible.length,
+    );
+  }
+
+  Widget _buildHistoryCard(OcrResultEntity result) {
+    final stats = _resultStats(result.result);
+    final accuracyLabel = stats.total > 0
+        ? '${stats.correct}/${stats.total} doğru'
+        : 'Veri bekleniyor';
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: _historyCardDecoration(),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              result.imageUrl ??
+                  'https://www.figma.com/api/mcp/asset/f2d7b0e8-69e2-477c-bd80-836b5a7f0120',
+              width: 64,
+              height: 80,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                width: 64,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE9EEF8),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.image_not_supported_outlined,
+                  color: Color(0xFF8A96B2),
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _resultTitle(result),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF0F1729),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _resultSubtitle(result),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF6B7A99),
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: stats.accuracy.clamp(0.0, 1.0),
+                    minHeight: 6,
+                    backgroundColor: const Color(0xFFE2E7F3),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Color(0xFF3B4FD8),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  accuracyLabel,
+                  style: const TextStyle(
+                    color: Color(0xFF3A4864),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    _MetricBadge(
+                      label: 'Doğru',
+                      value: '${stats.correct}',
+                      color: const Color(0xFF0BBFB0),
+                      background: const Color(0xFFDFF5F2),
+                    ),
+                    _MetricBadge(
+                      label: 'Yanlış',
+                      value: '${stats.incorrect < 0 ? 0 : stats.incorrect}',
+                      color: const Color(0xFFDE3F4D),
+                      background: const Color(0xFFFCE8EA),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () => _showResultDetails(result),
+            icon: const Icon(Icons.open_in_new, size: 20),
+            color: const Color(0xFF3B4FD8),
+            tooltip: 'Sonucu Gör',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _historyEmptyCard(String message, {Widget? action}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: _historyCardDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            message,
+            style: const TextStyle(
+              color: Color(0xFF6B7A99),
+              fontSize: 14,
+            ),
+          ),
+          if (action != null) ...[
+            const SizedBox(height: 8),
+            action,
+          ],
+        ],
+      ),
+    );
+  }
+
+  BoxDecoration _historyCardDecoration() {
+    return BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: const Color(0xFFDDE3F0)),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x100F1729),
+          blurRadius: 6,
+          offset: Offset(0, 2),
+        ),
+      ],
+    );
+  }
+
+  OcrResultEntity? _resolveReferenceResult(OcrState state) {
+    if (state.lastExtract != null) {
+      return state.lastExtract;
+    }
+    final list = state.results;
+    if (list != null && list.isNotEmpty) {
+      return list.first;
+    }
+    return null;
+  }
+
+  List<_PreviewRow> _buildPreviewRows(OcrState state) {
+    final reference = _resolveReferenceResult(state);
+    final answers = _extractAnswerList(reference?.result);
+    if (answers == null || answers.isEmpty) {
+      return const [];
+    }
+    final rows = <_PreviewRow>[];
+    for (var i = 0; i < answers.length && i < 4; i++) {
+      final row = answers[i];
+      final mapped = _asStringKeyedMap(row);
+      if (mapped == null) {
+        rows.add(
+          _PreviewRow(
+            index: i + 1,
+            detected: row.toString(),
+            expected: row.toString(),
+            correct: true,
+          ),
+        );
+        continue;
+      }
+      final detected =
+          _stringValue(mapped, const ['detected', 'answer', 'student']) ?? '—';
+      final expected =
+          _stringValue(mapped, const ['expected', 'correct']) ?? '—';
+      final correct = expected == '—'
+          ? true
+          : detected.trim().toUpperCase() == expected.trim().toUpperCase();
+      rows.add(
+        _PreviewRow(
+          index: i + 1,
+          detected: detected,
+          expected: expected,
+          correct: correct,
+        ),
+      );
+    }
+    return rows;
+  }
+
+  List<dynamic>? _extractAnswerList(dynamic data) {
+    if (data is List) return data;
+    final map = _asStringKeyedMap(data);
+    if (map == null) return null;
+    for (final key in ['answers', 'items', 'questions', 'results', 'values']) {
+      final value = map[key];
+      if (value is List) return value;
+    }
+    return null;
+  }
+
+  Map<String, dynamic>? _asStringKeyedMap(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) {
+      return value.map(
+        (key, dynamic v) => MapEntry(key.toString(), v),
+      );
+    }
+    return null;
+  }
+
+  String? _stringValue(Map<String, dynamic> map, List<String> keys) {
+    for (final key in keys) {
+      final value = map[key];
+      if (value == null) continue;
+      final str = value.toString().trim();
+      if (str.isEmpty) continue;
+      return str;
+    }
+    return null;
+  }
+
+  _ResultStats _resultStats(dynamic data) {
+    final map = _asStringKeyedMap(data);
+    if (map != null) {
+      final summary = _asStringKeyedMap(map['summary']);
+      if (summary != null) {
+        final total = _parseInt(summary['totalQuestions'] ??
+            summary['total'] ??
+            summary['questionCount']);
+        final correct = _parseInt(
+            summary['correct'] ?? summary['correctAnswers'] ?? summary['score']);
+        if (total != null && total > 0) {
+          final safeCorrect = correct ?? 0;
+          final bounded =
+              safeCorrect < 0 ? 0 : (safeCorrect > total ? total : safeCorrect);
+          return _ResultStats(total: total, correct: bounded);
+        }
       }
     }
-    return const [
-      _PreviewRow(index: 1, detected: 'A', expected: 'A', correct: true),
-      _PreviewRow(index: 2, detected: 'C', expected: 'B', correct: false),
-      _PreviewRow(index: 3, detected: 'D', expected: 'D', correct: true),
-      _PreviewRow(index: 4, detected: 'B', expected: 'B', correct: true),
-    ];
+    final answers = _extractAnswerList(data);
+    if (answers == null || answers.isEmpty) {
+      return const _ResultStats();
+    }
+    var correct = 0;
+    for (final answer in answers) {
+      final mapped = _asStringKeyedMap(answer);
+      if (mapped == null) continue;
+      final detected =
+          _stringValue(mapped, const ['detected', 'answer', 'student']);
+      final expected =
+          _stringValue(mapped, const ['expected', 'correct', 'key']);
+      if (detected == null || expected == null) continue;
+      if (detected.trim().toUpperCase() == expected.trim().toUpperCase()) {
+        correct++;
+      }
+    }
+    return _ResultStats(total: answers.length, correct: correct);
+  }
+
+  String _resultTitle(OcrResultEntity? result) {
+    if (result == null) return 'Sonuç bekleniyor';
+    final student =
+        _extractStudentName(_asStringKeyedMap(result.result));
+    if (student != null) return student;
+    final source = _sourceLabel(result.sourceId);
+    if (source != null) return source;
+    return 'İş ${_shortenId(result.jobId)}';
+  }
+
+  String _resultSubtitle(OcrResultEntity? result) {
+    if (result == null) return 'Henüz sonuç yok';
+    final parts = <String>[];
+    final source = _sourceLabel(result.sourceId);
+    if (source != null) {
+      parts.add(source);
+    }
+    parts.add(_formatDate(result.createdAt));
+    return parts.join(' • ');
+  }
+
+  String? _sourceLabel(String? sourceId) {
+    if (sourceId == null || sourceId.isEmpty) return null;
+    if (sourceId.startsWith('exam-')) {
+      return 'Sınav #${sourceId.substring(5)}';
+    }
+    if (sourceId.startsWith('class-')) {
+      return 'Sınıf #${sourceId.substring(6)}';
+    }
+    if (sourceId.startsWith('student-')) {
+      return 'Öğrenci #${sourceId.substring(8)}';
+    }
+    return sourceId;
+  }
+
+  String? _extractStudentName(Map<String, dynamic>? data) {
+    if (data == null) return null;
+    for (final key in ['studentName', 'student', 'name', 'owner']) {
+      final value = data[key];
+      if (value is String && value.trim().isNotEmpty) {
+        return value.trim();
+      }
+    }
+    final metadata = _asStringKeyedMap(data['metadata']);
+    if (metadata != null) {
+      for (final key in ['studentName', 'student', 'name']) {
+        final value = metadata[key];
+        if (value is String && value.trim().isNotEmpty) {
+          return value.trim();
+        }
+      }
+    }
+    return null;
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return '—';
+    return _dateFormatter.format(date.toLocal());
+  }
+
+  Future<void> _showResultDetails(OcrResultEntity entity) async {
+    if (!mounted) return;
+    final stats = _resultStats(entity.result);
+    final pretty = _prettifyResult(entity.result);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      builder: (context) {
+        final bottom = MediaQuery.paddingOf(context).bottom;
+        return FractionallySizedBox(
+          heightFactor: 0.9,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20, 12, 20, bottom + 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 46,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE1E6F0),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _resultTitle(entity),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F1729),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _resultSubtitle(entity),
+                  style: const TextStyle(
+                    color: Color(0xFF6B7A99),
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _MetricBadge(
+                      label: 'İş ID',
+                      value: _shortenId(entity.jobId),
+                      color: const Color(0xFF3B4FD8),
+                    ),
+                    if (entity.requestId.isNotEmpty)
+                      _MetricBadge(
+                        label: 'İstek',
+                        value: _shortenId(entity.requestId),
+                        color: const Color(0xFF3B4FD8),
+                      ),
+                    _MetricBadge(
+                      label: 'Oluşturma',
+                      value: _formatDate(entity.createdAt),
+                      color: const Color(0xFF6B7A99),
+                      background: const Color(0xFFE9EDF8),
+                    ),
+                    if (stats.total > 0)
+                      _MetricBadge(
+                        label: 'Doğruluk',
+                        value:
+                            '${(stats.accuracy * 100).toStringAsFixed(0)}%',
+                        color: const Color(0xFF0BBFB0),
+                        background: const Color(0xFFDFF5F2),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F8FC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E6F2)),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: SingleChildScrollView(
+                      child: SelectableText(
+                        pretty,
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 13,
+                          height: 1.25,
+                          color: Color(0xFF0F1729),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  String _prettifyResult(dynamic result) {
+    if (result == null) return '—';
+    try {
+      return _jsonEncoder.convert(result);
+    } catch (_) {
+      return result.toString();
+    }
+  }
+
+  int? _parseInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
   }
 }
 
@@ -953,6 +1518,67 @@ class _PreviewRow {
   final bool correct;
 }
 
+class _MetricBadge extends StatelessWidget {
+  const _MetricBadge({
+    required this.label,
+    required this.value,
+    required this.color,
+    this.background = const Color(0xFFE9EEFF),
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+  final Color background;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: RichText(
+        text: TextSpan(
+          text: '$label: ',
+          style: TextStyle(
+            fontSize: 12,
+            color: color.withValues(alpha: 0.75),
+            fontWeight: FontWeight.w600,
+          ),
+          children: [
+            TextSpan(
+              text: value,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ResultStats {
+  final int total;
+  final int correct;
+
+  const _ResultStats({this.total = 0, this.correct = 0});
+
+  int get incorrect => total - correct;
+
+  double get accuracy {
+    if (total <= 0) return 0;
+    final safeCorrect = correct < 0
+        ? 0
+        : (correct > total ? total : correct);
+    return safeCorrect / total;
+  }
+}
+
 class _ExamOption {
   final ExamEntity exam;
   final String className;
@@ -961,4 +1587,9 @@ class _ExamOption {
     required this.exam,
     required this.className,
   });
+}
+
+String _shortenId(String value) {
+  if (value.isEmpty) return '---';
+  return value.length <= 8 ? value : value.substring(0, 8);
 }

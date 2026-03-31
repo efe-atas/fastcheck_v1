@@ -4,6 +4,14 @@ import '../../../../core/error/exceptions.dart';
 import '../models/admin_models.dart';
 
 abstract class AdminRemoteDataSource {
+  Future<AdminProvisionedUserModel> createUser({
+    required String fullName,
+    required String email,
+    required String role,
+    String? password,
+    int? schoolId,
+    int? classId,
+  });
   Future<SchoolModel> createSchool(String schoolName);
   Future<AssignUserToSchoolModel> assignUserToSchool(int userId, int schoolId);
   Future<AdminPagedResultModel<AdminUserSummaryModel>> searchUsers({
@@ -29,13 +37,49 @@ abstract class AdminRemoteDataSource {
     required List<int> fileBytes,
     required String fileName,
   });
-  Future<List<AdminParentStudentViewModel>> listParentStudents(int parentUserId);
+  Future<List<AdminParentStudentViewModel>> listParentStudents(
+      int parentUserId);
 }
 
 class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
   final Dio dio;
 
   AdminRemoteDataSourceImpl({required this.dio});
+
+  @override
+  Future<AdminProvisionedUserModel> createUser({
+    required String fullName,
+    required String email,
+    required String role,
+    String? password,
+    int? schoolId,
+    int? classId,
+  }) async {
+    try {
+      final payload = <String, dynamic>{
+        'fullName': fullName,
+        'email': email,
+        'role': role,
+        'password': password,
+        'schoolId': schoolId,
+        'classId': classId,
+      }..removeWhere(
+          (key, value) => value == null || (value is String && value.isEmpty));
+
+      final response = await dio.post(
+        ApiConstants.adminProvisionUsers,
+        data: payload,
+      );
+      return AdminProvisionedUserModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
+      throw ServerException(
+        message: _msg(e),
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
 
   @override
   Future<SchoolModel> createSchool(String schoolName) async {

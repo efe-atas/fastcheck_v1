@@ -19,11 +19,17 @@ class AdminDashboardPage extends StatefulWidget {
 
 class _AdminDashboardPageState extends State<AdminDashboardPage> {
   final _schoolNameCtrl = TextEditingController();
+  final _newUserNameCtrl = TextEditingController();
+  final _newUserEmailCtrl = TextEditingController();
+  final _newUserPasswordCtrl = TextEditingController();
+  final _newUserSchoolIdCtrl = TextEditingController();
+  final _newUserClassIdCtrl = TextEditingController();
   final _assignUserSearchCtrl = TextEditingController();
   final _assignSchoolSearchCtrl = TextEditingController();
   final _parentSearchCtrl = TextEditingController();
   final _studentSearchCtrl = TextEditingController();
   final _listParentSearchCtrl = TextEditingController();
+  String _newUserRole = 'ROLE_TEACHER';
 
   Timer? _assignUserDebounce;
   Timer? _assignSchoolDebounce;
@@ -49,6 +55,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     _studentDebounce?.cancel();
     _listParentDebounce?.cancel();
     _schoolNameCtrl.dispose();
+    _newUserNameCtrl.dispose();
+    _newUserEmailCtrl.dispose();
+    _newUserPasswordCtrl.dispose();
+    _newUserSchoolIdCtrl.dispose();
+    _newUserClassIdCtrl.dispose();
     _assignUserSearchCtrl.dispose();
     _assignSchoolSearchCtrl.dispose();
     _parentSearchCtrl.dispose();
@@ -93,6 +104,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     const SizedBox(height: 12),
                   ],
                   _buildCreateSchoolSection(context, state),
+                  const SizedBox(height: 20),
+                  _buildCreateUserSection(context, state),
                   const SizedBox(height: 20),
                   _buildAssignUserSection(context, state),
                   const SizedBox(height: 20),
@@ -145,6 +158,99 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   },
             child: const Text('Oluştur'),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCreateUserSection(BuildContext context, AdminState state) {
+    const roleOptions = <String, String>{
+      'ROLE_TEACHER': 'Öğretmen',
+      'ROLE_STUDENT': 'Öğrenci',
+      'ROLE_PARENT': 'Veli',
+      'ROLE_ADMIN': 'Admin',
+    };
+
+    return _section(
+      title: 'Yeni kullanıcı oluştur',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Ad Soyad', style: ShadTheme.of(context).textTheme.large),
+          const SizedBox(height: 6),
+          ShadInput(
+            controller: _newUserNameCtrl,
+            placeholder: const Text('Örn. Ayşe Öğretmen'),
+          ),
+          const SizedBox(height: 12),
+          Text('E-posta', style: ShadTheme.of(context).textTheme.large),
+          const SizedBox(height: 6),
+          ShadInput(
+            controller: _newUserEmailCtrl,
+            placeholder: const Text('ornek@fastcheck.app'),
+            keyboardType: TextInputType.emailAddress,
+          ),
+          const SizedBox(height: 12),
+          Text('Rol', style: ShadTheme.of(context).textTheme.large),
+          const SizedBox(height: 6),
+          DropdownButtonFormField<String>(
+            key: ValueKey(_newUserRole),
+            initialValue: _newUserRole,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            items: roleOptions.entries
+                .map(
+                  (entry) => DropdownMenuItem<String>(
+                    value: entry.key,
+                    child: Text(entry.value),
+                  ),
+                )
+                .toList(),
+            onChanged: (value) {
+              if (value == null) return;
+              setState(() {
+                _newUserRole = value;
+              });
+            },
+          ),
+          const SizedBox(height: 12),
+          Text('Opsiyonel: Şifre (boş bırakırsanız sistem üretir)',
+              style: ShadTheme.of(context).textTheme.muted),
+          const SizedBox(height: 6),
+          ShadInput(
+            controller: _newUserPasswordCtrl,
+            placeholder: const Text('En az 8 karakter'),
+            obscureText: true,
+          ),
+          const SizedBox(height: 12),
+          Text('Opsiyonel: Okul ID',
+              style: ShadTheme.of(context).textTheme.muted),
+          const SizedBox(height: 6),
+          ShadInput(
+            controller: _newUserSchoolIdCtrl,
+            placeholder: const Text('Örn. 12'),
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 12),
+          Text('Opsiyonel: Sınıf ID (öğrenci için)',
+              style: ShadTheme.of(context).textTheme.muted),
+          const SizedBox(height: 6),
+          ShadInput(
+            controller: _newUserClassIdCtrl,
+            placeholder: const Text('Örn. 34'),
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 12),
+          ShadButton(
+            onPressed: state.isLoading ? null : () => _submitNewUser(context),
+            child: const Text('Kullanıcı oluştur'),
+          ),
+          if (state.lastProvisionedUser != null) ...[
+            const SizedBox(height: 12),
+            _provisionedUserCard(context, state.lastProvisionedUser!),
+          ],
         ],
       ),
     );
@@ -552,6 +658,89 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       if (!mounted) return;
       context.read<AdminCubit>().onSearchParents(_listParentSearchCtrl.text);
     });
+  }
+
+  void _submitNewUser(BuildContext context) {
+    final fullName = _newUserNameCtrl.text.trim();
+    final email = _newUserEmailCtrl.text.trim();
+    if (fullName.length < 3) {
+      showAppToast(context, message: 'Ad soyad en az 3 karakter olmalı');
+      return;
+    }
+    if (!email.contains('@')) {
+      showAppToast(context, message: 'Geçerli bir e-posta girin');
+      return;
+    }
+    final password = _newUserPasswordCtrl.text.trim();
+    final schoolText = _newUserSchoolIdCtrl.text.trim();
+    final classText = _newUserClassIdCtrl.text.trim();
+    int? schoolId;
+    if (schoolText.isNotEmpty) {
+      schoolId = int.tryParse(schoolText);
+      if (schoolId == null) {
+        showAppToast(context,
+            message: 'Okul ID yalnızca sayı olmalıdır', destructive: true);
+        return;
+      }
+    }
+    int? classId;
+    if (classText.isNotEmpty) {
+      classId = int.tryParse(classText);
+      if (classId == null) {
+        showAppToast(context,
+            message: 'Sınıf ID yalnızca sayı olmalıdır', destructive: true);
+        return;
+      }
+    }
+    context.read<AdminCubit>().onCreateUser(
+          fullName: fullName,
+          email: email,
+          role: _newUserRole,
+          password: password.isEmpty ? null : password,
+          schoolId: schoolId,
+          classId: classId,
+        );
+  }
+
+  Widget _provisionedUserCard(
+    BuildContext context,
+    AdminProvisionedUserEntity user,
+  ) {
+    final roleLabel = user.role.replaceFirst('ROLE_', '');
+    final theme = ShadTheme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${user.fullName} ($roleLabel)',
+            style: theme.textTheme.large.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 4),
+          Text(user.email, style: theme.textTheme.muted),
+          if (user.hasInitialPassword) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Geçici şifre: ${user.initialPassword}',
+              style: theme.textTheme.small.copyWith(
+                color: AppColors.success,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              'İlk girişte değiştirmesini isteyin.',
+              style: theme.textTheme.muted.copyWith(fontSize: 12),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   Widget _section({required String title, required Widget child}) {

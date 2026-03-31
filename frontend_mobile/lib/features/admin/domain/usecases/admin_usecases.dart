@@ -17,6 +17,49 @@ class CreateSchool extends UseCase<SchoolEntity, CreateSchoolParams> {
   }
 }
 
+class CreateAdminUserUc
+    extends UseCase<AdminProvisionedUserEntity, CreateAdminUserParams> {
+  final AdminRepository repository;
+
+  CreateAdminUserUc(this.repository);
+
+  @override
+  Future<Either<Failure, AdminProvisionedUserEntity>> call(
+    CreateAdminUserParams params,
+  ) {
+    return repository.createUser(
+      fullName: params.fullName,
+      email: params.email,
+      role: params.role,
+      password: params.password,
+      schoolId: params.schoolId,
+      classId: params.classId,
+    );
+  }
+}
+
+class CreateAdminUserParams extends Equatable {
+  final String fullName;
+  final String email;
+  final String role;
+  final String? password;
+  final int? schoolId;
+  final int? classId;
+
+  const CreateAdminUserParams({
+    required this.fullName,
+    required this.email,
+    required this.role,
+    this.password,
+    this.schoolId,
+    this.classId,
+  });
+
+  @override
+  List<Object?> get props =>
+      [fullName, email, role, password, schoolId, classId];
+}
+
 class CreateSchoolParams extends Equatable {
   final String schoolName;
 
@@ -97,8 +140,8 @@ class ListParentStudentsAdmin
   }
 }
 
-class SearchAdminUsers
-    extends UseCase<PagedResult<AdminUserSummaryEntity>, SearchAdminUsersParams> {
+class SearchAdminUsers extends UseCase<PagedResult<AdminUserSummaryEntity>,
+    SearchAdminUsersParams> {
   final AdminRepository repository;
 
   SearchAdminUsers(this.repository);
@@ -133,8 +176,8 @@ class SearchAdminUsersParams extends Equatable {
   List<Object?> get props => [role, query, page, size];
 }
 
-class SearchAdminSchools extends UseCase<
-    PagedResult<AdminSchoolSummaryEntity>, SearchAdminSchoolsParams> {
+class SearchAdminSchools extends UseCase<PagedResult<AdminSchoolSummaryEntity>,
+    SearchAdminSchoolsParams> {
   final AdminRepository repository;
 
   SearchAdminSchools(this.repository);

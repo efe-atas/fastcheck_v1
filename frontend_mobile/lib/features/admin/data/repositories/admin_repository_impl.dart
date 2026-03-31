@@ -12,6 +12,32 @@ class AdminRepositoryImpl implements AdminRepository {
   AdminRepositoryImpl({required this.remoteDataSource});
 
   @override
+  Future<Either<Failure, AdminProvisionedUserEntity>> createUser({
+    required String fullName,
+    required String email,
+    required String role,
+    String? password,
+    int? schoolId,
+    int? classId,
+  }) async {
+    try {
+      final model = await remoteDataSource.createUser(
+        fullName: fullName,
+        email: email,
+        role: role,
+        password: password,
+        schoolId: schoolId,
+        classId: classId,
+      );
+      return Right(model.toEntity());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.statusCode));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, SchoolEntity>> createSchool(String schoolName) async {
     try {
       final m = await remoteDataSource.createSchool(schoolName);
@@ -135,7 +161,8 @@ class AdminRepositoryImpl implements AdminRepository {
   }
 
   @override
-  Future<Either<Failure, List<AdminParentStudentViewEntity>>> listParentStudents(
+  Future<Either<Failure, List<AdminParentStudentViewEntity>>>
+      listParentStudents(
     int parentUserId,
   ) async {
     try {

@@ -19,7 +19,6 @@ public class EducationDtos {
         }
 
     public record CreateClassRequest(
-            @NotNull Long schoolId,
             @NotBlank @Size(min = 2, max = 120) String className
     ) {
     }
@@ -92,6 +91,25 @@ public class EducationDtos {
     ) {
     }
 
+    public record ParentStudentSummary(
+            Long studentId,
+            String fullName,
+            String email,
+            Long classId,
+            long totalExams,
+            long readyExams,
+            String latestExamTitle,
+            String latestExamStatus,
+            Instant latestExamCreatedAt
+    ) {
+    }
+
+    public record ParentDashboardSummary(
+            long linkedStudents,
+            List<ParentStudentSummary> students
+    ) {
+    }
+
     public record AdminUserSummary(
             Long userId,
             String fullName,
@@ -146,6 +164,15 @@ public class EducationDtos {
     ) {
     }
 
+    public record StudentDashboardSummary(
+            long totalExams,
+            long readyExams,
+            long processingExams,
+            long draftExams,
+            List<StudentExamListItem> latestExams
+    ) {
+    }
+
     public record ClassWithExamCountResponse(
             Long classId,
             Long schoolId,
@@ -155,12 +182,24 @@ public class EducationDtos {
     ) {
     }
 
+    public record TeacherDashboardSummary(
+            long totalClasses,
+            long totalExams,
+            long processingExams,
+            long readyExams,
+            List<ExamResponse> latestExams,
+            List<OcrJobStatusResponse> recentOcrJobs
+    ) {
+    }
+
     public record ExamImageResponse(
             Long imageId,
             int pageOrder,
             String imageUrl,
             String status,
-            String errorMessage
+            String errorMessage,
+            Instant processingStartedAt,
+            Instant processingCompletedAt
     ) {
     }
 

@@ -1,6 +1,7 @@
 package com.fastcheck.fastcheck.education;
 
 import com.fastcheck.fastcheck.common.ApiException;
+import com.fastcheck.fastcheck.ocr.OcrJob;
 import com.fastcheck.fastcheck.ocr.OcrJobRepository;
 import com.fastcheck.fastcheck.user.Role;
 import com.fastcheck.fastcheck.user.UserAccount;
@@ -22,7 +23,6 @@ import org.springframework.web.multipart.MultipartFile;
 public class TeacherEducationService {
 
     private final EducationAccessService accessService;
-    private final SchoolRepository schoolRepository;
     private final SchoolClassRepository schoolClassRepository;
     private final ExamRepository examRepository;
     private final ExamImageRepository examImageRepository;
@@ -34,7 +34,6 @@ public class TeacherEducationService {
 
     public TeacherEducationService(
             EducationAccessService accessService,
-            SchoolRepository schoolRepository,
             SchoolClassRepository schoolClassRepository,
             ExamRepository examRepository,
             ExamImageRepository examImageRepository,
@@ -45,7 +44,6 @@ public class TeacherEducationService {
             OcrJobRepository ocrJobRepository
     ) {
         this.accessService = accessService;
-        this.schoolRepository = schoolRepository;
         this.schoolClassRepository = schoolClassRepository;
         this.examRepository = examRepository;
         this.examImageRepository = examImageRepository;
@@ -60,11 +58,9 @@ public class TeacherEducationService {
     public EducationDtos.ClassResponse createClass(EducationDtos.CreateClassRequest request) {
         UserAccount teacher = accessService.requireRole(Role.ROLE_TEACHER);
 
-        School school = schoolRepository.findById(request.schoolId())
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "school not found"));
-
-        if (teacher.getSchool() == null || !teacher.getSchool().getId().equals(school.getId())) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "teacher can only create class in own school");
+        School school = teacher.getSchool();
+        if (school == null) {
+            throw new ApiException(HttpStatus.CONFLICT, "teacher must be assigned to a school");
         }
 
         SchoolClass schoolClass = new SchoolClass();
@@ -163,6 +159,13 @@ public class TeacherEducationService {
 
         int order = startOrder;
         for (MultipartFile file : images) {
+            if (file == null || file.isEmpty()) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "image file is required");
+            }
+            String contentType = file.getContentType();
+            if (contentType != null && !contentType.toLowerCase().startsWith("image/")) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "only image content types are accepted");
+            }
             ExamImage image = new ExamImage();
             image.setExam(exam);
             image.setPageOrder(order++);
@@ -195,14 +198,7 @@ public class TeacherEducationService {
 
         List<EducationDtos.OcrJobStatusResponse> jobs = ocrJobRepository.findByExamImage_Exam_IdOrderByCreatedAtAsc(examId)
                 .stream()
-                .map(job -> new EducationDtos.OcrJobStatusResponse(
-                        job.getJobId(),
-                        job.getRequestId(),
-                        job.getStatus().name(),
-                        job.getRetryCount(),
-                        job.getErrorMessage(),
-                        job.getCreatedAt()
-                ))
+                .map(this::toOcrJobStatusResponse)
                 .toList();
 
         return new EducationDtos.TeacherExamStatusResponse(
@@ -232,6 +228,32 @@ public class TeacherEducationService {
                 .stream()
                 .map(this::toExamResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public EducationDtos.TeacherDashboardSummary getDashboardSummary() {
+        UserAccount teacher = accessService.requireRole(Role.ROLE_TEACHER);
+        Long teacherId = teacher.getId();
+        List<SchoolClass> classes = schoolClassRepository.findByTeacher_Id(teacherId);
+        long totalExams = examRepository.countByTeacher_Id(teacherId);
+        long processing = examRepository.countByTeacher_IdAndStatus(teacherId, ExamStatus.PROCESSING);
+        long ready = examRepository.countByTeacher_IdAndStatus(teacherId, ExamStatus.READY);
+        List<EducationDtos.ExamResponse> latestExams = examRepository.findTop5ByTeacher_IdOrderByCreatedAtDesc(teacherId)
+                .stream()
+                .map(this::toExamResponse)
+                .toList();
+        List<EducationDtos.OcrJobStatusResponse> recentJobs = ocrJobRepository.findTop5ByUser_IdOrderByCreatedAtDesc(teacherId)
+                .stream()
+                .map(this::toOcrJobStatusResponse)
+                .toList();
+        return new EducationDtos.TeacherDashboardSummary(
+                classes.size(),
+                totalExams,
+                processing,
+                ready,
+                latestExams,
+                recentJobs
+        );
     }
 
         @Transactional(readOnly = true)
@@ -298,7 +320,9 @@ public class TeacherEducationService {
                 image.getPageOrder(),
                 image.getImageUrl(),
                 image.getStatus().name(),
-                image.getErrorMessage()
+                image.getErrorMessage(),
+                image.getProcessingStartedAt(),
+                image.getProcessingCompletedAt()
         );
     }
 
@@ -310,6 +334,17 @@ public class TeacherEducationService {
                 schoolClass.getName(),
                 examCount,
                 schoolClass.getCreatedAt()
+        );
+    }
+
+    private EducationDtos.OcrJobStatusResponse toOcrJobStatusResponse(OcrJob job) {
+        return new EducationDtos.OcrJobStatusResponse(
+                job.getJobId(),
+                job.getRequestId(),
+                job.getStatus().name(),
+                job.getRetryCount(),
+                job.getErrorMessage(),
+                job.getCreatedAt()
         );
     }
 }

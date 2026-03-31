@@ -3,6 +3,7 @@ package com.fastcheck.fastcheck.auth;
 import com.fastcheck.fastcheck.user.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class AuthDtos {
@@ -31,6 +32,27 @@ public class AuthDtos {
             String email,
             String accessToken,
             String refreshToken
+    ) {
+    }
+
+    public record AdminCreateUserRequest(
+            @NotBlank String fullName,
+            @NotBlank @Email String email,
+            @NotNull Role role,
+            @Size(min = 8, max = 120) String password,
+            Long schoolId,
+            Long classId
+    ) {
+    }
+
+    public record AdminCreatedUserResponse(
+            Long userId,
+            String fullName,
+            String email,
+            String role,
+            Long schoolId,
+            Long classId,
+            String initialPassword
     ) {
     }
 }

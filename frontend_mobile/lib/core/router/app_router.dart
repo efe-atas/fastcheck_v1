@@ -19,15 +19,18 @@ import '../../features/teacher/presentation/pages/add_student_page.dart';
 import '../../features/teacher/presentation/bloc/classes_bloc.dart';
 import '../../features/teacher/presentation/bloc/class_detail_bloc.dart';
 import '../../features/teacher/presentation/bloc/exam_bloc.dart';
+import '../../features/teacher/presentation/bloc/teacher_dashboard_cubit.dart';
 import '../../features/student/presentation/pages/student_dashboard_page.dart';
 import '../../features/student/presentation/pages/student_shell_page.dart';
 import '../../features/student/presentation/pages/exam_questions_page.dart';
 import '../../features/student/presentation/bloc/student_exams_bloc.dart';
 import '../../features/student/presentation/bloc/exam_questions_bloc.dart';
+import '../../features/student/presentation/cubit/student_dashboard_cubit.dart';
 import '../../features/parent/presentation/pages/parent_dashboard_page.dart';
 import '../../features/parent/presentation/pages/parent_shell_page.dart';
 import '../../features/parent/presentation/pages/student_exam_view_page.dart';
 import '../../features/parent/presentation/bloc/parent_bloc.dart';
+import '../../features/parent/presentation/cubit/parent_dashboard_cubit.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
 import '../../features/admin/presentation/pages/admin_shell_page.dart';
 import '../../features/admin/presentation/cubit/admin_cubit.dart';
@@ -87,7 +90,10 @@ class AppRouter {
             routes: [
               GoRoute(
                 path: '/teacher',
-                builder: (context, state) => const TeacherDashboardPage(),
+                builder: (context, state) => BlocProvider(
+                  create: (_) => sl<TeacherDashboardCubit>()..loadDashboard(),
+                  child: const TeacherDashboardPage(),
+                ),
                 routes: [
                   GoRoute(
                     path: 'classes/create',
@@ -136,7 +142,7 @@ class AppRouter {
                     ],
                   ),
                   GoRoute(
-                    path: 'exams/:examId',
+                    path: 'exams/:examId(\\d+)',
                     builder: (context, state) {
                       final examId =
                           int.parse(state.pathParameters['examId'] ?? '0');
@@ -186,7 +192,10 @@ class AppRouter {
             routes: [
               GoRoute(
                 path: '/student',
-                builder: (context, state) => const StudentDashboardPage(),
+                builder: (context, state) => BlocProvider(
+                  create: (_) => sl<StudentDashboardCubit>()..loadDashboard(),
+                  child: const StudentDashboardPage(),
+                ),
                 routes: [
                   GoRoute(
                     path: 'exams/:examId/questions',
@@ -212,8 +221,13 @@ class AppRouter {
 
       // Parent shell (Öğrenciler sekmesi)
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) => BlocProvider(
-          create: (_) => sl<ParentBloc>(),
+        builder: (context, state, navigationShell) => MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (_) => sl<ParentBloc>()),
+            BlocProvider(
+              create: (_) => sl<ParentDashboardCubit>()..loadDashboard(),
+            ),
+          ],
           child: ParentShellPage(navigationShell: navigationShell),
         ),
         branches: [

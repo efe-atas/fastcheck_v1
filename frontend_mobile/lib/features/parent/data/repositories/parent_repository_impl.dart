@@ -11,6 +11,18 @@ class ParentRepositoryImpl implements ParentRepository {
   ParentRepositoryImpl({required this.remoteDataSource});
 
   @override
+  Future<Either<Failure, ParentDashboardSummaryEntity>> getDashboardSummary() async {
+    try {
+      final model = await remoteDataSource.getDashboardSummary();
+      return Right(model.toEntity());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.statusCode));
+    } catch (e) {
+      return const Left(ServerFailure('Panel verileri alınamadı'));
+    }
+  }
+
+  @override
   Future<Either<Failure, List<LinkedStudentEntity>>> getLinkedStudents(
       int parentUserId) async {
     try {

@@ -34,4 +34,12 @@ public class AuthController {
     public AuthDtos.AuthResponse refresh(@Valid @RequestBody AuthDtos.RefreshRequest request) {
         return userService.refresh(request.refreshToken());
     }
+
+    @PostMapping("/admin/users")
+    @ResponseStatus(HttpStatus.CREATED)
+    public AuthDtos.AdminCreatedUserResponse createUserAsAdmin(
+            @Valid @RequestBody AuthDtos.AdminCreateUserRequest request
+    ) {
+        return userService.createUserAsAdmin(request);
+    }
 }

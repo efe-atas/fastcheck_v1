@@ -130,6 +130,11 @@ public class EducationController {
         return teacherEducationService.listMyClasses();
     }
 
+    @GetMapping("/teacher/dashboard")
+    public EducationDtos.TeacherDashboardSummary getTeacherDashboard() {
+        return teacherEducationService.getDashboardSummary();
+    }
+
     @GetMapping("/teacher/classes/{classId}/exams")
     public List<EducationDtos.ExamResponse> listClassExams(@PathVariable Long classId) {
         return teacherEducationService.listClassExams(classId);
@@ -159,8 +164,18 @@ public class EducationController {
         return studentEducationService.getQuestionsForStudent(examId);
     }
 
+    @GetMapping("/student/dashboard")
+    public EducationDtos.StudentDashboardSummary getStudentDashboard() {
+        return studentEducationService.getStudentDashboardSummary();
+    }
+
     @GetMapping("/parent/students/{studentId}/exams/{examId}/questions")
     public List<EducationDtos.QuestionResponse> getParentQuestions(@PathVariable Long studentId, @PathVariable Long examId) {
         return studentEducationService.getQuestionsForParent(studentId, examId);
+    }
+
+    @GetMapping("/parent/dashboard")
+    public EducationDtos.ParentDashboardSummary getParentDashboard() {
+        return studentEducationService.getParentDashboardSummary();
     }
 }

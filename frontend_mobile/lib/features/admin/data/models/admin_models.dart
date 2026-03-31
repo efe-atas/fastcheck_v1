@@ -69,6 +69,50 @@ class AssignUserToSchoolModel {
   }
 }
 
+class AdminProvisionedUserModel {
+  final int userId;
+  final String fullName;
+  final String email;
+  final String role;
+  final int? schoolId;
+  final int? classId;
+  final String? initialPassword;
+
+  const AdminProvisionedUserModel({
+    required this.userId,
+    required this.fullName,
+    required this.email,
+    required this.role,
+    this.schoolId,
+    this.classId,
+    this.initialPassword,
+  });
+
+  factory AdminProvisionedUserModel.fromJson(Map<String, dynamic> json) {
+    return AdminProvisionedUserModel(
+      userId: json['userId'] as int,
+      fullName: json['fullName'] as String,
+      email: json['email'] as String,
+      role: json['role'] as String,
+      schoolId: json['schoolId'] as int?,
+      classId: json['classId'] as int?,
+      initialPassword: json['initialPassword'] as String?,
+    );
+  }
+
+  AdminProvisionedUserEntity toEntity() {
+    return AdminProvisionedUserEntity(
+      userId: userId,
+      fullName: fullName,
+      email: email,
+      role: role,
+      schoolId: schoolId,
+      classId: classId,
+      initialPassword: initialPassword,
+    );
+  }
+}
+
 class ParentStudentLinkModel {
   final int linkId;
   final int parentUserId;
@@ -245,7 +289,8 @@ class AdminBulkOperationModel {
       success: json['success'] as int,
       failed: json['failed'] as int,
       errors: rawErrors
-          .map((e) => AdminBulkRowErrorModel.fromJson(e as Map<String, dynamic>))
+          .map(
+              (e) => AdminBulkRowErrorModel.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
   }
@@ -281,7 +326,8 @@ class AdminPagedResultModel<T> {
   ) {
     final rawItems = (json['items'] as List<dynamic>? ?? const []);
     return AdminPagedResultModel(
-      items: rawItems.map((e) => itemFromJson(e as Map<String, dynamic>)).toList(),
+      items:
+          rawItems.map((e) => itemFromJson(e as Map<String, dynamic>)).toList(),
       page: json['page'] as int,
       size: json['size'] as int,
       totalElements: json['totalElements'] as int,

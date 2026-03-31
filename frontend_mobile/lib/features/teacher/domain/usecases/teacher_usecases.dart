@@ -18,6 +18,20 @@ class GetClasses implements UseCase<List<ClassEntity>, NoParams> {
   }
 }
 
+class GetTeacherDashboardSummary
+    implements UseCase<TeacherDashboardSummaryEntity, NoParams> {
+  final TeacherRepository repository;
+
+  const GetTeacherDashboardSummary(this.repository);
+
+  @override
+  Future<Either<Failure, TeacherDashboardSummaryEntity>> call(
+    NoParams params,
+  ) {
+    return repository.getDashboardSummary();
+  }
+}
+
 class GetClassExams implements UseCase<List<ExamEntity>, int> {
   final TeacherRepository repository;
 
@@ -66,13 +80,12 @@ class GetClassStudents
 }
 
 class CreateClassParams extends Equatable {
-  final int schoolId;
   final String className;
 
-  const CreateClassParams({required this.schoolId, required this.className});
+  const CreateClassParams({required this.className});
 
   @override
-  List<Object?> get props => [schoolId, className];
+  List<Object?> get props => [className];
 }
 
 class CreateClass implements UseCase<ClassEntity, CreateClassParams> {
@@ -83,7 +96,6 @@ class CreateClass implements UseCase<ClassEntity, CreateClassParams> {
   @override
   Future<Either<Failure, ClassEntity>> call(CreateClassParams params) {
     return repository.createClass(
-      schoolId: params.schoolId,
       className: params.className,
     );
   }
