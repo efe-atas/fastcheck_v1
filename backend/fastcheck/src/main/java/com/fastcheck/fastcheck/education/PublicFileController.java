@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -37,7 +38,7 @@ public class PublicFileController {
         try {
             Resource resource = new UrlResource(target.toUri());
             String contentType = Files.probeContentType(target);
-            MediaType mediaType = contentType == null ? MediaType.APPLICATION_OCTET_STREAM : MediaType.parseMediaType(contentType);
+            MediaType mediaType = resolveMediaType(target.getFileName().toString(), contentType);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CACHE_CONTROL, "public, max-age=86400")
                     .contentType(mediaType)
@@ -47,5 +48,26 @@ public class PublicFileController {
         } catch (IOException exc) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "file read failed");
         }
+    }
+
+    private MediaType resolveMediaType(String fileName, String detectedContentType) {
+        if (detectedContentType != null && !detectedContentType.isBlank()) {
+            return MediaType.parseMediaType(detectedContentType);
+        }
+
+        String lower = fileName.toLowerCase(Locale.ROOT);
+        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) {
+            return MediaType.IMAGE_JPEG;
+        }
+        if (lower.endsWith(".png")) {
+            return MediaType.IMAGE_PNG;
+        }
+        if (lower.endsWith(".webp")) {
+            return MediaType.parseMediaType("image/webp");
+        }
+        if (lower.endsWith(".gif")) {
+            return MediaType.IMAGE_GIF;
+        }
+        return MediaType.APPLICATION_OCTET_STREAM;
     }
 }

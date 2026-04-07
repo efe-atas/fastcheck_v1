@@ -103,6 +103,10 @@ class ExamListTile extends StatelessWidget {
         return const LinearGradient(
           colors: [AppColors.textTertiary, Color(0xFF64748B)],
         );
+      case 'FAILED':
+        return const LinearGradient(
+          colors: [AppColors.error, Color(0xFFC62828)],
+        );
       default:
         return AppColors.primaryGradient;
     }
@@ -116,6 +120,8 @@ class ExamListTile extends StatelessWidget {
         return Icons.hourglass_top_rounded;
       case 'DRAFT':
         return Icons.edit_note_rounded;
+      case 'FAILED':
+        return Icons.error_outline_rounded;
       default:
         return Icons.assignment_rounded;
     }
@@ -154,6 +160,8 @@ class _StatusChip extends StatelessWidget {
         return 'İşleniyor';
       case 'DRAFT':
         return 'Taslak';
+      case 'FAILED':
+        return 'Hata';
       default:
         return status;
     }
@@ -167,6 +175,8 @@ class _StatusChip extends StatelessWidget {
         return AppColors.warningLight;
       case 'DRAFT':
         return AppColors.surfaceVariant;
+      case 'FAILED':
+        return AppColors.errorLight;
       default:
         return AppColors.primarySurface;
     }
@@ -180,6 +190,8 @@ class _StatusChip extends StatelessWidget {
         return AppColors.warning;
       case 'DRAFT':
         return AppColors.textSecondary;
+      case 'FAILED':
+        return AppColors.error;
       default:
         return AppColors.primary;
     }

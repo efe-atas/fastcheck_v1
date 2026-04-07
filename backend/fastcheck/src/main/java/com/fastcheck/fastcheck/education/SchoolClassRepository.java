@@ -9,4 +9,10 @@ public interface SchoolClassRepository extends JpaRepository<SchoolClass, Long> 
     List<SchoolClass> findBySchool_Id(Long schoolId);
 
     java.util.Optional<SchoolClass> findByIdAndSchool_Id(Long classId, Long schoolId);
+
+    java.util.Optional<SchoolClass> findFirstByTeacher_IdAndSchool_IdAndNameIgnoreCase(
+            Long teacherId,
+            Long schoolId,
+            String name
+    );
 }

@@ -24,6 +24,7 @@ abstract class TeacherRemoteDataSource {
     required List<File> images,
   });
   Future<ExamStatusModel> getExamStatus(int examId);
+  Future<ExamStatusModel> reprocessExam(int examId);
   Future<StudentModel> addStudentToClass({
     required int classId,
     required String fullName,
@@ -206,6 +207,19 @@ class TeacherRemoteDataSourceImpl implements TeacherRemoteDataSource {
   Future<ExamStatusModel> getExamStatus(int examId) async {
     try {
       final response = await dio.get(ApiConstants.teacherExamStatus(examId));
+      return ExamStatusModel.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw ServerException(
+        message: e.response?.data?['message']?.toString() ?? 'Sunucu hatası',
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
+
+  @override
+  Future<ExamStatusModel> reprocessExam(int examId) async {
+    try {
+      final response = await dio.post(ApiConstants.teacherExamReprocess(examId));
       return ExamStatusModel.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw ServerException(

@@ -181,12 +181,58 @@ class _AddStudentPageState extends State<AddStudentPage> {
           destructive: true,
         );
       },
-      (student) {
-        showAppToast(
-          context,
-          message: '${student.fullName} başarıyla eklendi',
-        );
-        Navigator.of(context).pop(true);
+      (student) async {
+        if (student.initialPassword != null &&
+            student.initialPassword!.isNotEmpty) {
+          await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Öğrenci Oluşturuldu'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('${student.fullName} başarıyla eklendi.'),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Başlangıç Şifresi:',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  SelectableText(
+                    student.initialPassword!,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Bu şifreyi öğrenciyle paylaşın. Sadece bir kez gösterilir.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Tamam'),
+                ),
+              ],
+            ),
+          );
+        } else {
+          showAppToast(
+            context,
+            message: '${student.fullName} başarıyla eklendi',
+          );
+        }
+        if (mounted) Navigator.of(context).pop(true);
       },
     );
   }

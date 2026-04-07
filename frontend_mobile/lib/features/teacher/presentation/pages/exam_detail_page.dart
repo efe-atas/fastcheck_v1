@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_error_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
@@ -116,9 +117,80 @@ class _ExamDetailPageState extends State<ExamDetailPage> {
             const SizedBox(height: 20),
             _buildAdvancedDetailsCard(examStatus),
           ],
+          _buildActionButtons(context, examStatus),
         ],
       ),
     );
+  }
+
+  Widget _buildActionButtons(BuildContext context, ExamStatusEntity examStatus) {
+    final status = examStatus.examStatus.toUpperCase();
+
+    if (status == 'FAILED' || status == 'ERROR') {
+      return Padding(
+        padding: const EdgeInsets.only(top: 24),
+        child: SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton.icon(
+            onPressed: () {
+              context.read<ExamBloc>().add(ReprocessExamEvent(examStatus.examId));
+            },
+            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+            label: const Text(
+              'Yeniden İşle',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              elevation: 0,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (status == 'READY' || status == 'COMPLETED' || status == 'DONE') {
+      return Padding(
+        padding: const EdgeInsets.only(top: 24),
+        child: SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton.icon(
+            onPressed: () {
+              context.push(
+                '/teacher/exams/${examStatus.examId}/questions?title=${Uri.encodeComponent(examStatus.title)}',
+              );
+            },
+            icon: const Icon(Icons.quiz_rounded, color: Colors.white),
+            label: Text(
+              'Soruları Gör (${examStatus.questionCount} Soru)',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              elevation: 0,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return const SizedBox();
   }
 
   Widget _buildNextStepCard(ExamStatusEntity examStatus) {

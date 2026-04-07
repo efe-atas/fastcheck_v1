@@ -158,6 +158,20 @@ class TeacherRepositoryImpl implements TeacherRepository {
   }
 
   @override
+  Future<Either<Failure, ExamStatusEntity>> reprocessExam(int examId) async {
+    try {
+      final model = await remoteDataSource.reprocessExam(examId);
+      return Right(model.toEntity());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.statusCode));
+    } on NetworkException {
+      return const Left(NetworkFailure());
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, StudentEntity>> addStudentToClass({
     required int classId,
     required String fullName,

@@ -183,6 +183,46 @@ public class StudentEducationService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public EducationDtos.PagedResponse<EducationDtos.StudentExamListItem> listStudentExamsForParent(
+            Long studentId, int page, int size, String examStatus
+    ) {
+        UserAccount parent = accessService.requireRole(Role.ROLE_PARENT);
+        boolean linked = parentStudentLinkRepository.findByParent_Id(parent.getId())
+                .stream()
+                .anyMatch(link -> link.getStudent().getId().equals(studentId));
+        if (!linked) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "forbidden");
+        }
+        UserAccount student = userRepository.findById(studentId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "student not found"));
+        if (student.getRole() != Role.ROLE_STUDENT || student.getSchoolClass() == null) {
+            return new EducationDtos.PagedResponse<>(List.of(), page, size, 0, 0);
+        }
+        Long classId = student.getSchoolClass().getId();
+        Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100));
+
+        Page<Exam> exams;
+        if (examStatus == null || examStatus.isBlank()) {
+            exams = examRepository.findBySchoolClass_IdOrderByCreatedAtDesc(classId, pageable);
+        } else {
+            ExamStatus parsedStatus;
+            try {
+                parsedStatus = ExamStatus.valueOf(examStatus.trim().toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException exc) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "invalid examStatus value");
+            }
+            exams = examRepository.findBySchoolClass_IdAndStatusOrderByCreatedAtDesc(classId, parsedStatus, pageable);
+        }
+
+        List<EducationDtos.StudentExamListItem> items = exams.getContent()
+                .stream()
+                .map(this::toStudentExamList)
+                .toList();
+
+        return new EducationDtos.PagedResponse<>(items, exams.getNumber(), exams.getSize(), exams.getTotalElements(), exams.getTotalPages());
+    }
+
     private EducationDtos.ParentStudentSummary buildParentStudentSummary(UserAccount student) {
         Long classId = student.getSchoolClass() == null ? null : student.getSchoolClass().getId();
         long total = classId == null ? 0 : examRepository.countBySchoolClass_Id(classId);
@@ -197,6 +237,7 @@ public class StudentEducationService {
                 classId,
                 total,
                 ready,
+                latest == null ? null : latest.getId(),
                 latest == null ? null : latest.getTitle(),
                 latest == null ? null : latest.getStatus().name(),
                 latest == null ? null : latest.getCreatedAt()

@@ -98,6 +98,7 @@ public class EducationDtos {
             Long classId,
             long totalExams,
             long readyExams,
+            Long latestExamId,
             String latestExamTitle,
             String latestExamStatus,
             Instant latestExamCreatedAt
@@ -226,7 +227,9 @@ public class EducationDtos {
             String title,
             String examStatus,
             List<ExamImageResponse> images,
-            List<OcrJobStatusResponse> ocrJobs
+            List<OcrJobStatusResponse> ocrJobs,
+            int questionCount,
+            List<QuestionResponse> questions
     ) {
     }
 

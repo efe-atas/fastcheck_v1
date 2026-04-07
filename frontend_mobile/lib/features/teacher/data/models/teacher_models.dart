@@ -77,12 +77,16 @@ class StudentModel {
   final String fullName;
   final String email;
   final int classId;
+  final String? role;
+  final String? initialPassword;
 
   const StudentModel({
     required this.userId,
     required this.fullName,
     required this.email,
     required this.classId,
+    this.role,
+    this.initialPassword,
   });
 
   factory StudentModel.fromJson(Map<String, dynamic> json) {
@@ -91,6 +95,8 @@ class StudentModel {
       fullName: json['fullName'] as String,
       email: json['email'] as String,
       classId: json['classId'] as int,
+      role: json['role'] as String?,
+      initialPassword: json['initialPassword'] as String?,
     );
   }
 
@@ -100,6 +106,7 @@ class StudentModel {
       fullName: fullName,
       email: email,
       classId: classId,
+      initialPassword: initialPassword,
     );
   }
 }
@@ -213,6 +220,8 @@ class ExamStatusModel {
   final String examStatus;
   final List<ExamImageModel> images;
   final List<OcrJobModel> ocrJobs;
+  final int questionCount;
+  final List<TeacherQuestionModel> questions;
 
   const ExamStatusModel({
     required this.examId,
@@ -221,6 +230,8 @@ class ExamStatusModel {
     required this.examStatus,
     required this.images,
     required this.ocrJobs,
+    this.questionCount = 0,
+    this.questions = const [],
   });
 
   factory ExamStatusModel.fromJson(Map<String, dynamic> json) {
@@ -243,6 +254,11 @@ class ExamStatusModel {
               ?.map((e) => OcrJobModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
+      questionCount: (json['questionCount'] as num?)?.toInt() ?? 0,
+      questions: (json['questions'] as List<dynamic>?)
+              ?.map((e) => TeacherQuestionModel.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 
@@ -254,6 +270,8 @@ class ExamStatusModel {
       examStatus: examStatus,
       images: images.map((e) => e.toEntity(parentExamId: examId)).toList(),
       ocrJobs: ocrJobs.map((e) => e.toEntity()).toList(),
+      questionCount: questionCount,
+      questions: questions.map((e) => e.toEntity()).toList(),
     );
   }
 }
@@ -312,6 +330,50 @@ class TeacherDashboardSummaryModel {
       readyExams: readyExams,
       latestExams: latestExams.map((e) => e.toEntity()).toList(),
       recentOcrJobs: recentOcrJobs.map((e) => e.toEntity()).toList(),
+    );
+  }
+}
+
+class TeacherQuestionModel {
+  final int id;
+  final int pageNumber;
+  final int questionOrder;
+  final String? sourceQuestionId;
+  final String? questionText;
+  final String? studentAnswer;
+  final double? confidence;
+
+  const TeacherQuestionModel({
+    required this.id,
+    required this.pageNumber,
+    required this.questionOrder,
+    this.sourceQuestionId,
+    this.questionText,
+    this.studentAnswer,
+    this.confidence,
+  });
+
+  factory TeacherQuestionModel.fromJson(Map<String, dynamic> json) {
+    return TeacherQuestionModel(
+      id: json['id'] as int,
+      pageNumber: json['pageNumber'] as int,
+      questionOrder: json['questionOrder'] as int,
+      sourceQuestionId: json['sourceQuestionId']?.toString(),
+      questionText: json['questionText'] as String?,
+      studentAnswer: json['studentAnswer'] as String?,
+      confidence: (json['confidence'] as num?)?.toDouble(),
+    );
+  }
+
+  TeacherQuestionEntity toEntity() {
+    return TeacherQuestionEntity(
+      id: id,
+      pageNumber: pageNumber,
+      questionOrder: questionOrder,
+      sourceQuestionId: sourceQuestionId,
+      questionText: questionText,
+      studentAnswer: studentAnswer,
+      confidence: confidence,
     );
   }
 }

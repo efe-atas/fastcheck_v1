@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     service_jwt_required: bool = True
     service_jwt_algorithms: str = "HS256"
     service_jwt_secret: str = ""
+    service_jwt_secret_alt: str = Field(default="", alias="FASTAPI_SERVICE_JWT_SECRET")
     service_jwt_jwks_url: str = ""
     service_jwt_issuer: str = "fastcheck-spring"
     service_jwt_audience: str = "fastcheck-ai"

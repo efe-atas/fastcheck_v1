@@ -27,6 +27,8 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
 
     Optional<Exam> findTop1BySchoolClass_IdOrderByCreatedAtDesc(Long classId);
 
+    Optional<Exam> findFirstBySchoolClass_IdAndTitleIgnoreCase(Long classId, String title);
+
     Page<Exam> findBySchoolClass_IdOrderByCreatedAtDesc(Long classId, Pageable pageable);
 
     Page<Exam> findBySchoolClass_IdAndStatusOrderByCreatedAtDesc(Long classId, ExamStatus status, Pageable pageable);

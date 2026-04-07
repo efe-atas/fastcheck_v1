@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/gradient_dashboard_header.dart';
@@ -118,7 +119,15 @@ class _ParentStudentCard extends StatelessWidget {
         ? _ParentStatusUi.fromStatus(student.latestExamStatus ?? '')
         : null;
 
-    return AppSurfaceCard(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => context.push(
+          '/parent/students/${student.studentId}/exams'
+          '?name=${Uri.encodeComponent(student.fullName)}',
+        ),
+        borderRadius: BorderRadius.circular(18),
+        child: AppSurfaceCard(
       padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,6 +273,8 @@ class _ParentStudentCard extends StatelessWidget {
             ),
         ],
       ),
+    ),
+      ),
     );
   }
 }
@@ -347,6 +358,13 @@ class _ParentStatusUi {
           color: AppColors.textSecondary,
           background: AppColors.surfaceVariant,
           icon: Icons.edit_note_rounded,
+        );
+      case 'FAILED':
+        return const _ParentStatusUi(
+          label: 'Hata',
+          color: AppColors.error,
+          background: AppColors.errorLight,
+          icon: Icons.error_rounded,
         );
       default:
         return const _ParentStatusUi(

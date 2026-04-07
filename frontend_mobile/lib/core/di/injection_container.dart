@@ -94,6 +94,7 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton(() => CreateExam(sl()));
   sl.registerLazySingleton(() => UploadExamImages(sl()));
   sl.registerLazySingleton(() => GetExamStatus(sl()));
+  sl.registerLazySingleton(() => ReprocessExam(sl()));
   sl.registerLazySingleton(() => AddStudentToClass(sl()));
 
   sl.registerFactory(() => ClassesBloc(getClasses: sl()));
@@ -108,6 +109,7 @@ Future<void> initDependencies() async {
       createExam: sl(),
       uploadExamImages: sl(),
       getExamStatus: sl(),
+      reprocessExam: sl(),
     ),
   );
 
@@ -138,6 +140,7 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton(() => GetLinkedStudents(sl()));
   sl.registerLazySingleton(() => GetStudentExamQuestions(sl()));
   sl.registerLazySingleton(() => GetParentDashboardSummary(sl()));
+  sl.registerLazySingleton(() => GetParentStudentExams(sl()));
 
   sl.registerFactory(
     () => ParentBloc(

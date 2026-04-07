@@ -6,6 +6,7 @@ class OcrResultEntity extends Equatable {
   final int? userId;
   final String? imageUrl;
   final String? sourceId;
+  final String status;
   final DateTime createdAt;
   final dynamic result;
 
@@ -15,11 +16,12 @@ class OcrResultEntity extends Equatable {
     this.userId,
     this.imageUrl,
     this.sourceId,
+    this.status = 'PENDING',
     required this.createdAt,
     this.result,
   });
 
   @override
   List<Object?> get props =>
-      [jobId, requestId, userId, imageUrl, sourceId, createdAt, result];
+      [jobId, requestId, userId, imageUrl, sourceId, status, createdAt, result];
 }

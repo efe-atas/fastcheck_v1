@@ -30,6 +30,7 @@ class ApiConstants {
   static String teacherExamImages(int examId) =>
       '/v1/teacher/exams/$examId/images';
   static String teacherExamStatus(int examId) => '/v1/teacher/exams/$examId';
+  static String teacherExamReprocess(int examId) => '/v1/teacher/exams/$examId/reprocess';
   static const String teacherDashboard = '/v1/teacher/dashboard';
 
   // Student
@@ -41,6 +42,8 @@ class ApiConstants {
   // Parent
   static String parentStudentExamQuestions(int studentId, int examId) =>
       '/v1/parent/students/$studentId/exams/$examId/questions';
+  static String parentStudentExams(int studentId) =>
+      '/v1/parent/students/$studentId/exams';
   static const String parentDashboard = '/v1/parent/dashboard';
 
   // Admin

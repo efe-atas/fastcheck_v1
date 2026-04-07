@@ -60,6 +60,7 @@ public class OcrProcessingService {
         job.setImageUrl(request.imageUrl());
         job.setSourceId(request.sourceId());
         job.setRequestId(fastApiRequestId);
+        job.setStatus(OcrJobStatus.COMPLETED);
         try {
             job.setOcrResultJson(objectMapper.writeValueAsString(apiResponse.result()));
         } catch (Exception exc) {
@@ -98,14 +99,16 @@ public class OcrProcessingService {
     private OcrDtos.OcrResultResponse toResponse(OcrJob job) {
         try {
             JsonNode result = objectMapper.readTree(job.getOcrResultJson());
+            Object responsePayload = objectMapper.convertValue(result, Object.class);
             return new OcrDtos.OcrResultResponse(
                     job.getJobId(),
                     job.getRequestId(),
                     job.getUser().getId(),
                     job.getImageUrl(),
                     job.getSourceId(),
+                    job.getStatus().name(),
                     job.getCreatedAt(),
-                    result
+                    responsePayload
             );
         } catch (Exception exc) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "stored OCR result is corrupted");

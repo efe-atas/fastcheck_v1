@@ -31,6 +31,7 @@ public class TeacherEducationService {
     private final ExamOcrQueueService examOcrQueueService;
     private final PasswordEncoder passwordEncoder;
     private final OcrJobRepository ocrJobRepository;
+    private final QuestionRepository questionRepository;
 
     public TeacherEducationService(
             EducationAccessService accessService,
@@ -41,7 +42,8 @@ public class TeacherEducationService {
             ExamFileStorageService fileStorageService,
             ExamOcrQueueService examOcrQueueService,
             PasswordEncoder passwordEncoder,
-            OcrJobRepository ocrJobRepository
+            OcrJobRepository ocrJobRepository,
+            QuestionRepository questionRepository
     ) {
         this.accessService = accessService;
         this.schoolClassRepository = schoolClassRepository;
@@ -52,6 +54,7 @@ public class TeacherEducationService {
         this.examOcrQueueService = examOcrQueueService;
         this.passwordEncoder = passwordEncoder;
         this.ocrJobRepository = ocrJobRepository;
+        this.questionRepository = questionRepository;
     }
 
     @Transactional
@@ -201,13 +204,29 @@ public class TeacherEducationService {
                 .map(this::toOcrJobStatusResponse)
                 .toList();
 
+        List<EducationDtos.QuestionResponse> questions = questionRepository
+                .findByExam_IdOrderByPageNumberAscQuestionOrderAsc(examId)
+                .stream()
+                .map(q -> new EducationDtos.QuestionResponse(
+                        q.getId(),
+                        q.getPageNumber(),
+                        q.getQuestionOrder(),
+                        q.getSourceQuestionId(),
+                        q.getQuestionTextRaw(),
+                        q.getStudentAnswerRaw(),
+                        q.getConfidence()
+                ))
+                .toList();
+
         return new EducationDtos.TeacherExamStatusResponse(
                 exam.getId(),
                 exam.getSchoolClass().getId(),
                 exam.getTitle(),
                 exam.getStatus().name(),
                 images,
-                jobs
+                jobs,
+                questions.size(),
+                questions
         );
     }
 
@@ -294,6 +313,38 @@ public class TeacherEducationService {
                 roster.getTotalPages()
             );
             }
+
+    @Transactional
+    public EducationDtos.TeacherExamStatusResponse reprocessExam(Long examId) {
+        UserAccount teacher = accessService.requireRole(Role.ROLE_TEACHER);
+        Exam exam = examRepository.findByIdAndTeacher_Id(examId, teacher.getId())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "exam not found"));
+
+        List<ExamImage> images = examImageRepository.findByExam_IdOrderByPageOrderAsc(examId);
+        if (images.isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "no images to reprocess");
+        }
+
+        // Reset all non-completed images back to PENDING
+        for (ExamImage image : images) {
+            String status = image.getStatus().name();
+            if ("FAILED".equals(status) || "PENDING".equals(status)) {
+                image.setStatus(ExamImageStatus.PENDING);
+                image.setErrorMessage(null);
+                image.setProcessingStartedAt(null);
+                image.setProcessingCompletedAt(null);
+                examImageRepository.save(image);
+            }
+        }
+
+        // Clear previous questions and re-enqueue
+        questionRepository.deleteByExam_Id(examId);
+        exam.setStatus(ExamStatus.PROCESSING);
+        examRepository.save(exam);
+        examOcrQueueService.enqueueExam(examId);
+
+        return getExamStatus(examId);
+    }
 
     private SchoolClass getTeacherClassOrThrow(Long classId, Long teacherId) {
         SchoolClass schoolClass = schoolClassRepository.findById(classId)

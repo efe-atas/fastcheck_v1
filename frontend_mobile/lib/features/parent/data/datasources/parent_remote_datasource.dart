@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../../../../core/constants/api_constants.dart';
+import '../../../../core/network/paged_response_dto.dart';
 import '../../../../core/error/exceptions.dart';
 import '../models/parent_models.dart';
 
@@ -8,6 +9,12 @@ abstract class ParentRemoteDataSource {
   Future<List<ParentQuestionModel>> getStudentExamQuestions(
       int studentId, int examId);
   Future<ParentDashboardSummaryModel> getDashboardSummary();
+  Future<PagedResponseDto<ParentStudentExamModel>> getStudentExams(
+    int studentId, {
+    int page = 0,
+    int size = 20,
+    String? examStatus,
+  });
 }
 
 class ParentRemoteDataSourceImpl implements ParentRemoteDataSource {
@@ -61,6 +68,34 @@ class ParentRemoteDataSourceImpl implements ParentRemoteDataSource {
     }
   }
 
+  @override
+  Future<PagedResponseDto<ParentStudentExamModel>> getStudentExams(
+    int studentId, {
+    int page = 0,
+    int size = 20,
+    String? examStatus,
+  }) async {
+    try {
+      final query = <String, dynamic>{'page': page, 'size': size};
+      if (examStatus != null && examStatus.isNotEmpty) {
+        query['examStatus'] = examStatus;
+      }
+      final response = await dio.get(
+        ApiConstants.parentStudentExams(studentId),
+        queryParameters: query,
+      );
+      return PagedResponseDto.fromJson(
+        response.data as Map<String, dynamic>,
+        ParentStudentExamModel.fromJson,
+      );
+    } on DioException catch (e) {
+      throw ServerException(
+        message: _extractError(e),
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
+
   String _extractError(DioException e) {
     if (e.response?.data is Map) {
       final data = e.response!.data as Map;
@@ -69,3 +104,4 @@ class ParentRemoteDataSourceImpl implements ParentRemoteDataSource {
     return 'Bir hata oluştu';
   }
 }
+

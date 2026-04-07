@@ -163,6 +163,17 @@ class GetExamStatus implements UseCase<ExamStatusEntity, int> {
   }
 }
 
+class ReprocessExam implements UseCase<ExamStatusEntity, int> {
+  final TeacherRepository repository;
+
+  const ReprocessExam(this.repository);
+
+  @override
+  Future<Either<Failure, ExamStatusEntity>> call(int examId) {
+    return repository.reprocessExam(examId);
+  }
+}
+
 class AddStudentParams extends Equatable {
   final int classId;
   final String fullName;

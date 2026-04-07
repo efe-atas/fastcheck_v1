@@ -51,6 +51,15 @@ class RefreshExamStatusEvent extends ExamEvent {
   List<Object?> get props => [examId];
 }
 
+class ReprocessExamEvent extends ExamEvent {
+  final int examId;
+
+  const ReprocessExamEvent(this.examId);
+
+  @override
+  List<Object?> get props => [examId];
+}
+
 // --- States ---
 
 abstract class ExamState extends Equatable {
@@ -118,16 +127,19 @@ class ExamBloc extends Bloc<ExamEvent, ExamState> {
   final CreateExam createExam;
   final UploadExamImages uploadExamImages;
   final GetExamStatus getExamStatus;
+  final ReprocessExam reprocessExam;
 
   ExamBloc({
     required this.createExam,
     required this.uploadExamImages,
     required this.getExamStatus,
+    required this.reprocessExam,
   }) : super(const ExamInitial()) {
     on<CreateExamEvent>(_onCreateExam);
     on<UploadImagesEvent>(_onUploadImages);
     on<LoadExamStatusEvent>(_onLoadExamStatus);
     on<RefreshExamStatusEvent>(_onRefreshExamStatus);
+    on<ReprocessExamEvent>(_onReprocessExam);
   }
 
   Future<void> _onCreateExam(
@@ -152,9 +164,15 @@ class ExamBloc extends Bloc<ExamEvent, ExamState> {
     final result = await uploadExamImages(
       UploadExamImagesParams(examId: event.examId, images: event.images),
     );
-    result.fold(
-      (failure) => emit(ExamError(failure.message)),
-      (images) => emit(ImagesUploaded(images)),
+    await result.fold(
+      (failure) async => emit(ExamError(failure.message)),
+      (images) async {
+        final statusResult = await getExamStatus(event.examId);
+        statusResult.fold(
+          (_) => emit(ImagesUploaded(images)),
+          (status) => emit(ExamStatusLoaded(status)),
+        );
+      },
     );
   }
 
@@ -175,6 +193,18 @@ class ExamBloc extends Bloc<ExamEvent, ExamState> {
     Emitter<ExamState> emit,
   ) async {
     final result = await getExamStatus(event.examId);
+    result.fold(
+      (failure) => emit(ExamError(failure.message)),
+      (status) => emit(ExamStatusLoaded(status)),
+    );
+  }
+
+  Future<void> _onReprocessExam(
+    ReprocessExamEvent event,
+    Emitter<ExamState> emit,
+  ) async {
+    emit(const ExamStatusLoading());
+    final result = await reprocessExam(event.examId);
     result.fold(
       (failure) => emit(ExamError(failure.message)),
       (status) => emit(ExamStatusLoaded(status)),

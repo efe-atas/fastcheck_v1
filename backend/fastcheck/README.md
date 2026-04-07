@@ -56,12 +56,15 @@ Bu dokuman son eklenen egitim akis endpointlerini ozetler.
 
 ## Parent Endpoints
 
+- `GET /v1/parent/students/{studentId}/exams`
+  - Veliye bağlı öğrencinin sınavlarını listeler.
+  - Query: `page` (default `0`), `size` (default `20`), `examStatus` (opsiyonel: `DRAFT|PROCESSING|READY|FAILED`).
 - `GET /v1/parent/students/{studentId}/exams/{examId}/questions`
   - Bagli ogrencinin sinav sorulari.
 - `GET /v1/admin/parents/{parentUserId}/students`
   - `ROLE_PARENT` kendi `parentUserId` degeri ile cagirdiginda kendi ogrencilerini gorebilir.
 - `GET /v1/parent/dashboard`
-  - Veliye bagli ogrencilerin ozet bilgisi (sinav toplamlari, son sinav durumu) ve kart listesi.
+  - Veliye bagli ogrencilerin ozet bilgisi (sinav toplamlari, son sinav durumu, `latestExamId`) ve kart listesi.
 
 ## File Endpoint
 

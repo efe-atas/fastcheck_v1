@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
+import '../../../../core/domain/paged_result.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/usecase/usecase.dart';
 import '../entities/parent_entities.dart';
@@ -51,4 +52,41 @@ class StudentExamParams extends Equatable {
 
   @override
   List<Object?> get props => [studentId, examId];
+}
+
+class GetParentStudentExamsParams extends Equatable {
+  final int studentId;
+  final int page;
+  final int size;
+  final String? examStatus;
+
+  const GetParentStudentExamsParams({
+    required this.studentId,
+    this.page = 0,
+    this.size = 20,
+    this.examStatus,
+  });
+
+  @override
+  List<Object?> get props => [studentId, page, size, examStatus];
+}
+
+class GetParentStudentExams
+    extends UseCase<PagedResult<ParentStudentExamEntity>,
+        GetParentStudentExamsParams> {
+  final ParentRepository repository;
+
+  GetParentStudentExams(this.repository);
+
+  @override
+  Future<Either<Failure, PagedResult<ParentStudentExamEntity>>> call(
+    GetParentStudentExamsParams params,
+  ) {
+    return repository.getStudentExams(
+      params.studentId,
+      page: params.page,
+      size: params.size,
+      examStatus: params.examStatus,
+    );
+  }
 }

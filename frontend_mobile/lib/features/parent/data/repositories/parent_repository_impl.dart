@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import '../../../../core/domain/paged_result.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/parent_entities.dart';
@@ -48,4 +49,27 @@ class ParentRepositoryImpl implements ParentRepository {
       return const Left(ServerFailure('Soru listesi alınamadı'));
     }
   }
+
+  @override
+  Future<Either<Failure, PagedResult<ParentStudentExamEntity>>> getStudentExams(
+    int studentId, {
+    int page = 0,
+    int size = 20,
+    String? examStatus,
+  }) async {
+    try {
+      final paged = await remoteDataSource.getStudentExams(
+        studentId,
+        page: page,
+        size: size,
+        examStatus: examStatus,
+      );
+      return Right(paged.toPagedResult((m) => m.toEntity()));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.statusCode));
+    } catch (e) {
+      return const Left(ServerFailure('Sınav listesi alınamadı'));
+    }
+  }
 }
+

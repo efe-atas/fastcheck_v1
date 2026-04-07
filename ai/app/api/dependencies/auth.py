@@ -27,7 +27,10 @@ def verify_service_jwt(authorization: str | None = Header(default=None)) -> Serv
     if not settings.service_jwt_required:
         return ServicePrincipal(subject="anonymous")
 
-    if not settings.service_jwt_secret:
+    primary_secret = settings.service_jwt_secret.strip()
+    alt_secret = settings.service_jwt_secret_alt.strip()
+
+    if not primary_secret and not alt_secret:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="jwt secret is not configured")
 
     if not authorization or not authorization.startswith("Bearer "):
@@ -37,16 +40,25 @@ def verify_service_jwt(authorization: str | None = Header(default=None)) -> Serv
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="empty bearer token")
 
-    try:
-        payload = _decode_with_secret(
-            token=token,
-            secret=settings.service_jwt_secret,
-            issuer=settings.service_jwt_issuer,
-            audience=settings.service_jwt_audience,
-            algorithms=[algo.strip() for algo in settings.service_jwt_algorithms.split(",") if algo.strip()],
-        )
-    except jwt.PyJWTError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token") from exc
+    payload = None
+    algorithms = [algo.strip() for algo in settings.service_jwt_algorithms.split(",") if algo.strip()]
+    for secret in [primary_secret, alt_secret]:
+        if not secret:
+            continue
+        try:
+            payload = _decode_with_secret(
+                token=token,
+                secret=secret,
+                issuer=settings.service_jwt_issuer,
+                audience=settings.service_jwt_audience,
+                algorithms=algorithms,
+            )
+            break
+        except jwt.PyJWTError:
+            continue
+
+    if payload is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token")
 
     sub = str(payload.get("sub", "")).strip()
     if not sub:

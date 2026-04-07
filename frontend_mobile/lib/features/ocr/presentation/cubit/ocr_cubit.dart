@@ -41,12 +41,13 @@ class OcrState extends Equatable {
     String? lastMessage,
     bool clearError = false,
     bool clearLastMessage = false,
+    bool clearLastExtract = false,
   }) {
     return OcrState(
       isLoading: isLoading ?? this.isLoading,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       results: results ?? this.results,
-      lastExtract: lastExtract ?? this.lastExtract,
+      lastExtract: clearLastExtract ? null : (lastExtract ?? this.lastExtract),
       processedCount: processedCount ?? this.processedCount,
       totalCount: totalCount ?? this.totalCount,
       successCount: successCount ?? this.successCount,
@@ -105,9 +106,35 @@ class OcrCubit extends Cubit<OcrState> {
     }
   }
 
+  List<OcrResultEntity> _sortResults(List<OcrResultEntity> list) {
+    final sorted = List<OcrResultEntity>.from(list);
+    sorted.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return sorted;
+  }
+
+  bool _isCompletedStatus(String status) {
+    switch (status.toUpperCase()) {
+      case 'COMPLETED':
+      case 'READY':
+      case 'DONE':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  OcrResultEntity? _latestCompleted(List<OcrResultEntity> list) {
+    for (final item in list) {
+      if (_isCompletedStatus(item.status) && item.result != null) {
+        return item;
+      }
+    }
+    return null;
+  }
+
   Future<List<OcrResultEntity>?> _refreshResults() async {
     final result = await ocrListMine(const NoParams());
-    return result.fold((_) => null, (list) => list);
+    return result.fold((_) => null, _sortResults);
   }
 
   /// Cihaz belge tarayıcısını açar ve sayfaları sırayla upload + extract yapar.
@@ -238,13 +265,16 @@ class OcrCubit extends Cubit<OcrState> {
     }
 
     final refreshed = await _refreshResults();
+    final latestCompleted =
+        refreshed == null ? null : _latestCompleted(refreshed);
     final summary = examTitle == null
         ? '$total sayfa işlendi, $success başarılı, $failed başarısız'
         : '$examTitle için $total sayfa işlendi, $success başarılı, $failed başarısız';
     emit(state.copyWith(
       isLoading: false,
       results: refreshed ?? state.results,
-      lastExtract: latestExtract ?? state.lastExtract,
+      lastExtract: latestExtract ?? latestCompleted,
+      clearLastExtract: latestExtract == null && latestCompleted == null,
       successCount: success,
       failedCount: failed,
       processedCount: processed,
@@ -283,11 +313,17 @@ class OcrCubit extends Cubit<OcrState> {
     final result = await ocrListMine(const NoParams());
     result.fold(
       (f) => emit(state.copyWith(isLoading: false, errorMessage: f.message)),
-      (list) => emit(state.copyWith(
-        isLoading: false,
-        results: list,
-        clearError: true,
-      )),
+      (list) {
+        final sorted = _sortResults(list);
+        final latestCompleted = _latestCompleted(sorted);
+        emit(state.copyWith(
+          isLoading: false,
+          results: sorted,
+          lastExtract: latestCompleted,
+          clearLastExtract: latestCompleted == null,
+          clearError: true,
+        ));
+      },
     );
   }
 

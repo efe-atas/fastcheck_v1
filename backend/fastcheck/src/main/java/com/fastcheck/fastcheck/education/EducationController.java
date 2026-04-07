@@ -125,6 +125,11 @@ public class EducationController {
         return teacherEducationService.getExamStatus(examId);
     }
 
+    @PostMapping("/teacher/exams/{examId}/reprocess")
+    public EducationDtos.TeacherExamStatusResponse reprocessExam(@PathVariable Long examId) {
+        return teacherEducationService.reprocessExam(examId);
+    }
+
     @GetMapping("/teacher/classes")
     public List<EducationDtos.ClassWithExamCountResponse> listTeacherClasses() {
         return teacherEducationService.listMyClasses();
@@ -167,6 +172,16 @@ public class EducationController {
     @GetMapping("/student/dashboard")
     public EducationDtos.StudentDashboardSummary getStudentDashboard() {
         return studentEducationService.getStudentDashboardSummary();
+    }
+
+    @GetMapping("/parent/students/{studentId}/exams")
+    public EducationDtos.PagedResponse<EducationDtos.StudentExamListItem> listParentStudentExams(
+            @PathVariable Long studentId,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size,
+            @RequestParam(name = "examStatus", required = false) String examStatus
+    ) {
+        return studentEducationService.listStudentExamsForParent(studentId, page, size, examStatus);
     }
 
     @GetMapping("/parent/students/{studentId}/exams/{examId}/questions")

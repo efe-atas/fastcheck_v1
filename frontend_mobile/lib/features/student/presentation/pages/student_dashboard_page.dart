@@ -138,6 +138,7 @@ class _FilterChips extends StatelessWidget {
     'READY': 'Hazır',
     'PROCESSING': 'İşleniyor',
     'DRAFT': 'Taslak',
+    'FAILED': 'Hata',
   };
 
   @override
@@ -713,6 +714,13 @@ class _StatusUi {
           color: AppColors.textSecondary,
           background: AppColors.surfaceVariant,
           icon: Icons.edit_note_rounded,
+        );
+      case 'FAILED':
+        return const _StatusUi(
+          label: 'Hata',
+          color: AppColors.error,
+          background: AppColors.errorLight,
+          icon: Icons.error_rounded,
         );
       default:
         return const _StatusUi(

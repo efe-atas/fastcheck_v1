@@ -34,6 +34,8 @@ abstract class TeacherRepository {
 
   Future<Either<Failure, ExamStatusEntity>> getExamStatus(int examId);
 
+  Future<Either<Failure, ExamStatusEntity>> reprocessExam(int examId);
+
   Future<Either<Failure, StudentEntity>> addStudentToClass({
     required int classId,
     required String fullName,

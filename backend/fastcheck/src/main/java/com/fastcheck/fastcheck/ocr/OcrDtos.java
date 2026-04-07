@@ -35,8 +35,9 @@ public class OcrDtos {
             Long userId,
             String imageUrl,
             String sourceId,
+            String status,
             Instant createdAt,
-            JsonNode result
+            Object result
     ) {
     }
 

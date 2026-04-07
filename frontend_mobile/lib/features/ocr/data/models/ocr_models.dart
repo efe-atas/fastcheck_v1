@@ -6,6 +6,7 @@ class OcrResultModel {
   final int? userId;
   final String? imageUrl;
   final String? sourceId;
+  final String status;
   final String createdAt;
   final dynamic result;
 
@@ -15,6 +16,7 @@ class OcrResultModel {
     this.userId,
     this.imageUrl,
     this.sourceId,
+    required this.status,
     required this.createdAt,
     this.result,
   });
@@ -26,6 +28,7 @@ class OcrResultModel {
       userId: (json['userId'] as num?)?.toInt(),
       imageUrl: json['imageUrl'] as String?,
       sourceId: json['sourceId'] as String?,
+      status: json['status'] as String? ?? 'PENDING',
       createdAt: json['createdAt'].toString(),
       result: json['result'],
     );
@@ -38,6 +41,7 @@ class OcrResultModel {
       userId: userId,
       imageUrl: imageUrl,
       sourceId: sourceId,
+      status: status,
       createdAt: DateTime.tryParse(createdAt) ?? DateTime.fromMillisecondsSinceEpoch(0),
       result: result,
     );

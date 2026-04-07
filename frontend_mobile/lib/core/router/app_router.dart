@@ -15,6 +15,7 @@ import '../../features/teacher/presentation/pages/class_detail_page.dart';
 import '../../features/teacher/presentation/pages/create_class_page.dart';
 import '../../features/teacher/presentation/pages/create_exam_page.dart';
 import '../../features/teacher/presentation/pages/exam_detail_page.dart';
+import '../../features/teacher/presentation/pages/teacher_exam_questions_page.dart';
 import '../../features/teacher/presentation/pages/add_student_page.dart';
 import '../../features/teacher/presentation/bloc/classes_bloc.dart';
 import '../../features/teacher/presentation/bloc/class_detail_bloc.dart';
@@ -28,6 +29,7 @@ import '../../features/student/presentation/bloc/exam_questions_bloc.dart';
 import '../../features/student/presentation/cubit/student_dashboard_cubit.dart';
 import '../../features/parent/presentation/pages/parent_dashboard_page.dart';
 import '../../features/parent/presentation/pages/parent_shell_page.dart';
+import '../../features/parent/presentation/pages/parent_student_exams_page.dart';
 import '../../features/parent/presentation/pages/student_exam_view_page.dart';
 import '../../features/parent/presentation/bloc/parent_bloc.dart';
 import '../../features/parent/presentation/cubit/parent_dashboard_cubit.dart';
@@ -154,6 +156,25 @@ class AppRouter {
                         child: ExamDetailPage(examId: examId, examTitle: title),
                       );
                     },
+                    routes: [
+                      GoRoute(
+                        path: 'questions',
+                        builder: (context, state) {
+                          final examId =
+                              int.parse(state.pathParameters['examId'] ?? '0');
+                          final title =
+                              state.uri.queryParameters['title'] ?? 'Sınav';
+                          return BlocProvider(
+                            create: (_) => sl<ExamBloc>()
+                              ..add(LoadExamStatusEvent(examId)),
+                            child: TeacherExamQuestionsPage(
+                              examId: examId,
+                              title: title,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -238,27 +259,42 @@ class AppRouter {
                 builder: (context, state) => const ParentDashboardPage(),
                 routes: [
                   GoRoute(
-                    path: 'students/:studentId/exams/:examId',
+                    path: 'students/:studentId/exams',
                     builder: (context, state) {
                       final studentId =
                           int.parse(state.pathParameters['studentId'] ?? '0');
-                      final examId =
-                          int.parse(state.pathParameters['examId'] ?? '0');
                       final studentName =
                           state.uri.queryParameters['name'] ?? 'Öğrenci';
-                      return BlocProvider(
-                        create: (_) => sl<ParentBloc>()
-                          ..add(LoadStudentExamQuestions(
-                            studentId: studentId,
-                            examId: examId,
-                          )),
-                        child: StudentExamViewPage(
-                          studentId: studentId,
-                          examId: examId,
-                          studentName: studentName,
-                        ),
+                      return ParentStudentExamsPage(
+                        studentId: studentId,
+                        studentName: studentName,
                       );
                     },
+                    routes: [
+                      GoRoute(
+                        path: ':examId/questions',
+                        builder: (context, state) {
+                          final studentId =
+                              int.parse(state.pathParameters['studentId'] ?? '0');
+                          final examId =
+                              int.parse(state.pathParameters['examId'] ?? '0');
+                          final title =
+                              state.uri.queryParameters['title'] ?? 'Sınav';
+                          return BlocProvider(
+                            create: (_) => sl<ParentBloc>()
+                              ..add(LoadStudentExamQuestions(
+                                studentId: studentId,
+                                examId: examId,
+                              )),
+                            child: StudentExamViewPage(
+                              studentId: studentId,
+                              examId: examId,
+                              studentName: title,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),

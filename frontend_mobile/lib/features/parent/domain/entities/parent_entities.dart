@@ -60,6 +60,7 @@ class ParentStudentSummaryEntity extends Equatable {
   final int? classId;
   final int totalExams;
   final int readyExams;
+  final int? latestExamId;
   final String? latestExamTitle;
   final String? latestExamStatus;
   final DateTime? latestExamCreatedAt;
@@ -71,6 +72,7 @@ class ParentStudentSummaryEntity extends Equatable {
     this.classId,
     required this.totalExams,
     required this.readyExams,
+    this.latestExamId,
     this.latestExamTitle,
     this.latestExamStatus,
     this.latestExamCreatedAt,
@@ -84,10 +86,30 @@ class ParentStudentSummaryEntity extends Equatable {
         classId,
         totalExams,
         readyExams,
+        latestExamId,
         latestExamTitle,
         latestExamStatus,
         latestExamCreatedAt,
       ];
+}
+
+class ParentStudentExamEntity extends Equatable {
+  final int examId;
+  final int classId;
+  final String title;
+  final String status;
+  final DateTime createdAt;
+
+  const ParentStudentExamEntity({
+    required this.examId,
+    required this.classId,
+    required this.title,
+    required this.status,
+    required this.createdAt,
+  });
+
+  @override
+  List<Object?> get props => [examId, classId, title, status, createdAt];
 }
 
 class ParentDashboardSummaryEntity extends Equatable {

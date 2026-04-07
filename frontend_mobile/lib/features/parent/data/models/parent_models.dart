@@ -83,6 +83,7 @@ class ParentStudentSummaryModel {
   final int? classId;
   final int totalExams;
   final int readyExams;
+  final int? latestExamId;
   final String? latestExamTitle;
   final String? latestExamStatus;
   final String? latestExamCreatedAt;
@@ -94,6 +95,7 @@ class ParentStudentSummaryModel {
     this.classId,
     required this.totalExams,
     required this.readyExams,
+    this.latestExamId,
     this.latestExamTitle,
     this.latestExamStatus,
     this.latestExamCreatedAt,
@@ -107,6 +109,7 @@ class ParentStudentSummaryModel {
       classId: json['classId'] as int?,
       totalExams: (json['totalExams'] as num?)?.toInt() ?? 0,
       readyExams: (json['readyExams'] as num?)?.toInt() ?? 0,
+      latestExamId: (json['latestExamId'] as num?)?.toInt(),
       latestExamTitle: json['latestExamTitle'] as String?,
       latestExamStatus: json['latestExamStatus'] as String?,
       latestExamCreatedAt: json['latestExamCreatedAt']?.toString(),
@@ -121,11 +124,48 @@ class ParentStudentSummaryModel {
       classId: classId,
       totalExams: totalExams,
       readyExams: readyExams,
+      latestExamId: latestExamId,
       latestExamTitle: latestExamTitle,
       latestExamStatus: latestExamStatus,
       latestExamCreatedAt: latestExamCreatedAt != null
           ? DateTime.tryParse(latestExamCreatedAt!)
           : null,
+    );
+  }
+}
+
+class ParentStudentExamModel {
+  final int examId;
+  final int classId;
+  final String title;
+  final String status;
+  final String createdAt;
+
+  const ParentStudentExamModel({
+    required this.examId,
+    required this.classId,
+    required this.title,
+    required this.status,
+    required this.createdAt,
+  });
+
+  factory ParentStudentExamModel.fromJson(Map<String, dynamic> json) {
+    return ParentStudentExamModel(
+      examId: json['examId'] as int,
+      classId: json['classId'] as int,
+      title: json['title'] as String,
+      status: json['status'] as String,
+      createdAt: json['createdAt'] as String,
+    );
+  }
+
+  ParentStudentExamEntity toEntity() {
+    return ParentStudentExamEntity(
+      examId: examId,
+      classId: classId,
+      title: title,
+      status: status,
+      createdAt: DateTime.parse(createdAt),
     );
   }
 }

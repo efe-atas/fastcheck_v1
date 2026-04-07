@@ -43,16 +43,18 @@ class StudentEntity extends Equatable {
   final String fullName;
   final String email;
   final int classId;
+  final String? initialPassword;
 
   const StudentEntity({
     required this.userId,
     required this.fullName,
     required this.email,
     required this.classId,
+    this.initialPassword,
   });
 
   @override
-  List<Object?> get props => [userId, fullName, email, classId];
+  List<Object?> get props => [userId, fullName, email, classId, initialPassword];
 }
 
 class ExamImageEntity extends Equatable {
@@ -119,6 +121,8 @@ class ExamStatusEntity extends Equatable {
   final String examStatus;
   final List<ExamImageEntity> images;
   final List<OcrJobEntity> ocrJobs;
+  final int questionCount;
+  final List<TeacherQuestionEntity> questions;
 
   const ExamStatusEntity({
     required this.examId,
@@ -127,10 +131,21 @@ class ExamStatusEntity extends Equatable {
     required this.examStatus,
     required this.images,
     required this.ocrJobs,
+    this.questionCount = 0,
+    this.questions = const [],
   });
 
   @override
-  List<Object?> get props => [examId, classId, title, examStatus, images, ocrJobs];
+  List<Object?> get props => [
+        examId,
+        classId,
+        title,
+        examStatus,
+        images,
+        ocrJobs,
+        questionCount,
+        questions,
+      ];
 }
 
 class TeacherDashboardSummaryEntity extends Equatable {
@@ -158,5 +173,38 @@ class TeacherDashboardSummaryEntity extends Equatable {
         readyExams,
         latestExams,
         recentOcrJobs,
+      ];
+}
+
+class TeacherQuestionEntity extends Equatable {
+  final int id;
+  final int pageNumber;
+  final int questionOrder;
+  final String? sourceQuestionId;
+  final String? questionText;
+  final String? studentAnswer;
+  final double? confidence;
+
+  const TeacherQuestionEntity({
+    required this.id,
+    required this.pageNumber,
+    required this.questionOrder,
+    this.sourceQuestionId,
+    this.questionText,
+    this.studentAnswer,
+    this.confidence,
+  });
+
+  double get confidencePercent => (confidence ?? 0) * 100;
+
+  @override
+  List<Object?> get props => [
+        id,
+        pageNumber,
+        questionOrder,
+        sourceQuestionId,
+        questionText,
+        studentAnswer,
+        confidence,
       ];
 }
