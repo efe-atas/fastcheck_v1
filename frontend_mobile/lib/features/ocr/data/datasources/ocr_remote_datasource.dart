@@ -1,5 +1,6 @@
 import 'package:cross_file/cross_file.dart';
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/error/exceptions.dart';
 import '../models/ocr_models.dart';
@@ -47,6 +48,20 @@ class OcrRemoteDataSourceImpl implements OcrRemoteDataSource {
     return last;
   }
 
+  String _mediaTypeForFilename(String filename) {
+    final lower = filename.toLowerCase();
+    if (lower.endsWith('.png')) {
+      return 'image/png';
+    }
+    if (lower.endsWith('.webp')) {
+      return 'image/webp';
+    }
+    if (lower.endsWith('.gif')) {
+      return 'image/gif';
+    }
+    return 'image/jpeg';
+  }
+
   @override
   Future<String> uploadImage(String localPath) async {
     try {
@@ -57,7 +72,11 @@ class OcrRemoteDataSourceImpl implements OcrRemoteDataSource {
       }
       final name = _uploadFilename(localPath);
       final formData = FormData.fromMap({
-        'file': MultipartFile.fromBytes(bytes, filename: name),
+        'file': MultipartFile.fromBytes(
+          bytes,
+          filename: name,
+          contentType: MediaType.parse(_mediaTypeForFilename(name)),
+        ),
       });
       final response = await dio.post<Map<String, dynamic>>(
         ApiConstants.ocrUploadImage,

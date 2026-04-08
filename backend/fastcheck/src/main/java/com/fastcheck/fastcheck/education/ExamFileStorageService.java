@@ -34,11 +34,12 @@ public class ExamFileStorageService {
         }
 
         String contentType = file.getContentType() == null ? "" : file.getContentType().toLowerCase(Locale.ROOT);
-        if (!contentType.startsWith("image/")) {
+        String originalFilename = file.getOriginalFilename();
+        if (!isSupportedImageUpload(contentType, originalFilename)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "only image files are allowed");
         }
 
-        String extension = extensionFor(contentType, file.getOriginalFilename());
+        String extension = extensionFor(contentType, originalFilename);
         String fileName = UUID.randomUUID() + extension;
         Path target = basePath.resolve(fileName);
 
@@ -49,6 +50,22 @@ public class ExamFileStorageService {
         }
 
         return publicBaseUrl.replaceAll("/$", "") + "/" + fileName;
+    }
+
+    private boolean isSupportedImageUpload(String contentType, String originalFilename) {
+        if (contentType.startsWith("image/")) {
+            return true;
+        }
+        if (originalFilename == null || originalFilename.isBlank()) {
+            return false;
+        }
+
+        String lower = originalFilename.toLowerCase(Locale.ROOT);
+        return lower.endsWith(".jpg")
+                || lower.endsWith(".jpeg")
+                || lower.endsWith(".png")
+                || lower.endsWith(".webp")
+                || lower.endsWith(".gif");
     }
 
     private String extensionFor(String contentType, String originalFilename) {

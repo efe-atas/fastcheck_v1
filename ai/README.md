@@ -8,8 +8,20 @@ This service extracts exam paper content from an image URL and returns strict JS
 cd ai
 /Users/efeatas/Desktop/fastcheck/.venv/bin/pip install -r requirements.txt
 cp .env.example .env
-/Users/efeatas/Desktop/fastcheck/.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+/Users/efeatas/Desktop/fastcheck/ai/.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
+
+
+
+╰─ source .venv/bin/activate                                                                                                                   ─╯
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+source: no such file or directory: .venv/bin/activate
+INFO:     Will watch for changes in these directories: ['/Users/efeatas/Desktop/Projects/fastcheck/ai']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [62994] using WatchFiles
+INFO:     Started server process [62996]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
 
 ### API
 

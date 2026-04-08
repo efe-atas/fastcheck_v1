@@ -2,6 +2,7 @@ package com.fastcheck.fastcheck.auth;
 
 import com.fastcheck.fastcheck.config.FastApiProperties;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -29,7 +30,7 @@ public class ServiceTokenProvider {
                 .audience().add(fastApiProperties.serviceJwt().audience()).and()
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))
-                .signWith(signingKey())
+                .signWith(signingKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 

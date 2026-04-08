@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/network/paged_response_dto.dart';
 import '../../../../core/error/exceptions.dart';
@@ -37,6 +38,20 @@ class TeacherRemoteDataSourceImpl implements TeacherRemoteDataSource {
   final Dio dio;
 
   const TeacherRemoteDataSourceImpl({required this.dio});
+
+  MediaType _mediaTypeForPath(String path) {
+    final lower = path.toLowerCase();
+    if (lower.endsWith('.png')) {
+      return MediaType.parse('image/png');
+    }
+    if (lower.endsWith('.webp')) {
+      return MediaType.parse('image/webp');
+    }
+    if (lower.endsWith('.gif')) {
+      return MediaType.parse('image/gif');
+    }
+    return MediaType.parse('image/jpeg');
+  }
 
   @override
   Future<List<ClassModel>> getClasses() async {
@@ -163,6 +178,7 @@ class TeacherRemoteDataSourceImpl implements TeacherRemoteDataSource {
           await MultipartFile.fromFile(
             image.path,
             filename: image.path.split('/').last,
+            contentType: _mediaTypeForPath(image.path),
           ),
         ));
       }

@@ -4,6 +4,8 @@ import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -21,6 +23,22 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorBody> handleValidation(Exception exception) {
         return ResponseEntity.badRequest()
                 .body(new ErrorBody(HttpStatus.BAD_REQUEST.value(), "validation failed", Instant.now().toString()));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorBody> handleMaxUploadSize(MaxUploadSizeExceededException exception) {
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(new ErrorBody(
+                        HttpStatus.PAYLOAD_TOO_LARGE.value(),
+                        "uploaded file is too large",
+                        Instant.now().toString()
+                ));
+    }
+
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<ErrorBody> handleMultipart(MultipartException exception) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorBody(HttpStatus.BAD_REQUEST.value(), "invalid multipart upload", Instant.now().toString()));
     }
 
     @ExceptionHandler(Exception.class)
