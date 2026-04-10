@@ -6,7 +6,11 @@ import com.fastcheck.fastcheck.education.ExamImage;
 import com.fastcheck.fastcheck.education.ExamImageStatus;
 import com.fastcheck.fastcheck.education.ExamImageRepository;
 import com.fastcheck.fastcheck.education.ExamRepository;
+import com.fastcheck.fastcheck.education.Question;
+import com.fastcheck.fastcheck.education.QuestionRepository;
 import com.fastcheck.fastcheck.education.ExamStatus;
+import com.fastcheck.fastcheck.education.GradingStatus;
+import com.fastcheck.fastcheck.education.StudentMatchStatus;
 import com.fastcheck.fastcheck.education.School;
 import com.fastcheck.fastcheck.education.SchoolClass;
 import com.fastcheck.fastcheck.education.SchoolClassRepository;
@@ -31,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -60,6 +65,9 @@ class EducationControllerIntegrationTests {
 
     @Autowired
     private ExamImageRepository examImageRepository;
+
+    @Autowired
+    private QuestionRepository questionRepository;
 
     @Autowired
     private OcrJobRepository ocrJobRepository;
@@ -114,6 +122,7 @@ class EducationControllerIntegrationTests {
     @Test
     void teacherCanFetchExamAndOcrStatus() throws Exception {
         UserAccount teacher = saveUser("teacher@fastcheck.local", "Teacher User", Role.ROLE_TEACHER);
+        UserAccount student = saveUser("student-match@fastcheck.local", "Ayse Kaya", Role.ROLE_STUDENT);
         School school = new School();
         school.setName("Test School");
         school = schoolRepository.save(school);
@@ -125,6 +134,10 @@ class EducationControllerIntegrationTests {
         schoolClass.setSchool(school);
         schoolClass.setTeacher(teacher);
         schoolClass = schoolClassRepository.save(schoolClass);
+
+        student.setSchool(school);
+        student.setSchoolClass(schoolClass);
+        student = userRepository.save(student);
 
         Exam exam = new Exam();
         exam.setTitle("Math Quiz");
@@ -138,6 +151,13 @@ class EducationControllerIntegrationTests {
         image.setPageOrder(1);
         image.setImageUrl("http://localhost:8080/files/page-1.png");
         image.setStatus(ExamImageStatus.COMPLETED);
+        image.setDetectedStudentName("Ayse Kaya");
+        image.setDetectedStudentNameConfidence(0.91);
+        image.setMatchedStudentId(student.getId());
+        image.setMatchedStudentName(student.getFullName());
+        image.setStudentMatchConfidence(0.96);
+        image.setStudentMatchStatus(StudentMatchStatus.MATCHED);
+        image.setCandidateStudentIds(String.valueOf(student.getId()));
         image = examImageRepository.save(image);
 
         OcrJob job = new OcrJob();
@@ -157,8 +177,152 @@ class EducationControllerIntegrationTests {
                 .andExpect(jsonPath("$.examId").value(exam.getId()))
                 .andExpect(jsonPath("$.examStatus").value("PROCESSING"))
                 .andExpect(jsonPath("$.images[0].status").value("COMPLETED"))
+                .andExpect(jsonPath("$.images[0].studentMatch.matchedStudentId").value(student.getId()))
+                .andExpect(jsonPath("$.images[0].studentMatch.matchedStudentName").value("Ayse Kaya"))
+                .andExpect(jsonPath("$.images[0].studentMatch.matchingStatus").value("MATCHED"))
+                .andExpect(jsonPath("$.studentClusters[0].studentId").value(student.getId()))
+                .andExpect(jsonPath("$.studentClusters[0].studentName").value("Ayse Kaya"))
+                .andExpect(jsonPath("$.studentClusters[0].pageCount").value(1))
+                .andExpect(jsonPath("$.studentClusters[0].questionCount").value(0))
+                .andExpect(jsonPath("$.students[0].fullName").value("Ayse Kaya"))
                 .andExpect(jsonPath("$.ocrJobs[0].status").value("COMPLETED"))
                 .andExpect(jsonPath("$.ocrJobs[0].retryCount").value(1));
+    }
+
+    @Test
+    void teacherCanOverrideStudentMatchForExamImage() throws Exception {
+        UserAccount teacher = saveUser("teacher-override@fastcheck.local", "Teacher Override", Role.ROLE_TEACHER);
+        UserAccount studentA = saveUser("student-a@fastcheck.local", "Ali Kaya", Role.ROLE_STUDENT);
+        UserAccount studentB = saveUser("student-b@fastcheck.local", "Veli Demir", Role.ROLE_STUDENT);
+
+        School school = new School();
+        school.setName("Override School");
+        school = schoolRepository.save(school);
+        teacher.setSchool(school);
+        teacher = userRepository.save(teacher);
+
+        SchoolClass schoolClass = new SchoolClass();
+        schoolClass.setName("7-B");
+        schoolClass.setSchool(school);
+        schoolClass.setTeacher(teacher);
+        schoolClass = schoolClassRepository.save(schoolClass);
+
+        studentA.setSchool(school);
+        studentA.setSchoolClass(schoolClass);
+        userRepository.save(studentA);
+
+        studentB.setSchool(school);
+        studentB.setSchoolClass(schoolClass);
+        studentB = userRepository.save(studentB);
+
+        Exam exam = new Exam();
+        exam.setTitle("Override Quiz");
+        exam.setTeacher(teacher);
+        exam.setSchoolClass(schoolClass);
+        exam.setStatus(ExamStatus.READY);
+        exam = examRepository.save(exam);
+
+        ExamImage image = new ExamImage();
+        image.setExam(exam);
+        image.setPageOrder(1);
+        image.setImageUrl("http://localhost:8080/files/override-page.png");
+        image.setStatus(ExamImageStatus.COMPLETED);
+        image.setDetectedStudentName("Belirsiz");
+        image.setDetectedStudentNameConfidence(0.32);
+        image.setStudentMatchStatus(StudentMatchStatus.UNMATCHED);
+        image = examImageRepository.save(image);
+
+        String body = """
+                {
+                  "studentId": %d
+                }
+                """.formatted(studentB.getId());
+
+        mockMvc.perform(patch("/v1/teacher/exams/{examId}/images/{imageId}/student-match", exam.getId(), image.getId())
+                        .header("Authorization", bearerToken(teacher))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.images[0].studentMatch.matchedStudentId").value(studentB.getId()))
+                .andExpect(jsonPath("$.images[0].studentMatch.matchedStudentName").value("Veli Demir"))
+                .andExpect(jsonPath("$.images[0].studentMatch.matchingStatus").value("MANUAL"))
+                .andExpect(jsonPath("$.studentClusters[0].studentId").value(studentB.getId()))
+                .andExpect(jsonPath("$.studentClusters[0].matchingStatus").value("MANUAL"));
+    }
+
+    @Test
+    void teacherCanOverrideQuestionGrading() throws Exception {
+        UserAccount teacher = saveUser("teacher-question-override@fastcheck.local", "Teacher Override Q", Role.ROLE_TEACHER);
+        UserAccount student = saveUser("student-question-override@fastcheck.local", "Elif Acar", Role.ROLE_STUDENT);
+
+        School school = new School();
+        school.setName("Question Override School");
+        school = schoolRepository.save(school);
+        teacher.setSchool(school);
+        teacher = userRepository.save(teacher);
+
+        SchoolClass schoolClass = new SchoolClass();
+        schoolClass.setName("8-C");
+        schoolClass.setSchool(school);
+        schoolClass.setTeacher(teacher);
+        schoolClass = schoolClassRepository.save(schoolClass);
+
+        student.setSchool(school);
+        student.setSchoolClass(schoolClass);
+        student = userRepository.save(student);
+
+        Exam exam = new Exam();
+        exam.setTitle("Override Question Quiz");
+        exam.setTeacher(teacher);
+        exam.setSchoolClass(schoolClass);
+        exam.setStatus(ExamStatus.READY);
+        exam = examRepository.save(exam);
+
+        ExamImage image = new ExamImage();
+        image.setExam(exam);
+        image.setPageOrder(1);
+        image.setImageUrl("http://localhost:8080/files/question-override.png");
+        image.setStatus(ExamImageStatus.COMPLETED);
+        image.setMatchedStudentId(student.getId());
+        image.setMatchedStudentName(student.getFullName());
+        image.setStudentMatchStatus(StudentMatchStatus.MATCHED);
+        image = examImageRepository.save(image);
+
+        Question question = new Question();
+        question.setExam(exam);
+        question.setExamImage(image);
+        question.setPageNumber(1);
+        question.setQuestionOrder(1);
+        question.setSourceQuestionId("Q-1");
+        question.setQuestionTextRaw("Su kac derecede kaynar?");
+        question.setStudentAnswerRaw("95");
+        question.setMaxPoints(10.0);
+        question.setAwardedPoints(0.0);
+        question.setGradingStatus(GradingStatus.GRADED);
+        question.setConfidence(0.92);
+        question = questionRepository.save(question);
+
+        String body = """
+                {
+                  "awardedPoints": 7.5,
+                  "maxPoints": 10,
+                  "expectedAnswer": "100 derece",
+                  "gradingRubric": "Temel bilgi dogru olmali",
+                  "evaluationSummary": "Kismi dogru kabul edildi",
+                  "correct": false
+                }
+                """;
+
+        mockMvc.perform(patch("/v1/teacher/exams/{examId}/questions/{questionId}/override", exam.getId(), question.getId())
+                        .header("Authorization", bearerToken(teacher))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.questions[0].awardedPoints").value(7.5))
+                .andExpect(jsonPath("$.questions[0].maxPoints").value(10.0))
+                .andExpect(jsonPath("$.questions[0].expectedAnswer").value("100 derece"))
+                .andExpect(jsonPath("$.questions[0].gradingStatus").value("OVERRIDDEN"))
+                .andExpect(jsonPath("$.questions[0].evaluationSummary").value("Kismi dogru kabul edildi"));
     }
 
     @Test

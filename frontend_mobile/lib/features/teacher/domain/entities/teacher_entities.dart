@@ -16,7 +16,8 @@ class ClassEntity extends Equatable {
   });
 
   @override
-  List<Object?> get props => [classId, schoolId, className, examCount, createdAt];
+  List<Object?> get props =>
+      [classId, schoolId, className, examCount, createdAt];
 }
 
 class ExamEntity extends Equatable {
@@ -54,7 +55,8 @@ class StudentEntity extends Equatable {
   });
 
   @override
-  List<Object?> get props => [userId, fullName, email, classId, initialPassword];
+  List<Object?> get props =>
+      [userId, fullName, email, classId, initialPassword];
 }
 
 class ExamImageEntity extends Equatable {
@@ -66,6 +68,7 @@ class ExamImageEntity extends Equatable {
   final String? errorMessage;
   final DateTime? processingStartedAt;
   final DateTime? processingCompletedAt;
+  final StudentMatchEntity? studentMatch;
 
   const ExamImageEntity({
     required this.imageId,
@@ -76,11 +79,11 @@ class ExamImageEntity extends Equatable {
     this.errorMessage,
     this.processingStartedAt,
     this.processingCompletedAt,
+    this.studentMatch,
   });
 
   @override
-  List<Object?> get props =>
-      [
+  List<Object?> get props => [
         imageId,
         examId,
         pageOrder,
@@ -89,6 +92,7 @@ class ExamImageEntity extends Equatable {
         errorMessage,
         processingStartedAt,
         processingCompletedAt,
+        studentMatch,
       ];
 }
 
@@ -119,20 +123,30 @@ class ExamStatusEntity extends Equatable {
   final int classId;
   final String title;
   final String examStatus;
+  final String? gradingSystemSummary;
+  final double? totalMaxPoints;
   final List<ExamImageEntity> images;
+  final List<StudentEntity> students;
   final List<OcrJobEntity> ocrJobs;
   final int questionCount;
   final List<TeacherQuestionEntity> questions;
+  final List<TeacherStudentClusterEntity> studentClusters;
+  final List<StudentExamResultEntity> studentResults;
 
   const ExamStatusEntity({
     required this.examId,
     required this.classId,
     required this.title,
     required this.examStatus,
+    this.gradingSystemSummary,
+    this.totalMaxPoints,
     required this.images,
+    this.students = const [],
     required this.ocrJobs,
     this.questionCount = 0,
     this.questions = const [],
+    this.studentClusters = const [],
+    this.studentResults = const [],
   });
 
   @override
@@ -141,10 +155,164 @@ class ExamStatusEntity extends Equatable {
         classId,
         title,
         examStatus,
+        gradingSystemSummary,
+        totalMaxPoints,
         images,
+        students,
         ocrJobs,
         questionCount,
         questions,
+        studentClusters,
+        studentResults,
+      ];
+}
+
+class TeacherStudentClusterEntity extends Equatable {
+  final int? studentId;
+  final String studentName;
+  final String? studentEmail;
+  final bool unmatched;
+  final String? matchingStatus;
+  final int pageCount;
+  final int questionCount;
+  final double awardedPoints;
+  final double maxPoints;
+  final double scorePercentage;
+  final String? gradingStatus;
+  final String? gradingSummary;
+  final List<ExamImageEntity> images;
+  final List<TeacherQuestionEntity> questions;
+
+  const TeacherStudentClusterEntity({
+    this.studentId,
+    required this.studentName,
+    this.studentEmail,
+    this.unmatched = false,
+    this.matchingStatus,
+    this.pageCount = 0,
+    this.questionCount = 0,
+    this.awardedPoints = 0,
+    this.maxPoints = 0,
+    this.scorePercentage = 0,
+    this.gradingStatus,
+    this.gradingSummary,
+    this.images = const [],
+    this.questions = const [],
+  });
+
+  bool get hasQuestions => questions.isNotEmpty;
+  bool get hasImages => images.isNotEmpty;
+
+  bool get needsAttention {
+    final normalized = matchingStatus?.toUpperCase();
+    return unmatched || normalized == 'UNMATCHED' || normalized == 'AMBIGUOUS';
+  }
+
+  @override
+  List<Object?> get props => [
+        studentId,
+        studentName,
+        studentEmail,
+        unmatched,
+        matchingStatus,
+        pageCount,
+        questionCount,
+        awardedPoints,
+        maxPoints,
+        scorePercentage,
+        gradingStatus,
+        gradingSummary,
+        images,
+        questions,
+      ];
+}
+
+class StudentExamResultEntity extends Equatable {
+  final int studentId;
+  final String studentName;
+  final int totalQuestions;
+  final int scoredQuestions;
+  final double awardedPoints;
+  final double maxPoints;
+  final double? gradingConfidence;
+  final String? gradingStatus;
+  final String? gradingSummary;
+  final double? scorePercentage;
+
+  const StudentExamResultEntity({
+    required this.studentId,
+    required this.studentName,
+    required this.totalQuestions,
+    required this.scoredQuestions,
+    required this.awardedPoints,
+    required this.maxPoints,
+    this.gradingConfidence,
+    this.gradingStatus,
+    this.gradingSummary,
+    this.scorePercentage,
+  });
+
+  @override
+  List<Object?> get props => [
+        studentId,
+        studentName,
+        totalQuestions,
+        scoredQuestions,
+        awardedPoints,
+        maxPoints,
+        gradingConfidence,
+        gradingStatus,
+        gradingSummary,
+        scorePercentage,
+      ];
+}
+
+class StudentMatchCandidateEntity extends Equatable {
+  final int userId;
+  final String fullName;
+
+  const StudentMatchCandidateEntity({
+    required this.userId,
+    required this.fullName,
+  });
+
+  @override
+  List<Object?> get props => [userId, fullName];
+}
+
+class StudentMatchEntity extends Equatable {
+  final String? detectedStudentName;
+  final double? detectedNameConfidence;
+  final int? matchedStudentId;
+  final String? matchedStudentName;
+  final double? matchingConfidence;
+  final String? matchingStatus;
+  final List<StudentMatchCandidateEntity> candidateStudents;
+
+  const StudentMatchEntity({
+    this.detectedStudentName,
+    this.detectedNameConfidence,
+    this.matchedStudentId,
+    this.matchedStudentName,
+    this.matchingConfidence,
+    this.matchingStatus,
+    this.candidateStudents = const [],
+  });
+
+  bool get hasMatchedStudent =>
+      matchedStudentId != null &&
+      matchedStudentName != null &&
+      matchedStudentName!.isNotEmpty;
+
+  @override
+  List<Object?> get props => [
+        detectedStudentName,
+        detectedNameConfidence,
+        matchedStudentId,
+        matchedStudentName,
+        matchingConfidence,
+        matchingStatus,
+        candidateStudents,
       ];
 }
 
@@ -184,6 +352,18 @@ class TeacherQuestionEntity extends Equatable {
   final String? questionText;
   final String? studentAnswer;
   final double? confidence;
+  final String? questionType;
+  final String? expectedAnswer;
+  final String? gradingRubric;
+  final double? maxPoints;
+  final double? awardedPoints;
+  final double? gradingConfidence;
+  final String? gradingStatus;
+  final String? evaluationSummary;
+  final bool? correct;
+  final int? studentId;
+  final String? studentName;
+  final String? matchingStatus;
 
   const TeacherQuestionEntity({
     required this.id,
@@ -193,9 +373,25 @@ class TeacherQuestionEntity extends Equatable {
     this.questionText,
     this.studentAnswer,
     this.confidence,
+    this.questionType,
+    this.expectedAnswer,
+    this.gradingRubric,
+    this.maxPoints,
+    this.awardedPoints,
+    this.gradingConfidence,
+    this.gradingStatus,
+    this.evaluationSummary,
+    this.correct,
+    this.studentId,
+    this.studentName,
+    this.matchingStatus,
   });
 
   double get confidencePercent => (confidence ?? 0) * 100;
+  double get gradingConfidencePercent => (gradingConfidence ?? 0) * 100;
+  double get scorePercent => (maxPoints == null || maxPoints == 0)
+      ? 0
+      : ((awardedPoints ?? 0) / maxPoints!) * 100;
 
   @override
   List<Object?> get props => [
@@ -206,5 +402,17 @@ class TeacherQuestionEntity extends Equatable {
         questionText,
         studentAnswer,
         confidence,
+        questionType,
+        expectedAnswer,
+        gradingRubric,
+        maxPoints,
+        awardedPoints,
+        gradingConfidence,
+        gradingStatus,
+        evaluationSummary,
+        correct,
+        studentId,
+        studentName,
+        matchingStatus,
       ];
 }

@@ -31,6 +31,10 @@ class ApiConstants {
       '/v1/teacher/exams/$examId/images';
   static String teacherExamStatus(int examId) => '/v1/teacher/exams/$examId';
   static String teacherExamReprocess(int examId) => '/v1/teacher/exams/$examId/reprocess';
+  static String teacherExamImageStudentMatch(int examId, int imageId) =>
+      '/v1/teacher/exams/$examId/images/$imageId/student-match';
+  static String teacherExamQuestionOverride(int examId, int questionId) =>
+      '/v1/teacher/exams/$examId/questions/$questionId/override';
   static const String teacherDashboard = '/v1/teacher/dashboard';
 
   // Student

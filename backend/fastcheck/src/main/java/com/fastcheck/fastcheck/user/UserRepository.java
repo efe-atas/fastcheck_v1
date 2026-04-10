@@ -1,6 +1,7 @@
 package com.fastcheck.fastcheck.user;
 
 import java.util.Optional;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -31,4 +32,8 @@ public interface UserRepository extends JpaRepository<UserAccount, Long> {
 
     Page<UserAccount> findBySchoolClass_IdAndRoleAndFullNameContainingIgnoreCaseOrderByFullNameAsc(
             Long classId, Role role, String fullName, Pageable pageable);
+
+    List<UserAccount> findBySchoolClass_IdAndRoleOrderByFullNameAsc(Long classId, Role role);
+
+    Optional<UserAccount> findByIdAndSchoolClass_IdAndRole(Long userId, Long classId, Role role);
 }

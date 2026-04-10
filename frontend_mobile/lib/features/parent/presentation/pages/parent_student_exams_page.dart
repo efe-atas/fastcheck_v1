@@ -90,17 +90,35 @@ class _ParentStudentExamsPageState extends State<ParentStudentExamsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(widget.studentName),
-        backgroundColor: AppColors.surface,
-        surfaceTintColor: Colors.transparent,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            _buildTopBar(context),
+            _buildFilterChips(),
+            const SizedBox(height: 4),
+            Expanded(child: _buildBody()),
+          ],
+        ),
       ),
-      body: Column(
-        children: [
-          _buildFilterChips(),
-          const SizedBox(height: 4),
-          Expanded(child: _buildBody()),
-        ],
+    );
+  }
+
+  Widget _buildTopBar(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: IconButton(
+          onPressed: () => Navigator.of(context).maybePop(),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          padding: EdgeInsets.zero,
+          visualDensity: VisualDensity.compact,
+          style: IconButton.styleFrom(
+            backgroundColor: AppColors.surface,
+            foregroundColor: AppColors.textPrimary,
+          ),
+        ),
       ),
     );
   }

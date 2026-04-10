@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
     openrouter_api_key: str = Field(default="", alias="OPENROUTER_API_KEY")
     openrouter_model: str = Field(default="google/gemini-3.1-flash-lite-preview", alias="OPENROUTER_MODEL")
+    llm_request_timeout_seconds: int = Field(default=25, alias="LLM_REQUEST_TIMEOUT_SECONDS")
 
     service_jwt_required: bool = True
     service_jwt_algorithms: str = "HS256"

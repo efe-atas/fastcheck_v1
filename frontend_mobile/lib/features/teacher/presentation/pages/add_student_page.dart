@@ -35,122 +35,135 @@ class _AddStudentPageState extends State<AddStudentPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Öğrenci Ekle'),
-        backgroundColor: AppColors.surface,
-        surfaceTintColor: Colors.transparent,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppSurfaceCard(
-                padding: const EdgeInsets.all(20),
-                backgroundColor: AppColors.primarySurface,
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12),
+      body: SafeArea(
+        bottom: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildTopBar(context),
+                const SizedBox(height: 8),
+                AppSurfaceCard(
+                  padding: const EdgeInsets.all(20),
+                  backgroundColor: AppColors.primarySurface,
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.person_add_rounded,
+                          color: AppColors.primary,
+                          size: 28,
+                        ),
                       ),
-                      child: const Icon(
-                        Icons.person_add_rounded,
-                        color: AppColors.primary,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Yeni Öğrenci',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Yeni Öğrenci',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Sınıfa yeni bir öğrenci ekleyin.',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
+                            SizedBox(height: 4),
+                            Text(
+                              'Sınıfa yeni bir öğrenci ekleyin.',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 28),
-              AppTextField(
-                controller: _fullNameController,
-                label: 'Ad Soyad',
-                hint: 'Öğrencinin tam adını girin',
-                prefixIcon: Icons.person_rounded,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Ad soyad gereklidir';
-                  }
-                  if (value.trim().length < 3) {
-                    return 'Ad soyad en az 3 karakter olmalıdır';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              AppTextField(
-                controller: _emailController,
-                label: 'E-posta',
-                hint: 'ornek@email.com',
-                prefixIcon: Icons.email_rounded,
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'E-posta gereklidir';
-                  }
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                      .hasMatch(value.trim())) {
-                    return 'Geçerli bir e-posta adresi girin';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              AppTextField(
-                controller: _passwordController,
-                label: 'Şifre',
-                hint: 'En az 6 karakter',
-                prefixIcon: Icons.lock_rounded,
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Şifre gereklidir';
-                  }
-                  if (value.length < 6) {
-                    return 'Şifre en az 6 karakter olmalıdır';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 36),
-              AppGradientButton(
-                text: 'Öğrenci Ekle',
-                isLoading: _isLoading,
-                onPressed: _isLoading ? null : _handleAdd,
-              ),
-            ],
+                const SizedBox(height: 28),
+                AppTextField(
+                  controller: _fullNameController,
+                  label: 'Ad Soyad',
+                  hint: 'Öğrencinin tam adını girin',
+                  prefixIcon: Icons.person_rounded,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Ad soyad gereklidir';
+                    }
+                    if (value.trim().length < 3) {
+                      return 'Ad soyad en az 3 karakter olmalıdır';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                AppTextField(
+                  controller: _emailController,
+                  label: 'E-posta',
+                  hint: 'ornek@email.com',
+                  prefixIcon: Icons.email_rounded,
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'E-posta gereklidir';
+                    }
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                        .hasMatch(value.trim())) {
+                      return 'Geçerli bir e-posta adresi girin';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                AppTextField(
+                  controller: _passwordController,
+                  label: 'Şifre',
+                  hint: 'En az 6 karakter',
+                  prefixIcon: Icons.lock_rounded,
+                  obscureText: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Şifre gereklidir';
+                    }
+                    if (value.length < 6) {
+                      return 'Şifre en az 6 karakter olmalıdır';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 36),
+                AppGradientButton(
+                  text: 'Öğrenci Ekle',
+                  isLoading: _isLoading,
+                  onPressed: _isLoading ? null : _handleAdd,
+                ),
+              ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTopBar(BuildContext context) {
+    return IconButton(
+      onPressed: () => Navigator.of(context).maybePop(),
+      icon: const Icon(Icons.arrow_back_ios_new_rounded),
+      padding: EdgeInsets.zero,
+      visualDensity: VisualDensity.compact,
+      style: IconButton.styleFrom(
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.textPrimary,
       ),
     );
   }

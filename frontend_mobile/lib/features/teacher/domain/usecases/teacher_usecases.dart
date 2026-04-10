@@ -174,6 +174,96 @@ class ReprocessExam implements UseCase<ExamStatusEntity, int> {
   }
 }
 
+class UpdateExamImageStudentMatchParams extends Equatable {
+  final int examId;
+  final int imageId;
+  final int studentId;
+
+  const UpdateExamImageStudentMatchParams({
+    required this.examId,
+    required this.imageId,
+    required this.studentId,
+  });
+
+  @override
+  List<Object?> get props => [examId, imageId, studentId];
+}
+
+class UpdateExamImageStudentMatch
+    implements UseCase<ExamStatusEntity, UpdateExamImageStudentMatchParams> {
+  final TeacherRepository repository;
+
+  const UpdateExamImageStudentMatch(this.repository);
+
+  @override
+  Future<Either<Failure, ExamStatusEntity>> call(
+    UpdateExamImageStudentMatchParams params,
+  ) {
+    return repository.updateExamImageStudentMatch(
+      examId: params.examId,
+      imageId: params.imageId,
+      studentId: params.studentId,
+    );
+  }
+}
+
+class UpdateQuestionOverrideParams extends Equatable {
+  final int examId;
+  final int questionId;
+  final double awardedPoints;
+  final double maxPoints;
+  final String? expectedAnswer;
+  final String? gradingRubric;
+  final String? evaluationSummary;
+  final bool? correct;
+
+  const UpdateQuestionOverrideParams({
+    required this.examId,
+    required this.questionId,
+    required this.awardedPoints,
+    required this.maxPoints,
+    this.expectedAnswer,
+    this.gradingRubric,
+    this.evaluationSummary,
+    this.correct,
+  });
+
+  @override
+  List<Object?> get props => [
+        examId,
+        questionId,
+        awardedPoints,
+        maxPoints,
+        expectedAnswer,
+        gradingRubric,
+        evaluationSummary,
+        correct,
+      ];
+}
+
+class UpdateQuestionOverride
+    implements UseCase<ExamStatusEntity, UpdateQuestionOverrideParams> {
+  final TeacherRepository repository;
+
+  const UpdateQuestionOverride(this.repository);
+
+  @override
+  Future<Either<Failure, ExamStatusEntity>> call(
+    UpdateQuestionOverrideParams params,
+  ) {
+    return repository.updateQuestionOverride(
+      examId: params.examId,
+      questionId: params.questionId,
+      awardedPoints: params.awardedPoints,
+      maxPoints: params.maxPoints,
+      expectedAnswer: params.expectedAnswer,
+      gradingRubric: params.gradingRubric,
+      evaluationSummary: params.evaluationSummary,
+      correct: params.correct,
+    );
+  }
+}
+
 class AddStudentParams extends Equatable {
   final int classId;
   final String fullName;

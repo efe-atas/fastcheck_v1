@@ -36,6 +36,23 @@ abstract class TeacherRepository {
 
   Future<Either<Failure, ExamStatusEntity>> reprocessExam(int examId);
 
+  Future<Either<Failure, ExamStatusEntity>> updateExamImageStudentMatch({
+    required int examId,
+    required int imageId,
+    required int studentId,
+  });
+
+  Future<Either<Failure, ExamStatusEntity>> updateQuestionOverride({
+    required int examId,
+    required int questionId,
+    required double awardedPoints,
+    required double maxPoints,
+    String? expectedAnswer,
+    String? gradingRubric,
+    String? evaluationSummary,
+    bool? correct,
+  });
+
   Future<Either<Failure, StudentEntity>> addStudentToClass({
     required int classId,
     required String fullName,

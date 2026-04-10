@@ -8,7 +8,10 @@ import com.fastcheck.fastcheck.user.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class OcrProcessingService {
+    private static final Logger log = LoggerFactory.getLogger(OcrProcessingService.class);
 
     private final OcrClient ocrClient;
     private final ServiceTokenProvider serviceTokenProvider;
@@ -97,21 +101,52 @@ public class OcrProcessingService {
     }
 
     private OcrDtos.OcrResultResponse toResponse(OcrJob job) {
-        try {
-            JsonNode result = objectMapper.readTree(job.getOcrResultJson());
-            Object responsePayload = objectMapper.convertValue(result, Object.class);
-            return new OcrDtos.OcrResultResponse(
-                    job.getJobId(),
-                    job.getRequestId(),
-                    job.getUser().getId(),
-                    job.getImageUrl(),
-                    job.getSourceId(),
-                    job.getStatus().name(),
-                    job.getCreatedAt(),
-                    responsePayload
-            );
-        } catch (Exception exc) {
-            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "stored OCR result is corrupted");
+        Object responsePayload = deserializeStoredResult(job);
+        return new OcrDtos.OcrResultResponse(
+                job.getJobId(),
+                job.getRequestId(),
+                job.getUser().getId(),
+                job.getImageUrl(),
+                job.getSourceId(),
+                job.getStatus().name(),
+                job.getCreatedAt(),
+                responsePayload
+        );
+    }
+
+    private Object deserializeStoredResult(OcrJob job) {
+        String raw = job.getOcrResultJson();
+        if (raw == null || raw.isBlank()) {
+            return null;
         }
+
+        try {
+            JsonNode result = objectMapper.readTree(raw);
+            if (result != null && result.isTextual()) {
+                String nestedJson = result.asText("");
+                String trimmed = nestedJson.trim();
+                if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+                    result = objectMapper.readTree(trimmed);
+                }
+            }
+            return objectMapper.convertValue(result, Object.class);
+        } catch (Exception exc) {
+            log.warn("Stored OCR result could not be parsed jobId={}", job.getJobId(), exc);
+            return Map.of(
+                    "corrupted", true,
+                    "message", "stored OCR result is corrupted",
+                    "rawPreview", abbreviate(raw)
+            );
+        }
+    }
+
+    private String abbreviate(String value) {
+        if (value == null) {
+            return "";
+        }
+        if (value.length() <= 240) {
+            return value;
+        }
+        return value.substring(0, 240) + "...";
     }
 }

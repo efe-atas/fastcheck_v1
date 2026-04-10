@@ -40,6 +40,15 @@ class ParentQuestionModel {
   final String? questionText;
   final String? studentAnswer;
   final double confidence;
+  final String? questionType;
+  final String? expectedAnswer;
+  final String? gradingRubric;
+  final double? maxPoints;
+  final double? awardedPoints;
+  final double? gradingConfidence;
+  final String? gradingStatus;
+  final String? evaluationSummary;
+  final bool? correct;
 
   const ParentQuestionModel({
     required this.id,
@@ -49,6 +58,15 @@ class ParentQuestionModel {
     this.questionText,
     this.studentAnswer,
     required this.confidence,
+    this.questionType,
+    this.expectedAnswer,
+    this.gradingRubric,
+    this.maxPoints,
+    this.awardedPoints,
+    this.gradingConfidence,
+    this.gradingStatus,
+    this.evaluationSummary,
+    this.correct,
   });
 
   factory ParentQuestionModel.fromJson(Map<String, dynamic> json) {
@@ -60,6 +78,15 @@ class ParentQuestionModel {
       questionText: json['questionText'] as String?,
       studentAnswer: json['studentAnswer'] as String?,
       confidence: (json['confidence'] as num).toDouble(),
+      questionType: json['questionType'] as String?,
+      expectedAnswer: json['expectedAnswer'] as String?,
+      gradingRubric: json['gradingRubric'] as String?,
+      maxPoints: (json['maxPoints'] as num?)?.toDouble(),
+      awardedPoints: (json['awardedPoints'] as num?)?.toDouble(),
+      gradingConfidence: (json['gradingConfidence'] as num?)?.toDouble(),
+      gradingStatus: json['gradingStatus'] as String?,
+      evaluationSummary: json['evaluationSummary'] as String?,
+      correct: json['correct'] as bool?,
     );
   }
 
@@ -72,6 +99,15 @@ class ParentQuestionModel {
       questionText: questionText,
       studentAnswer: studentAnswer,
       confidence: confidence,
+      questionType: questionType,
+      expectedAnswer: expectedAnswer,
+      gradingRubric: gradingRubric,
+      maxPoints: maxPoints,
+      awardedPoints: awardedPoints,
+      gradingConfidence: gradingConfidence,
+      gradingStatus: gradingStatus,
+      evaluationSummary: evaluationSummary,
+      correct: correct,
     );
   }
 }
@@ -140,6 +176,9 @@ class ParentStudentExamModel {
   final String title;
   final String status;
   final String createdAt;
+  final double? awardedPoints;
+  final double? maxPoints;
+  final double? scorePercentage;
 
   const ParentStudentExamModel({
     required this.examId,
@@ -147,6 +186,9 @@ class ParentStudentExamModel {
     required this.title,
     required this.status,
     required this.createdAt,
+    this.awardedPoints,
+    this.maxPoints,
+    this.scorePercentage,
   });
 
   factory ParentStudentExamModel.fromJson(Map<String, dynamic> json) {
@@ -156,6 +198,9 @@ class ParentStudentExamModel {
       title: json['title'] as String,
       status: json['status'] as String,
       createdAt: json['createdAt'] as String,
+      awardedPoints: (json['awardedPoints'] as num?)?.toDouble(),
+      maxPoints: (json['maxPoints'] as num?)?.toDouble(),
+      scorePercentage: (json['scorePercentage'] as num?)?.toDouble(),
     );
   }
 
@@ -166,6 +211,9 @@ class ParentStudentExamModel {
       title: title,
       status: status,
       createdAt: DateTime.parse(createdAt),
+      awardedPoints: awardedPoints,
+      maxPoints: maxPoints,
+      scorePercentage: scorePercentage,
     );
   }
 }

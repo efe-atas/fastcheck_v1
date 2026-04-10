@@ -3,8 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/authenticated_image.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
+import '../../../ocr/domain/entities/ocr_entities.dart';
 import '../../domain/entities/teacher_entities.dart';
 import '../bloc/classes_bloc.dart';
 import '../bloc/teacher_dashboard_cubit.dart';
@@ -47,8 +49,12 @@ class TeacherDashboardPage extends StatelessWidget {
                     summary?.latestExams ?? const <ExamEntity>[];
                 final recentJobs =
                     summary?.recentOcrJobs ?? const <OcrJobEntity>[];
+                final recentResults = dashboardState is TeacherDashboardLoaded
+                    ? dashboardState.recentOcrResults
+                    : const <OcrResultEntity>[];
                 final visibleExams = latestExams.take(3).toList();
                 final visibleJobs = recentJobs.take(5).toList();
+                final visibleResults = recentResults.take(5).toList();
 
                 return ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -137,7 +143,7 @@ class TeacherDashboardPage extends StatelessWidget {
                         height: 120,
                         child: Center(child: CircularProgressIndicator()),
                       )
-                    else if (visibleJobs.isEmpty)
+                    else if (visibleResults.isEmpty && visibleJobs.isEmpty)
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16),
                         child: _DashboardEmptyCard(
@@ -147,29 +153,45 @@ class TeacherDashboardPage extends StatelessWidget {
                       )
                     else
                       SizedBox(
-                        height: 205,
+                        height: 198,
                         child: ListView.separated(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           scrollDirection: Axis.horizontal,
                           itemBuilder: (context, index) {
+                            if (visibleResults.isNotEmpty) {
+                              final result = visibleResults[index];
+                              final statusUi = _mapOcrStatus(result.status);
+                              return _OcrPreviewCard(
+                                title: _ocrResultTitle(result),
+                                subtitle: _ocrResultSubtitle(result),
+                                progress: statusUi.progress,
+                                progressText: statusUi.progressLabel,
+                                status: statusUi.label,
+                                statusColor: statusUi.color,
+                                imageUrl: result.imageUrl,
+                                useAuthenticatedImage: true,
+                              );
+                            }
+
                             final job = visibleJobs[index];
                             final statusUi = _mapOcrStatus(job.status);
                             final subtitle = job.createdAt != null
-                                ? 'Oluşturma: ${DateFormat('d MMM HH:mm', 'tr_TR').format(job.createdAt!)}'
+                                ? 'Oluşturma: ${DateFormat('d MMM HH:mm', 'tr_TR').format(job.createdAt!.toLocal())}'
                                 : 'Tekrar sayısı: ${job.retryCount}';
                             return _OcrPreviewCard(
-                              title: 'İş ${_shortenId(job.jobId)}',
+                              title: _ocrJobTitle(job),
                               subtitle: subtitle,
                               progress: statusUi.progress,
                               progressText: statusUi.progressLabel,
                               status: statusUi.label,
                               statusColor: statusUi.color,
-                              imageUrl: statusUi.imageUrl,
                             );
                           },
                           separatorBuilder: (_, __) =>
                               const SizedBox(width: 12),
-                          itemCount: visibleJobs.length,
+                          itemCount: visibleResults.isNotEmpty
+                              ? visibleResults.length
+                              : visibleJobs.length,
                         ),
                       ),
                     const Padding(
@@ -392,9 +414,10 @@ class _DashboardHero extends StatelessWidget {
                           ClipRRect(
                             borderRadius: BorderRadius.circular(16),
                             child: SizedBox.expand(
-                              child: Image.network(
-                                'https://www.figma.com/api/mcp/asset/577ed5ac-0be7-4457-aae3-aa419800500a',
+                              child: Image.asset(
+                                'lib/mascot/dashboard_ai_banner.png',
                                 fit: BoxFit.cover,
+                                filterQuality: FilterQuality.medium,
                                 errorBuilder: (_, __, ___) => Container(
                                   color: const Color(0xFF4B5EDC),
                                   child: const Center(
@@ -719,7 +742,8 @@ class _OcrPreviewCard extends StatelessWidget {
     required this.progressText,
     required this.status,
     required this.statusColor,
-    required this.imageUrl,
+    this.imageUrl,
+    this.useAuthenticatedImage = false,
   });
 
   final String title;
@@ -728,7 +752,8 @@ class _OcrPreviewCard extends StatelessWidget {
   final String progressText;
   final String status;
   final Color statusColor;
-  final String imageUrl;
+  final String? imageUrl;
+  final bool useAuthenticatedImage;
 
   @override
   Widget build(BuildContext context) {
@@ -756,12 +781,19 @@ class _OcrPreviewCard extends StatelessWidget {
                 SizedBox(
                   width: 178,
                   height: 95,
-                  child: imageUrl.isNotEmpty
-                      ? Image.network(
-                          imageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _imageFallback(),
-                        )
+                  child: imageUrl != null && imageUrl!.trim().isNotEmpty
+                      ? (useAuthenticatedImage
+                          ? AuthenticatedImage(
+                              url: imageUrl!.trim(),
+                              width: 178,
+                              height: 95,
+                              fit: BoxFit.cover,
+                            )
+                          : Image.network(
+                              imageUrl!.trim(),
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _imageFallback(),
+                            ))
                       : _imageFallback(),
                 ),
                 Positioned(
@@ -787,21 +819,25 @@ class _OcrPreviewCard extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                         color: Color(0xFF0F1729),
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         height: 1)),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                         color: Color(0xFF6B7A99), fontSize: 11)),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
@@ -812,8 +848,10 @@ class _OcrPreviewCard extends StatelessWidget {
                         const AlwaysStoppedAnimation<Color>(Color(0xFF0BBFB0)),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(progressText,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                         color: Color(0xFF6B7A99), fontSize: 11)),
               ],
@@ -1030,13 +1068,6 @@ class _ExamStatusUi {
   });
 }
 
-const _ocrCompletedImage =
-    'https://www.figma.com/api/mcp/asset/e7c9e96d-f0a2-4878-b694-6d46113b9171';
-const _ocrProcessingImage =
-    'https://www.figma.com/api/mcp/asset/b041ebc8-6cfc-4b5f-9a6d-9210f18baf92';
-const _ocrPendingImage =
-    'https://www.figma.com/api/mcp/asset/577ed5ac-0be7-4457-aae3-aa419800500a';
-
 _OcrStatusUi _mapOcrStatus(String? raw) {
   final status = raw?.toUpperCase() ?? '';
   switch (status) {
@@ -1046,7 +1077,6 @@ _OcrStatusUi _mapOcrStatus(String? raw) {
         color: Color(0xFF19A56E),
         progress: 1,
         progressLabel: '%100 tamamlandı',
-        imageUrl: _ocrCompletedImage,
       );
     case 'PROCESSING':
       return const _OcrStatusUi(
@@ -1054,7 +1084,6 @@ _OcrStatusUi _mapOcrStatus(String? raw) {
         color: Color(0xFF0BBFB0),
         progress: 0.65,
         progressLabel: '%65 tamamlandı',
-        imageUrl: _ocrProcessingImage,
       );
     case 'FAILED':
       return const _OcrStatusUi(
@@ -1062,7 +1091,6 @@ _OcrStatusUi _mapOcrStatus(String? raw) {
         color: AppColors.error,
         progress: 1,
         progressLabel: 'İşleme hatası',
-        imageUrl: _ocrProcessingImage,
       );
     case 'PENDING':
     default:
@@ -1071,7 +1099,6 @@ _OcrStatusUi _mapOcrStatus(String? raw) {
         color: Color(0xFF3B4FD8),
         progress: 0.15,
         progressLabel: '%15 sırada',
-        imageUrl: _ocrPendingImage,
       );
   }
 }
@@ -1081,18 +1108,83 @@ class _OcrStatusUi {
   final Color color;
   final double progress;
   final String progressLabel;
-  final String imageUrl;
 
   const _OcrStatusUi({
     required this.label,
     required this.color,
     required this.progress,
     required this.progressLabel,
-    required this.imageUrl,
   });
 }
 
 String _shortenId(String value) {
   if (value.isEmpty) return '---';
   return value.length <= 8 ? value : value.substring(0, 8);
+}
+
+String _ocrResultTitle(OcrResultEntity result) {
+  final studentName = _extractStudentName(result.result);
+  if (studentName != null) return studentName;
+
+  final source = _sourceLabel(result.sourceId);
+  if (source != null) return source;
+
+  return 'İş ${_shortenId(result.jobId)}';
+}
+
+String _ocrResultSubtitle(OcrResultEntity result) {
+  final parts = <String>[];
+  final source = _sourceLabel(result.sourceId);
+  if (source != null) {
+    parts.add(source);
+  }
+  parts.add(DateFormat('d MMM HH:mm', 'tr_TR').format(result.createdAt.toLocal()));
+  return parts.join(' • ');
+}
+
+String _ocrJobTitle(OcrJobEntity job) {
+  final source = _sourceLabel(job.requestId);
+  if (source != null) return source;
+  return 'İş ${_shortenId(job.jobId)}';
+}
+
+String? _sourceLabel(String? raw) {
+  if (raw == null || raw.trim().isEmpty) return null;
+  final value = raw.trim();
+  if (value.startsWith('exam-') && value.length > 5) {
+    return 'Sınav #${value.substring(5)}';
+  }
+  if (value.startsWith('class-') && value.length > 6) {
+    return 'Sınıf #${value.substring(6)}';
+  }
+  if (value.startsWith('student-') && value.length > 8) {
+    return 'Öğrenci #${value.substring(8)}';
+  }
+  return null;
+}
+
+String? _extractStudentName(dynamic raw) {
+  if (raw is! Map) return null;
+  final data = raw.map((key, value) => MapEntry(key.toString(), value));
+
+  for (final key in const ['studentName', 'student', 'name', 'owner']) {
+    final value = data[key];
+    if (value is String && value.trim().isNotEmpty) {
+      return value.trim();
+    }
+  }
+
+  final metadata = data['metadata'];
+  if (metadata is Map) {
+    final normalized =
+        metadata.map((key, value) => MapEntry(key.toString(), value));
+    for (final key in const ['studentName', 'student', 'name']) {
+      final value = normalized[key];
+      if (value is String && value.trim().isNotEmpty) {
+        return value.trim();
+      }
+    }
+  }
+
+  return null;
 }

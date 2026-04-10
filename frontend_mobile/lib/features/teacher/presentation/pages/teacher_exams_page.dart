@@ -579,12 +579,11 @@ class _ExamOverviewCard extends StatelessWidget {
     final isDone =
         status == 'READY' || status == 'COMPLETED' || status == 'DONE';
     final color = isDone ? const Color(0xFF0BBFB0) : const Color(0xFF3B4FD8);
-    final count = (item.exam.examId % 30) + 2;
-    final total = count + 10;
     final date = DateFormat('d MMM', 'tr_TR').format(item.exam.createdAt);
     final plannedFor = item.plannedDate != null
         ? DateFormat('d MMM', 'tr_TR').format(item.plannedDate!)
         : null;
+    final statusLabel = _statusLabel(status);
 
     return InkWell(
       onTap: onTap,
@@ -627,22 +626,6 @@ class _ExamOverviewCard extends StatelessWidget {
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE9EDF6),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          '${item.exam.classId}-${String.fromCharCode(64 + ((item.exam.examId % 4) + 1))}',
-                          style: const TextStyle(
-                              color: Color(0xFF8A96B2),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600),
                         ),
                       ),
                       if (item.subject != null && item.subject!.isNotEmpty)
@@ -702,12 +685,24 @@ class _ExamOverviewCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 12),
                       ],
-                      const Icon(Icons.groups_rounded,
-                          size: 14, color: Color(0xFF8A96B2)),
-                      const SizedBox(width: 4),
-                      Text('${total - 2} öğrenci',
-                          style: const TextStyle(
-                              color: Color(0xFF6B7A99), fontSize: 11)),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          statusLabel,
+                          style: TextStyle(
+                            color: color,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -715,30 +710,20 @@ class _ExamOverviewCard extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(
-                  width: 48,
-                  height: 48,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      CircularProgressIndicator(
-                        value: total == 0 ? 0 : count / total,
-                        strokeWidth: 4,
-                        backgroundColor: const Color(0xFFDDE3F0),
-                        valueColor: AlwaysStoppedAnimation<Color>(color),
-                      ),
-                      Center(
-                        child: Text(
-                          '$count/$total',
-                          style: const TextStyle(
-                            color: Color(0xFF3B4FD8),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    isDone
+                        ? Icons.check_circle_outline_rounded
+                        : Icons.pending_actions_rounded,
+                    color: color,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -761,6 +746,23 @@ class _ExamOverviewCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _statusLabel(String status) {
+    switch (status) {
+      case 'READY':
+      case 'COMPLETED':
+      case 'DONE':
+        return 'Tamamlandı';
+      case 'PROCESSING':
+        return 'İşleniyor';
+      case 'FAILED':
+        return 'Hata';
+      case 'DRAFT':
+      case 'PENDING':
+      default:
+        return 'Taslak';
+    }
   }
 }
 

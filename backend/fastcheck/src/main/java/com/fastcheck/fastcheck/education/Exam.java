@@ -37,6 +37,11 @@ public class Exam {
     @Column(nullable = false, length = 32)
     private ExamStatus status = ExamStatus.DRAFT;
 
+    @Column(columnDefinition = "TEXT")
+    private String gradingSystemSummary;
+
+    private Double totalMaxPoints;
+
     @Column(nullable = false)
     private Instant createdAt = Instant.now();
 
@@ -74,6 +79,22 @@ public class Exam {
 
     public void setStatus(ExamStatus status) {
         this.status = status;
+    }
+
+    public String getGradingSystemSummary() {
+        return gradingSystemSummary;
+    }
+
+    public void setGradingSystemSummary(String gradingSystemSummary) {
+        this.gradingSystemSummary = gradingSystemSummary;
+    }
+
+    public Double getTotalMaxPoints() {
+        return totalMaxPoints;
+    }
+
+    public void setTotalMaxPoints(Double totalMaxPoints) {
+        this.totalMaxPoints = totalMaxPoints;
     }
 
     public Instant getCreatedAt() {

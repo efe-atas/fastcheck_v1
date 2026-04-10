@@ -72,6 +72,12 @@ public class ExamFileStorageService {
         if (contentType.endsWith("png")) {
             return ".png";
         }
+        if (contentType.endsWith("heic")) {
+            return ".heic";
+        }
+        if (contentType.endsWith("heif")) {
+            return ".heif";
+        }
         if (contentType.endsWith("jpeg") || contentType.endsWith("jpg")) {
             return ".jpg";
         }

@@ -6,12 +6,16 @@ JSON_SCHEMA = {
         "properties": {
             "document_type": {"type": "string", "const": "exam_paper"},
             "language": {"type": "string"},
+            "grading_system_summary": {"type": "string"},
+            "total_max_points": {"type": "number", "minimum": 0},
             "pages": {
                 "type": "array",
                 "items": {
                     "type": "object",
                     "properties": {
                         "page_number": {"type": "integer"},
+                        "detected_student_name": {"type": "string"},
+                        "name_confidence": {"type": "number", "minimum": 0, "maximum": 1},
                         "questions": {
                             "type": "array",
                             "items": {
@@ -22,7 +26,16 @@ JSON_SCHEMA = {
                                     "question_lines": {"type": "array", "items": {"type": "string"}},
                                     "student_answer_raw": {"type": "string"},
                                     "student_answer_lines": {"type": "array", "items": {"type": "string"}},
-                                    "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+                                    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+                                    "question_type": {"type": "string"},
+                                    "expected_answer_raw": {"type": "string"},
+                                    "grading_rubric_raw": {"type": "string"},
+                                    "max_points": {"type": "number", "minimum": 0},
+                                    "awarded_points": {"type": "number", "minimum": 0},
+                                    "grading_confidence": {"type": "number", "minimum": 0, "maximum": 1},
+                                    "evaluation_summary": {"type": "string"},
+                                    "needs_review": {"type": "boolean"},
+                                    "is_correct": {"type": ["boolean", "null"]}
                                 },
                                 "required": [
                                     "question_id",
@@ -30,7 +43,16 @@ JSON_SCHEMA = {
                                     "question_lines",
                                     "student_answer_raw",
                                     "student_answer_lines",
-                                    "confidence"
+                                    "confidence",
+                                    "question_type",
+                                    "expected_answer_raw",
+                                    "grading_rubric_raw",
+                                    "max_points",
+                                    "awarded_points",
+                                    "grading_confidence",
+                                    "evaluation_summary",
+                                    "needs_review",
+                                    "is_correct"
                                 ],
                                 "additionalProperties": False
                             }
@@ -48,12 +70,18 @@ JSON_SCHEMA = {
                             }
                         }
                     },
-                    "required": ["page_number", "questions", "unmatched_text_blocks"],
+                    "required": [
+                        "page_number",
+                        "detected_student_name",
+                        "name_confidence",
+                        "questions",
+                        "unmatched_text_blocks"
+                    ],
                     "additionalProperties": False
                 }
             }
         },
-        "required": ["document_type", "language", "pages"],
+        "required": ["document_type", "language", "grading_system_summary", "total_max_points", "pages"],
         "additionalProperties": False
     }
 }

@@ -6,10 +6,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_doc_scanner/flutter_doc_scanner.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/usecase/usecase.dart';
 import '../../../../core/widgets/app_toast.dart';
+import '../../../../core/widgets/authenticated_image.dart';
 import '../../../teacher/domain/entities/teacher_entities.dart';
 import '../../../teacher/domain/usecases/teacher_usecases.dart';
 import '../../domain/entities/ocr_entities.dart';
@@ -29,6 +31,7 @@ class OcrLabPage extends StatefulWidget {
 
 class _OcrLabPageState extends State<OcrLabPage> {
   final DateFormat _dateFormatter = DateFormat('d MMM y • HH:mm', 'tr_TR');
+  final ImagePicker _imagePicker = ImagePicker();
 
   bool _isLoadingExamOptions = false;
   bool _isUploadingSelectedExam = false;
@@ -203,7 +206,7 @@ class _OcrLabPageState extends State<OcrLabPage> {
     });
   }
 
-  Future<void> _onScanPressed() async {
+  Future<void> _onCameraPressed() async {
     if (widget.requireExamSelection && _selectedExam == null) {
       showAppToast(
         context,
@@ -224,6 +227,57 @@ class _OcrLabPageState extends State<OcrLabPage> {
               : 'exam-${_selectedExam!.exam.examId}',
           examTitle: _selectedExam?.exam.title,
         );
+  }
+
+  Future<void> _onGalleryPressed() async {
+    if (widget.requireExamSelection && _selectedExam == null) {
+      showAppToast(
+        context,
+        message: 'Lütfen önce bir sınav seçin.',
+        destructive: true,
+      );
+      return;
+    }
+
+    final files = await _pickGalleryFiles();
+    if (!mounted || files == null || files.isEmpty) {
+      return;
+    }
+
+    if (widget.requireExamSelection && _selectedExam != null) {
+      await _uploadSelectedExamFiles(_selectedExam!, files);
+      return;
+    }
+
+    await context.read<OcrCubit>().extractFromLocalPaths(
+          localPaths: files.map((file) => file.path).toList(),
+          sourceId: _selectedExam == null
+              ? null
+              : 'exam-${_selectedExam!.exam.examId}',
+          examTitle: _selectedExam?.exam.title,
+        );
+  }
+
+  Future<List<File>?> _pickGalleryFiles() async {
+    try {
+      final pickedFiles = await _imagePicker.pickMultiImage();
+      if (pickedFiles.isEmpty) {
+        if (mounted) {
+          showAppToast(context, message: 'Galeri seçimi iptal edildi.');
+        }
+        return null;
+      }
+      return pickedFiles.map((file) => File(file.path)).toList();
+    } catch (_) {
+      if (mounted) {
+        showAppToast(
+          context,
+          message: 'Galeri açılamadı.',
+          destructive: true,
+        );
+      }
+      return null;
+    }
   }
 
   Future<void> _scanForSelectedExam() async {
@@ -275,7 +329,24 @@ class _OcrLabPageState extends State<OcrLabPage> {
       return;
     }
 
-    final files = scanResult.images.map(File.new).toList();
+    await _uploadSelectedExamFiles(
+      selectedExam,
+      scanResult.images.map(File.new).toList(),
+    );
+  }
+
+  Future<void> _uploadSelectedExamFiles(
+    _ExamOption selectedExam,
+    List<File> files,
+  ) async {
+    if (files.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _isUploadingSelectedExam = true;
+    });
+
     final result = await sl<UploadExamImages>()(
       UploadExamImagesParams(
         examId: selectedExam.exam.examId,
@@ -411,30 +482,12 @@ class _OcrLabPageState extends State<OcrLabPage> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: EdgeInsets.fromLTRB(
                   16,
-                  MediaQuery.paddingOf(context).top + 8,
+                  MediaQuery.paddingOf(context).top + 4,
                   16,
-                  56 + bottomInset,
+                  16 + bottomInset,
                 ),
                 children: [
-                  const Text(
-                    'OCR İşlem Merkezi',
-                    style: TextStyle(
-                      color: Color(0xFF0F1729),
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      height: 1.05,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Sınav kağıtlarını yükleyin, iş akışını takip edin ve geçmiş işlemleri tek ekrandan yönetin.',
-                    style: TextStyle(
-                      color: Color(0xFF6B7A99),
-                      fontSize: 14,
-                      height: 1.35,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       Expanded(
@@ -469,10 +522,13 @@ class _OcrLabPageState extends State<OcrLabPage> {
                     const SizedBox(height: 10),
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.errorLight,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                           color: AppColors.error.withValues(alpha: 0.15),
                         ),
@@ -487,9 +543,9 @@ class _OcrLabPageState extends State<OcrLabPage> {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(14),
                     decoration: _historyCardDecoration(),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -498,18 +554,19 @@ class _OcrLabPageState extends State<OcrLabPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Container(
-                              width: 48,
-                              height: 48,
+                              width: 42,
+                              height: 42,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFE9EEFF),
-                                borderRadius: BorderRadius.circular(14),
+                                color: const Color(0xFFF0F3FF),
+                                borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(
                                 Icons.camera_alt_outlined,
                                 color: Color(0xFF3B4FD8),
+                                size: 20,
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 10),
                             const Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -518,16 +575,16 @@ class _OcrLabPageState extends State<OcrLabPage> {
                                     'Yeni tarama başlat',
                                     style: TextStyle(
                                       color: Color(0xFF0F1729),
-                                      fontSize: 16,
+                                      fontSize: 15,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
-                                  SizedBox(height: 4),
+                                  SizedBox(height: 3),
                                   Text(
-                                    'Kamera veya galeri ile sınav kağıtlarını ekleyin. İşlem tamamlandığında kayıt otomatik olarak geçmişe düşer.',
+                                    'Kamera veya galeriden kağıt ekleyin. Tamamlanan kayıtlar otomatik olarak geçmişe düşer.',
                                     style: TextStyle(
                                       color: Color(0xFF6B7A99),
-                                      fontSize: 13,
+                                      fontSize: 12,
                                       height: 1.35,
                                     ),
                                   ),
@@ -537,7 +594,7 @@ class _OcrLabPageState extends State<OcrLabPage> {
                           ],
                         ),
                         if (widget.requireExamSelection) ...[
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 12),
                           InkWell(
                             onTap:
                                 _isLoadingExamOptions ? null : _openExamPicker,
@@ -546,11 +603,14 @@ class _OcrLabPageState extends State<OcrLabPage> {
                               width: double.infinity,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
-                                vertical: 12,
+                                vertical: 11,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF2F4FA),
+                                color: const Color(0xFFF6F7FB),
                                 borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(0xFFE2E7F2),
+                                ),
                               ),
                               child: Row(
                                 children: [
@@ -595,7 +655,7 @@ class _OcrLabPageState extends State<OcrLabPage> {
                               ),
                             ),
                         ],
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 12),
                         Row(
                           children: [
                             Expanded(
@@ -609,7 +669,7 @@ class _OcrLabPageState extends State<OcrLabPage> {
                                         (widget.requireExamSelection &&
                                             selectedExam == null)
                                     ? null
-                                    : _onScanPressed,
+                                    : _onCameraPressed,
                               ),
                             ),
                             const SizedBox(width: 10),
@@ -624,14 +684,14 @@ class _OcrLabPageState extends State<OcrLabPage> {
                                         (widget.requireExamSelection &&
                                             selectedExam == null)
                                     ? null
-                                    : _onScanPressed,
+                                    : _onGalleryPressed,
                               ),
                             ),
                           ],
                         ),
                         if (kIsWeb)
                           const Padding(
-                            padding: EdgeInsets.only(top: 8),
+                            padding: EdgeInsets.only(top: 6),
                             child: Text(
                               'Belge tarama sadece iOS/Android uygulamasında desteklenir.',
                               style: TextStyle(
@@ -644,28 +704,16 @@ class _OcrLabPageState extends State<OcrLabPage> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      const Text(
-                        'Aktif İşlem',
-                        style: TextStyle(
-                          color: Color(0xFF0F1729),
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          height: 1.05,
-                        ),
-                      ),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: state.isLoading && !showLiveProgress
-                            ? null
-                            : () => context.read<OcrCubit>().refreshList(),
-                        child: const Text('Yenile'),
-                      ),
-                    ],
+                  _SectionHeader(
+                    title: 'Aktif İşlem',
+                    actionLabel: 'Yenile',
+                    onAction: state.isLoading && !showLiveProgress
+                        ? null
+                        : () => context.read<OcrCubit>().refreshList(),
                   ),
+                  const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(10),
                     decoration: _historyCardDecoration(),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -675,28 +723,12 @@ class _OcrLabPageState extends State<OcrLabPage> {
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                activeResult?.imageUrl ??
-                                    'https://www.figma.com/api/mcp/asset/f2d7b0e8-69e2-477c-bd80-836b5a7f0120',
-                                width: 64,
-                                height: 80,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
-                                  width: 64,
-                                  height: 80,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFE9EEF8),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Icon(
-                                    Icons.image_not_supported_outlined,
-                                    color: Color(0xFF8A96B2),
-                                    size: 20,
-                                  ),
-                                ),
+                              child: _ResultPreviewImage(
+                                imageUrl: activeResult?.imageUrl,
+                                compact: true,
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 10),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -710,48 +742,50 @@ class _OcrLabPageState extends State<OcrLabPage> {
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(
                                             color: Color(0xFF0F1729),
-                                            fontSize: 14,
+                                            fontSize: 13,
                                             fontWeight: FontWeight.w700,
+                                            height: 1.1,
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(width: 8),
+                                      const SizedBox(width: 6),
                                       _StatusBadge(
                                         label: activeStatusLabel,
                                         color: activeStatusColor,
                                         background: activeStatusBackground,
+                                        compact: true,
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 4),
+                                  const SizedBox(height: 3),
                                   Text(
                                     activeSubtitle,
-                                    maxLines: 2,
+                                    maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       color: Color(0xFF6B7A99),
-                                      fontSize: 13,
-                                      height: 1.3,
+                                      fontSize: 11,
+                                      height: 1.2,
                                     ),
                                   ),
-                                  const SizedBox(height: 10),
+                                  const SizedBox(height: 6),
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(4),
                                     child: LinearProgressIndicator(
                                       value: normalizedProgress,
-                                      minHeight: 6,
+                                      minHeight: 4,
                                       backgroundColor: const Color(0xFFDCE2EE),
                                       valueColor: AlwaysStoppedAnimation<Color>(
                                         activeStatusColor,
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(height: 6),
+                                  const SizedBox(height: 4),
                                   Text(
                                     activeProgressLabel,
                                     style: const TextStyle(
                                       color: Color(0xFF3A4864),
-                                      fontSize: 12,
+                                      fontSize: 10,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -760,47 +794,50 @@ class _OcrLabPageState extends State<OcrLabPage> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8),
                         Text(
                           activeSupportText,
                           style: const TextStyle(
                             color: Color(0xFF6B7A99),
-                            fontSize: 13,
-                            height: 1.35,
+                            fontSize: 11,
+                            height: 1.3,
                           ),
                         ),
                         if (showLiveProgress) ...[
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 6),
                           Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
+                            spacing: 6,
+                            runSpacing: 6,
                             children: [
                               _MetricBadge(
                                 label: 'Başarılı',
                                 value: '${state.successCount}',
                                 color: const Color(0xFF0BBFB0),
                                 background: const Color(0xFFDFF5F2),
+                                compact: true,
                               ),
                               _MetricBadge(
                                 label: 'Hatalı',
                                 value: '${state.failedCount}',
                                 color: const Color(0xFFDE3F4D),
                                 background: const Color(0xFFFCE8EA),
+                                compact: true,
                               ),
                             ],
                           ),
                         ] else if (activeResult != null &&
                             activeStats.total > 0) ...[
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 6),
                           Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
+                            spacing: 6,
+                            runSpacing: 6,
                             children: [
                               _MetricBadge(
                                 label: 'Doğru',
                                 value: '${activeStats.correct}',
                                 color: const Color(0xFF0BBFB0),
                                 background: const Color(0xFFDFF5F2),
+                                compact: true,
                               ),
                               _MetricBadge(
                                 label: 'Yanlış',
@@ -808,6 +845,7 @@ class _OcrLabPageState extends State<OcrLabPage> {
                                     '${activeStats.incorrect < 0 ? 0 : activeStats.incorrect}',
                                 color: const Color(0xFFDE3F4D),
                                 background: const Color(0xFFFCE8EA),
+                                compact: true,
                               ),
                             ],
                           ),
@@ -815,16 +853,9 @@ class _OcrLabPageState extends State<OcrLabPage> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'İşlem Geçmişi',
-                    style: TextStyle(
-                      color: Color(0xFF0F1729),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 14),
+                  const _SectionHeader(title: 'İşlem Geçmişi'),
+                  const SizedBox(height: 6),
                   _buildHistorySection(state),
                 ],
               ),
@@ -864,7 +895,7 @@ class _OcrLabPageState extends State<OcrLabPage> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemBuilder: (context, index) => _buildHistoryCard(visible[index]),
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemCount: visible.length,
     );
   }
@@ -875,35 +906,19 @@ class _OcrLabPageState extends State<OcrLabPage> {
         ? '${stats.correct}/${stats.total} doğru'
         : _statusDescription(result.status);
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(10),
       decoration: _historyCardDecoration(),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              result.imageUrl ??
-                  'https://www.figma.com/api/mcp/asset/f2d7b0e8-69e2-477c-bd80-836b5a7f0120',
-              width: 64,
-              height: 80,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                width: 64,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE9EEF8),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.image_not_supported_outlined,
-                  color: Color(0xFF8A96B2),
-                  size: 20,
-                ),
-              ),
+            child: _ResultPreviewImage(
+              imageUrl: result.imageUrl,
+              compact: true,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -917,16 +932,18 @@ class _OcrLabPageState extends State<OcrLabPage> {
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: Color(0xFF0F1729),
-                          fontSize: 14,
+                          fontSize: 13,
                           fontWeight: FontWeight.w700,
+                          height: 1.1,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     _StatusBadge(
                       label: _statusLabel(result.status),
                       color: _statusColor(result.status),
                       background: _statusBackground(result.status),
+                      compact: true,
                     ),
                   ],
                 ),
@@ -937,10 +954,11 @@ class _OcrLabPageState extends State<OcrLabPage> {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Color(0xFF6B7A99),
-                    fontSize: 13,
+                    fontSize: 11,
+                    height: 1.2,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
@@ -948,41 +966,45 @@ class _OcrLabPageState extends State<OcrLabPage> {
                             ? stats.accuracy
                             : _statusProgress(result.status))
                         .clamp(0.0, 1.0),
-                    minHeight: 6,
+                    minHeight: 4,
                     backgroundColor: const Color(0xFFE2E7F3),
                     valueColor: AlwaysStoppedAnimation<Color>(
                       _statusColor(result.status),
                     ),
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
                   accuracyLabel,
                   style: const TextStyle(
                     color: Color(0xFF3A4864),
-                    fontSize: 12,
+                    fontSize: 10,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: [
-                    _MetricBadge(
-                      label: 'Doğru',
-                      value: '${stats.correct}',
-                      color: const Color(0xFF0BBFB0),
-                      background: const Color(0xFFDFF5F2),
-                    ),
-                    _MetricBadge(
-                      label: 'Yanlış',
-                      value: '${stats.incorrect < 0 ? 0 : stats.incorrect}',
-                      color: const Color(0xFFDE3F4D),
-                      background: const Color(0xFFFCE8EA),
-                    ),
-                  ],
-                ),
+                if (stats.total > 0) ...[
+                  const SizedBox(height: 5),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 5,
+                    children: [
+                      _MetricBadge(
+                        label: 'Doğru',
+                        value: '${stats.correct}',
+                        color: const Color(0xFF0BBFB0),
+                        background: const Color(0xFFDFF5F2),
+                        compact: true,
+                      ),
+                      _MetricBadge(
+                        label: 'Yanlış',
+                        value: '${stats.incorrect < 0 ? 0 : stats.incorrect}',
+                        color: const Color(0xFFDE3F4D),
+                        background: const Color(0xFFFCE8EA),
+                        compact: true,
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -1018,13 +1040,13 @@ class _OcrLabPageState extends State<OcrLabPage> {
   BoxDecoration _historyCardDecoration() {
     return BoxDecoration(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: const Color(0xFFDDE3F0)),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: const Color(0xFFE1E6F0)),
       boxShadow: const [
         BoxShadow(
           color: Color(0x100F1729),
-          blurRadius: 6,
-          offset: Offset(0, 2),
+          blurRadius: 4,
+          offset: Offset(0, 1),
         ),
       ],
     );
@@ -1370,7 +1392,7 @@ class _ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 46,
+      height: 42,
       child: ElevatedButton.icon(
         onPressed: onTap,
         style: ElevatedButton.styleFrom(
@@ -1379,10 +1401,61 @@ class _ActionButton extends StatelessWidget {
           foregroundColor: primary ? Colors.white : const Color(0xFF3B4FD8),
           elevation: 0,
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
         ),
         icon: Icon(icon, size: 16),
-        label: Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+        label: Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ResultPreviewImage extends StatelessWidget {
+  const _ResultPreviewImage({
+    required this.imageUrl,
+    this.compact = false,
+  });
+
+  final String? imageUrl;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    if (imageUrl == null || imageUrl!.trim().isEmpty) {
+      return _placeholder();
+    }
+
+    return SizedBox(
+      width: compact ? 48 : 56,
+      height: compact ? 62 : 72,
+      child: AuthenticatedImage(
+        url: imageUrl!.trim(),
+        width: compact ? 48 : 56,
+        height: compact ? 62 : 72,
+        fit: BoxFit.cover,
+      ),
+    );
+  }
+
+  Widget _placeholder() {
+    return Container(
+      width: compact ? 48 : 56,
+      height: compact ? 62 : 72,
+      decoration: BoxDecoration(
+        color: const Color(0xFFE9EEF8),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Icon(
+        Icons.image_not_supported_outlined,
+        color: Color(0xFF8A96B2),
+        size: 20,
       ),
     );
   }
@@ -1404,16 +1477,16 @@ class _SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFDDE3F0)),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE1E6F0)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x100F1729),
-            blurRadius: 6,
-            offset: Offset(0, 2),
+            blurRadius: 4,
+            offset: Offset(0, 1),
           ),
         ],
       ),
@@ -1421,17 +1494,17 @@ class _SummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 18, color: accent),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Text(
             value,
             style: const TextStyle(
               color: Color(0xFF0F1729),
-              fontSize: 22,
+              fontSize: 20,
               fontWeight: FontWeight.w700,
               height: 1,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Text(
             label,
             style: const TextStyle(
@@ -1451,16 +1524,21 @@ class _StatusBadge extends StatelessWidget {
     required this.label,
     required this.color,
     required this.background,
+    this.compact = false,
   });
 
   final String label;
   final Color color;
   final Color background;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 7 : 9,
+        vertical: compact ? 4 : 5,
+      ),
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(999),
@@ -1469,10 +1547,53 @@ class _StatusBadge extends StatelessWidget {
         label,
         style: TextStyle(
           color: color,
-          fontSize: 11,
+          fontSize: compact ? 9 : 10,
           fontWeight: FontWeight.w700,
         ),
       ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.title,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final String title;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFF0F1729),
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            height: 1.05,
+          ),
+        ),
+        const Spacer(),
+        if (actionLabel != null)
+          TextButton(
+            onPressed: onAction,
+            style: TextButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: Text(
+              actionLabel!,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -1483,17 +1604,22 @@ class _MetricBadge extends StatelessWidget {
     required this.value,
     required this.color,
     this.background = const Color(0xFFE9EEFF),
+    this.compact = false,
   });
 
   final String label;
   final String value;
   final Color color;
   final Color background;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 7 : 9,
+        vertical: compact ? 4 : 5,
+      ),
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(999),
@@ -1502,7 +1628,7 @@ class _MetricBadge extends StatelessWidget {
         text: TextSpan(
           text: '$label: ',
           style: TextStyle(
-            fontSize: 12,
+            fontSize: compact ? 10 : 11,
             color: color.withValues(alpha: 0.75),
             fontWeight: FontWeight.w600,
           ),

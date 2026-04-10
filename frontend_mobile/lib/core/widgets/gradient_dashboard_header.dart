@@ -69,12 +69,12 @@ class DashboardGradientSliverAppBar extends StatelessWidget {
 class DashboardGradientBoxHeader extends StatelessWidget {
   const DashboardGradientBoxHeader({
     super.key,
-    required this.headline,
+    this.headline,
     this.subtitle,
     this.trailing,
   });
 
-  final String headline;
+  final String? headline;
   final String? subtitle;
   final Widget? trailing;
 
@@ -102,15 +102,17 @@ class DashboardGradientBoxHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  headline,
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
+                if (headline != null && headline!.isNotEmpty)
+                  Text(
+                    headline!,
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
                 if (subtitle != null) ...[
-                  const SizedBox(height: AppSpacing.xs),
+                  if (headline != null && headline!.isNotEmpty)
+                    const SizedBox(height: AppSpacing.xs),
                   Text(
                     subtitle!,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(

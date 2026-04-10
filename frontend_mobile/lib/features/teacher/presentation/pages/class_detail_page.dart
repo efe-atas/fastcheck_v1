@@ -51,56 +51,83 @@ class _ClassDetailPageState extends State<ClassDetailPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(widget.className),
-        backgroundColor: AppColors.surface,
-        surfaceTintColor: Colors.transparent,
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.textTertiary,
-          indicatorColor: AppColors.primary,
-          indicatorWeight: 3,
-          labelStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-          tabs: const [
-            Tab(
-              icon: Icon(Icons.assignment_rounded, size: 20),
-              text: 'Sınavlar',
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            _buildTopBar(context),
+            Container(
+              color: AppColors.surface,
+              child: TabBar(
+                controller: _tabController,
+                labelColor: AppColors.primary,
+                unselectedLabelColor: AppColors.textTertiary,
+                indicatorColor: AppColors.primary,
+                indicatorWeight: 3,
+                labelStyle: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+                tabs: const [
+                  Tab(
+                    icon: Icon(Icons.assignment_rounded, size: 20),
+                    text: 'Sınavlar',
+                  ),
+                  Tab(
+                    icon: Icon(Icons.people_rounded, size: 20),
+                    text: 'Öğrenciler',
+                  ),
+                ],
+              ),
             ),
-            Tab(
-              icon: Icon(Icons.people_rounded, size: 20),
-              text: 'Öğrenciler',
+            Expanded(
+              child: BlocBuilder<ClassDetailBloc, ClassDetailState>(
+                builder: (context, state) {
+                  if (state is ClassDetailLoading) {
+                    return const LoadingWidget(message: 'Yükleniyor...');
+                  }
+                  if (state is ClassDetailError) {
+                    return AppErrorWidget(
+                      message: state.message,
+                      onRetry: () => context
+                          .read<ClassDetailBloc>()
+                          .add(LoadClassDetail(widget.classId)),
+                    );
+                  }
+                  if (state is ClassDetailLoaded) {
+                    return TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildExamsTab(context, state),
+                        _buildStudentsTab(context, state),
+                      ],
+                    );
+                  }
+                  return const SizedBox();
+                },
+              ),
             ),
           ],
         ),
       ),
-      body: BlocBuilder<ClassDetailBloc, ClassDetailState>(
-        builder: (context, state) {
-          if (state is ClassDetailLoading) {
-            return const LoadingWidget(message: 'Yükleniyor...');
-          }
-          if (state is ClassDetailError) {
-            return AppErrorWidget(
-              message: state.message,
-              onRetry: () => context
-                  .read<ClassDetailBloc>()
-                  .add(LoadClassDetail(widget.classId)),
-            );
-          }
-          if (state is ClassDetailLoaded) {
-            return TabBarView(
-              controller: _tabController,
-              children: [
-                _buildExamsTab(context, state),
-                _buildStudentsTab(context, state),
-              ],
-            );
-          }
-          return const SizedBox();
-        },
+    );
+  }
+
+  Widget _buildTopBar(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: IconButton(
+          onPressed: () => context.pop(),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          padding: EdgeInsets.zero,
+          visualDensity: VisualDensity.compact,
+          style: IconButton.styleFrom(
+            backgroundColor: AppColors.surface,
+            foregroundColor: AppColors.textPrimary,
+          ),
+        ),
       ),
     );
   }

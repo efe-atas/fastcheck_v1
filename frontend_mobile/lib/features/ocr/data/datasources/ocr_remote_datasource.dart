@@ -53,6 +53,12 @@ class OcrRemoteDataSourceImpl implements OcrRemoteDataSource {
     if (lower.endsWith('.png')) {
       return 'image/png';
     }
+    if (lower.endsWith('.heic')) {
+      return 'image/heic';
+    }
+    if (lower.endsWith('.heif')) {
+      return 'image/heif';
+    }
     if (lower.endsWith('.webp')) {
       return 'image/webp';
     }

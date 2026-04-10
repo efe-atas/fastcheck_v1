@@ -164,12 +164,22 @@ class AppRouter {
                               int.parse(state.pathParameters['examId'] ?? '0');
                           final title =
                               state.uri.queryParameters['title'] ?? 'Sınav';
+                          final studentId = int.tryParse(
+                            state.uri.queryParameters['studentId'] ?? '',
+                          );
+                          final studentName =
+                              state.uri.queryParameters['studentName'];
+                          final showUnmatchedOnly =
+                              state.uri.queryParameters['unmatched'] == 'true';
                           return BlocProvider(
                             create: (_) => sl<ExamBloc>()
                               ..add(LoadExamStatusEvent(examId)),
                             child: TeacherExamQuestionsPage(
                               examId: examId,
                               title: title,
+                              studentId: studentId,
+                              studentName: studentName,
+                              showUnmatchedOnly: showUnmatchedOnly,
                             ),
                           );
                         },
@@ -274,8 +284,8 @@ class AppRouter {
                       GoRoute(
                         path: ':examId/questions',
                         builder: (context, state) {
-                          final studentId =
-                              int.parse(state.pathParameters['studentId'] ?? '0');
+                          final studentId = int.parse(
+                              state.pathParameters['studentId'] ?? '0');
                           final examId =
                               int.parse(state.pathParameters['examId'] ?? '0');
                           final title =

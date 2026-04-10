@@ -25,18 +25,6 @@ class _QuestionCardState extends State<QuestionCard>
 
   double get confidencePercent => (q.confidence ?? 0) * 100;
 
-  Color get _confidenceColor {
-    if (confidencePercent >= 80) return AppColors.success;
-    if (confidencePercent >= 50) return AppColors.warning;
-    return AppColors.error;
-  }
-
-  Color get _confidenceBgColor {
-    if (confidencePercent >= 80) return AppColors.successLight;
-    if (confidencePercent >= 50) return AppColors.warningLight;
-    return AppColors.errorLight;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -128,12 +116,29 @@ class _QuestionCardState extends State<QuestionCard>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (q.maxPoints != null && q.maxPoints! > 0) ...[
+          _buildRow(
+            'Puan',
+            '${(q.awardedPoints ?? 0).toStringAsFixed((q.awardedPoints ?? 0) % 1 == 0 ? 0 : 1)} / ${q.maxPoints!.toStringAsFixed(q.maxPoints! % 1 == 0 ? 0 : 1)}',
+            Icons.workspace_premium_outlined,
+          ),
+          const SizedBox(height: 8),
+        ],
         _detailRow(
           'Öğrenci Cevabı',
           (q.studentAnswer == null || q.studentAnswer!.trim().isEmpty)
               ? 'Öğrenci cevabı bulunmuyor.'
               : q.studentAnswer!,
         ),
+        if (q.expectedAnswer != null && q.expectedAnswer!.trim().isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _detailRow('Beklenen Cevap', q.expectedAnswer!),
+        ],
+        if (q.evaluationSummary != null &&
+            q.evaluationSummary!.trim().isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _detailRow('Değerlendirme', q.evaluationSummary!),
+        ],
         const SizedBox(height: 12),
         _buildRow(
           'Sayfa',
@@ -146,6 +151,24 @@ class _QuestionCardState extends State<QuestionCard>
           '${q.questionOrder}',
           Icons.format_list_numbered_rounded,
         ),
+        if (q.questionType != null && q.questionType!.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          _buildRow(
+            'Soru Tipi',
+            _formatQuestionType(q.questionType!),
+            Icons.category_outlined,
+          ),
+        ],
+        if (q.correct != null) ...[
+          const SizedBox(height: 8),
+          _buildRow(
+            'Sonuç',
+            q.correct == true ? 'Doğru' : 'Yanlış / Kısmi',
+            q.correct == true
+                ? Icons.check_circle_outline
+                : Icons.cancel_outlined,
+          ),
+        ],
         if (q.confidence != null || q.sourceQuestionId != null) ...[
           const SizedBox(height: 16),
           _buildTechnicalDetails(),
@@ -184,6 +207,13 @@ class _QuestionCardState extends State<QuestionCard>
             if (q.sourceQuestionId != null && q.sourceQuestionId!.isNotEmpty)
               const SizedBox(height: 10),
             if (q.confidence != null) _buildConfidenceBar(),
+            if (q.gradingConfidence != null) ...[
+              const SizedBox(height: 12),
+              _buildSecondaryConfidenceBar(
+                label: 'Puanlama Güveni',
+                value: q.gradingConfidence!,
+              ),
+            ],
           ],
         ),
       ),
@@ -248,14 +278,35 @@ class _QuestionCardState extends State<QuestionCard>
   }
 
   Widget _buildConfidenceBar() {
+    return _buildSecondaryConfidenceBar(
+      label: 'OCR Güven Skoru',
+      value: q.confidence ?? 0,
+    );
+  }
+
+  Widget _buildSecondaryConfidenceBar({
+    required String label,
+    required double value,
+  }) {
+    final percent = value * 100;
+    final color = percent >= 80
+        ? AppColors.success
+        : percent >= 50
+            ? AppColors.warning
+            : AppColors.error;
+    final bgColor = percent >= 80
+        ? AppColors.successLight
+        : percent >= 50
+            ? AppColors.warningLight
+            : AppColors.errorLight;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Güven Skoru',
+            Text(
+              label,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -263,11 +314,11 @@ class _QuestionCardState extends State<QuestionCard>
               ),
             ),
             Text(
-              '%${confidencePercent.toStringAsFixed(1)}',
+              '%${percent.toStringAsFixed(1)}',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: _confidenceColor,
+                color: color,
               ),
             ),
           ],
@@ -276,13 +327,28 @@ class _QuestionCardState extends State<QuestionCard>
         ClipRRect(
           borderRadius: BorderRadius.circular(6),
           child: LinearProgressIndicator(
-            value: (q.confidence ?? 0).clamp(0.0, 1.0),
+            value: value.clamp(0.0, 1.0),
             minHeight: 8,
-            backgroundColor: _confidenceBgColor,
-            valueColor: AlwaysStoppedAnimation<Color>(_confidenceColor),
+            backgroundColor: bgColor,
+            valueColor: AlwaysStoppedAnimation<Color>(color),
           ),
         ),
       ],
     );
+  }
+
+  String _formatQuestionType(String value) {
+    switch (value.toUpperCase()) {
+      case 'MULTIPLE_CHOICE':
+        return 'Çoktan seçmeli';
+      case 'SHORT_TEXT':
+        return 'Kısa cevap';
+      case 'NUMERIC':
+        return 'Sayısal';
+      case 'OPEN_ENDED':
+        return 'Açık uçlu';
+      default:
+        return value;
+    }
   }
 }

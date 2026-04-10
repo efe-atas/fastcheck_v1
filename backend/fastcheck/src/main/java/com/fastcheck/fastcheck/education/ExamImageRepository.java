@@ -9,5 +9,7 @@ public interface ExamImageRepository extends JpaRepository<ExamImage, Long> {
 
     List<ExamImage> findByExam_IdAndStatusOrderByPageOrderAsc(Long examId, ExamImageStatus status);
 
+    Optional<ExamImage> findByIdAndExam_Id(Long imageId, Long examId);
+
     Optional<ExamImage> findTopByExam_IdOrderByPageOrderDesc(Long examId);
 }

@@ -11,8 +11,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.List;
 
 @Entity
 @Table(
@@ -48,6 +51,25 @@ public class ExamImage {
     private Instant processingStartedAt;
 
     private Instant processingCompletedAt;
+
+    @Column(length = 255)
+    private String detectedStudentName;
+
+    private Double detectedStudentNameConfidence;
+
+    private Long matchedStudentId;
+
+    @Column(length = 255)
+    private String matchedStudentName;
+
+    private Double studentMatchConfidence;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 32)
+    private StudentMatchStatus studentMatchStatus;
+
+    @Column(columnDefinition = "TEXT")
+    private String candidateStudentIds;
 
     public Long getId() {
         return id;
@@ -111,5 +133,73 @@ public class ExamImage {
 
     public void setProcessingCompletedAt(Instant processingCompletedAt) {
         this.processingCompletedAt = processingCompletedAt;
+    }
+
+    public String getDetectedStudentName() {
+        return detectedStudentName;
+    }
+
+    public void setDetectedStudentName(String detectedStudentName) {
+        this.detectedStudentName = detectedStudentName;
+    }
+
+    public Double getDetectedStudentNameConfidence() {
+        return detectedStudentNameConfidence;
+    }
+
+    public void setDetectedStudentNameConfidence(Double detectedStudentNameConfidence) {
+        this.detectedStudentNameConfidence = detectedStudentNameConfidence;
+    }
+
+    public Long getMatchedStudentId() {
+        return matchedStudentId;
+    }
+
+    public void setMatchedStudentId(Long matchedStudentId) {
+        this.matchedStudentId = matchedStudentId;
+    }
+
+    public String getMatchedStudentName() {
+        return matchedStudentName;
+    }
+
+    public void setMatchedStudentName(String matchedStudentName) {
+        this.matchedStudentName = matchedStudentName;
+    }
+
+    public Double getStudentMatchConfidence() {
+        return studentMatchConfidence;
+    }
+
+    public void setStudentMatchConfidence(Double studentMatchConfidence) {
+        this.studentMatchConfidence = studentMatchConfidence;
+    }
+
+    public StudentMatchStatus getStudentMatchStatus() {
+        return studentMatchStatus;
+    }
+
+    public void setStudentMatchStatus(StudentMatchStatus studentMatchStatus) {
+        this.studentMatchStatus = studentMatchStatus;
+    }
+
+    public String getCandidateStudentIds() {
+        return candidateStudentIds;
+    }
+
+    public void setCandidateStudentIds(String candidateStudentIds) {
+        this.candidateStudentIds = candidateStudentIds;
+    }
+
+    @Transient
+    public List<Long> getCandidateStudentIdList() {
+        if (candidateStudentIds == null || candidateStudentIds.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(candidateStudentIds.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .map(Long::valueOf)
+                .toList();
     }
 }

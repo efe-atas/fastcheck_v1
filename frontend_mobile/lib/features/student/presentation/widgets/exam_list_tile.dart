@@ -16,22 +16,28 @@ class ExamListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dateLabel = DateFormat('dd MMM yyyy', 'tr').format(exam.createdAt);
+    final scoreLabel = exam.scorePercentage == null
+        ? null
+        : '%${exam.scorePercentage!.round()} başarı';
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         child: AppSurfaceCard(
           padding: const EdgeInsets.all(16),
-          radius: 16,
+          radius: 18,
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 52,
+                height: 52,
                 decoration: BoxDecoration(
                   gradient: _statusGradient,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(
                   _statusIcon,
@@ -47,40 +53,77 @@ class ExamListTile extends StatelessWidget {
                     Text(
                       exam.title,
                       style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
                       ),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
-                        _StatusChip(status: exam.status),
-                        const SizedBox(width: 12),
                         Icon(
-                          Icons.calendar_today_rounded,
-                          size: 14,
+                          Icons.calendar_today_outlined,
+                          size: 13,
                           color: AppColors.textTertiary,
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          DateFormat('dd MMM yyyy', 'tr')
-                              .format(exam.createdAt),
+                          dateLabel,
                           style: const TextStyle(
                             fontSize: 12,
                             color: AppColors.textTertiary,
                           ),
                         ),
+                        const SizedBox(width: 10),
+                        Container(
+                          width: 4,
+                          height: 4,
+                          decoration: const BoxDecoration(
+                            color: AppColors.border,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Text(
+                            'Sınıf #${exam.classId}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
+                    if (scoreLabel != null) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        scoreLabel,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.success,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: AppColors.textTertiary,
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _StatusChip(status: exam.status),
+                  const SizedBox(height: 16),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.textTertiary,
+                  ),
+                ],
               ),
             ],
           ),

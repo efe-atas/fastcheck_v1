@@ -89,13 +89,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               ListView(
                 padding: EdgeInsets.fromLTRB(16, topPadding + 16, 16, 110),
                 children: [
-                  Text(
-                    'Yönetim',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                  const SizedBox(height: 20),
                   if (state.lastSuccessMessage != null) ...[
                     _successBanner(
                       context,

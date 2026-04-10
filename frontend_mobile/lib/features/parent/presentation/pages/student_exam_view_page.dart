@@ -24,39 +24,63 @@ class StudentExamViewPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text('$studentName - Sınav'),
-        backgroundColor: AppColors.surface,
-        surfaceTintColor: Colors.transparent,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            _buildTopBar(context),
+            Expanded(
+              child: BlocBuilder<ParentBloc, ParentState>(
+                builder: (context, state) {
+                  if (state is ParentLoading) {
+                    return const ShimmerList(itemCount: 5, itemHeight: 120);
+                  }
+                  if (state is ParentError) {
+                    return AppErrorWidget(
+                      message: state.message,
+                      onRetry: () => context.read<ParentBloc>().add(
+                            LoadStudentExamQuestions(
+                              studentId: studentId,
+                              examId: examId,
+                            ),
+                          ),
+                    );
+                  }
+                  if (state is StudentQuestionsLoaded) {
+                    if (state.questions.isEmpty) {
+                      return const EmptyStateWidget(
+                        icon: Icons.quiz_outlined,
+                        title: 'Soru Bulunamadı',
+                        subtitle: 'Bu sınav için henüz soru işlenmemiş.',
+                      );
+                    }
+                    return _buildQuestionList(state.questions);
+                  }
+                  return const SizedBox();
+                },
+              ),
+            ),
+          ],
+        ),
       ),
-      body: BlocBuilder<ParentBloc, ParentState>(
-        builder: (context, state) {
-          if (state is ParentLoading) {
-            return const ShimmerList(itemCount: 5, itemHeight: 120);
-          }
-          if (state is ParentError) {
-            return AppErrorWidget(
-              message: state.message,
-              onRetry: () => context.read<ParentBloc>().add(
-                    LoadStudentExamQuestions(
-                      studentId: studentId,
-                      examId: examId,
-                    ),
-                  ),
-            );
-          }
-          if (state is StudentQuestionsLoaded) {
-            if (state.questions.isEmpty) {
-              return const EmptyStateWidget(
-                icon: Icons.quiz_outlined,
-                title: 'Soru Bulunamadı',
-                subtitle: 'Bu sınav için henüz soru işlenmemiş.',
-              );
-            }
-            return _buildQuestionList(state.questions);
-          }
-          return const SizedBox();
-        },
+    );
+  }
+
+  Widget _buildTopBar(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: IconButton(
+          onPressed: () => Navigator.of(context).maybePop(),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          padding: EdgeInsets.zero,
+          visualDensity: VisualDensity.compact,
+          style: IconButton.styleFrom(
+            backgroundColor: AppColors.surface,
+            foregroundColor: AppColors.textPrimary,
+          ),
+        ),
       ),
     );
   }
@@ -87,12 +111,22 @@ class StudentExamViewPage extends StatelessWidget {
         ? 0.0
         : questions.map((q) => q.confidence).reduce((a, b) => a + b) /
             questions.length;
+    final awardedPoints = questions.fold<double>(
+      0,
+      (sum, q) => sum + (q.awardedPoints ?? 0),
+    );
+    final maxPoints = questions.fold<double>(
+      0,
+      (sum, q) => sum + (q.maxPoints ?? 0),
+    );
 
     return AppSurfaceCard(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       margin: const EdgeInsets.all(16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+      child: Wrap(
+        alignment: WrapAlignment.spaceAround,
+        spacing: 20,
+        runSpacing: 12,
         children: [
           _SummaryItem(
             label: 'Toplam Soru',
@@ -100,13 +134,21 @@ class StudentExamViewPage extends StatelessWidget {
             icon: Icons.quiz_outlined,
             color: AppColors.primary,
           ),
-          Container(width: 1, height: 40, color: AppColors.border),
           _SummaryItem(
             label: 'Ortalama Güven',
             value: '%${(avgConfidence * 100).round()}',
             icon: Icons.analytics_outlined,
             color: _getConfidenceColor(avgConfidence),
           ),
+          if (maxPoints > 0) ...[
+            _SummaryItem(
+              label: 'Toplam Puan',
+              value:
+                  '${awardedPoints.toStringAsFixed(awardedPoints % 1 == 0 ? 0 : 1)} / ${maxPoints.toStringAsFixed(maxPoints % 1 == 0 ? 0 : 1)}',
+              icon: Icons.workspace_premium_outlined,
+              color: AppColors.primary,
+            ),
+          ],
         ],
       ),
     );
@@ -169,6 +211,8 @@ class _QuestionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final confidenceColor = _getColor(question.confidence);
     final confidencePercent = question.confidencePercent;
+    final gradingConfidencePercent =
+        ((question.gradingConfidence ?? 0) * 100).round();
 
     return AppSurfaceCard(
       padding: const EdgeInsets.all(16),
@@ -222,6 +266,17 @@ class _QuestionCard extends StatelessWidget {
               ),
             ],
           ),
+          if (question.maxPoints != null && question.maxPoints! > 0) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Puan: ${(question.awardedPoints ?? 0).toStringAsFixed((question.awardedPoints ?? 0) % 1 == 0 ? 0 : 1)} / ${question.maxPoints!.toStringAsFixed(question.maxPoints! % 1 == 0 ? 0 : 1)}',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
+            ),
+          ],
           if (question.questionText != null &&
               question.questionText!.isNotEmpty) ...[
             const SizedBox(height: 12),
@@ -277,6 +332,22 @@ class _QuestionCard extends StatelessWidget {
               ],
             ),
           ],
+          if (question.expectedAnswer != null &&
+              question.expectedAnswer!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _InfoBlock(
+              title: 'Beklenen Cevap',
+              content: question.expectedAnswer!,
+            ),
+          ],
+          if (question.evaluationSummary != null &&
+              question.evaluationSummary!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _InfoBlock(
+              title: 'Değerlendirme Özeti',
+              content: question.evaluationSummary!,
+            ),
+          ],
           const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
@@ -287,6 +358,16 @@ class _QuestionCard extends StatelessWidget {
               minHeight: 6,
             ),
           ),
+          if (question.gradingConfidence != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Puanlama güveni: %$gradingConfidencePercent',
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -296,5 +377,49 @@ class _QuestionCard extends StatelessWidget {
     if (confidence >= 0.8) return AppColors.success;
     if (confidence >= 0.5) return AppColors.warning;
     return AppColors.error;
+  }
+}
+
+class _InfoBlock extends StatelessWidget {
+  final String title;
+  final String content;
+
+  const _InfoBlock({
+    required this.title,
+    required this.content,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            content,
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.textPrimary,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

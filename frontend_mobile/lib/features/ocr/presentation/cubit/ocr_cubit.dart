@@ -137,18 +137,14 @@ class OcrCubit extends Cubit<OcrState> {
     return result.fold((_) => null, _sortResults);
   }
 
-  /// Cihaz belge tarayıcısını açar ve sayfaları sırayla upload + extract yapar.
-  Future<void> scanAndExtract({
+  Future<void> _processLocalImages({
+    required List<String> localPaths,
     String? sourceId,
     String? examTitle,
     String? languageHint,
-    int maxPages = 4,
   }) async {
-    if (kIsWeb) {
-      emit(state.copyWith(
-        errorMessage:
-            'Belge tarama yalnızca iOS ve Android uygulamasında desteklenir.',
-      ));
+    if (localPaths.isEmpty) {
+      emit(state.copyWith(lastMessage: 'Görsel seçilmedi.'));
       return;
     }
 
@@ -161,27 +157,7 @@ class OcrCubit extends Cubit<OcrState> {
       failedCount: 0,
     ));
 
-    ImageScanResult? scanResult;
-    try {
-      scanResult = await FlutterDocScanner().getScannedDocumentAsImages(
-        page: maxPages,
-        imageFormat: ImageFormat.jpeg,
-      );
-    } on DocScanException catch (e) {
-      emit(state.copyWith(
-        errorMessage: _docScanErrorMessage(e),
-        lastMessage: 'Tarama başlatılamadı.',
-      ));
-      return;
-    }
-
-    if (scanResult == null || scanResult.images.isEmpty) {
-      emit(state.copyWith(lastMessage: 'Tarama iptal edildi.'));
-      return;
-    }
-
-    final images = scanResult.images;
-    final total = images.length;
+    final total = localPaths.length;
     var processed = 0;
     var success = 0;
     var failed = 0;
@@ -203,7 +179,7 @@ class OcrCubit extends Cubit<OcrState> {
     for (var i = 0; i < total; i++) {
       final pageNo = i + 1;
       final uploadResult = await ocrUploadImage(
-        OcrUploadImageParams(localPath: images[i]),
+        OcrUploadImageParams(localPath: localPaths[i]),
       );
 
       await uploadResult.fold<Future<void>>(
@@ -283,6 +259,62 @@ class OcrCubit extends Cubit<OcrState> {
       clearError: failed == 0,
       lastMessage: summary,
     ));
+  }
+
+  /// Cihaz belge tarayıcısını açar ve sayfaları sırayla upload + extract yapar.
+  Future<void> scanAndExtract({
+    String? sourceId,
+    String? examTitle,
+    String? languageHint,
+    int maxPages = 4,
+  }) async {
+    if (kIsWeb) {
+      emit(state.copyWith(
+        errorMessage:
+            'Belge tarama yalnızca iOS ve Android uygulamasında desteklenir.',
+      ));
+      return;
+    }
+
+    ImageScanResult? scanResult;
+    try {
+      scanResult = await FlutterDocScanner().getScannedDocumentAsImages(
+        page: maxPages,
+        imageFormat: ImageFormat.jpeg,
+      );
+    } on DocScanException catch (e) {
+      emit(state.copyWith(
+        errorMessage: _docScanErrorMessage(e),
+        lastMessage: 'Tarama başlatılamadı.',
+      ));
+      return;
+    }
+
+    if (scanResult == null || scanResult.images.isEmpty) {
+      emit(state.copyWith(lastMessage: 'Tarama iptal edildi.'));
+      return;
+    }
+
+    await _processLocalImages(
+      localPaths: scanResult.images,
+      sourceId: sourceId,
+      examTitle: examTitle,
+      languageHint: languageHint,
+    );
+  }
+
+  Future<void> extractFromLocalPaths({
+    required List<String> localPaths,
+    String? sourceId,
+    String? examTitle,
+    String? languageHint,
+  }) async {
+    await _processLocalImages(
+      localPaths: localPaths,
+      sourceId: sourceId,
+      examTitle: examTitle,
+      languageHint: languageHint,
+    );
   }
 
   Future<void> extract({

@@ -2,6 +2,7 @@ package com.fastcheck.fastcheck.education;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.List;
@@ -161,7 +162,10 @@ public class EducationDtos {
             Long classId,
             String title,
             String status,
-            Instant createdAt
+            Instant createdAt,
+            Double awardedPoints,
+            Double maxPoints,
+            Double scorePercentage
     ) {
     }
 
@@ -200,7 +204,8 @@ public class EducationDtos {
             String status,
             String errorMessage,
             Instant processingStartedAt,
-            Instant processingCompletedAt
+            Instant processingCompletedAt,
+            StudentMatchResponse studentMatch
     ) {
     }
 
@@ -226,10 +231,79 @@ public class EducationDtos {
             Long classId,
             String title,
             String examStatus,
+            String gradingSystemSummary,
+            Double totalMaxPoints,
             List<ExamImageResponse> images,
+            List<TeacherStudentRosterResponse> students,
             List<OcrJobStatusResponse> ocrJobs,
             int questionCount,
+            List<QuestionResponse> questions,
+            List<TeacherStudentClusterResponse> studentClusters,
+            List<StudentExamResultResponse> studentResults
+    ) {
+    }
+
+    public record TeacherStudentClusterResponse(
+            Long studentId,
+            String studentName,
+            String studentEmail,
+            boolean unmatched,
+            String matchingStatus,
+            int pageCount,
+            int questionCount,
+            Double awardedPoints,
+            Double maxPoints,
+            Double scorePercentage,
+            String gradingStatus,
+            String gradingSummary,
+            List<ExamImageResponse> images,
             List<QuestionResponse> questions
+    ) {
+    }
+
+    public record StudentExamResultResponse(
+            Long studentId,
+            String studentName,
+            int totalQuestions,
+            int scoredQuestions,
+            double awardedPoints,
+            double maxPoints,
+            Double gradingConfidence,
+            String gradingStatus,
+            String gradingSummary,
+            Double scorePercentage
+    ) {
+    }
+
+    public record StudentMatchCandidateResponse(
+            Long userId,
+            String fullName
+    ) {
+    }
+
+    public record StudentMatchResponse(
+            String detectedStudentName,
+            Double detectedNameConfidence,
+            Long matchedStudentId,
+            String matchedStudentName,
+            Double matchingConfidence,
+            String matchingStatus,
+            List<StudentMatchCandidateResponse> candidateStudents
+    ) {
+    }
+
+    public record UpdateExamImageStudentMatchRequest(
+            @NotNull Long studentId
+    ) {
+    }
+
+    public record UpdateQuestionOverrideRequest(
+            @NotNull @PositiveOrZero Double awardedPoints,
+            @NotNull @PositiveOrZero Double maxPoints,
+            String expectedAnswer,
+            String gradingRubric,
+            String evaluationSummary,
+            Boolean correct
     ) {
     }
 
@@ -240,7 +314,19 @@ public class EducationDtos {
             String sourceQuestionId,
             String questionText,
             String studentAnswer,
-            double confidence
+            double confidence,
+            String questionType,
+            String expectedAnswer,
+            String gradingRubric,
+            Double maxPoints,
+            Double awardedPoints,
+            Double gradingConfidence,
+            String gradingStatus,
+            String evaluationSummary,
+            Boolean correct,
+            Long studentId,
+            String studentName,
+            String matchingStatus
     ) {
     }
 }

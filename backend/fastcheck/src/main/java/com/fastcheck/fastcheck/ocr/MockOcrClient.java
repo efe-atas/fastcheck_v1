@@ -26,12 +26,29 @@ public class MockOcrClient implements OcrClient {
         log.info("Mock OCR invoked for user {} request {}", userId, requestId);
         ObjectNode page = objectMapper.createObjectNode();
         page.put("page_number", 1);
-        page.putArray("questions").add(objectMapper.createObjectNode()
-                .put("question_id", "Q-" + Instant.now().toEpochMilli())
-                .put("question_text_raw", "Mock question text")
-                .put("student_answer_raw", "Mock answer")
-                .put("confidence", 0.95));
+        page.put("detected_student_name", "Mock Student");
+        page.put("name_confidence", 0.92);
+        ObjectNode question = objectMapper.createObjectNode();
+        question.put("question_id", "Q-" + Instant.now().toEpochMilli());
+        question.put("question_text_raw", "Mock question text");
+        question.putArray("question_lines").add("Mock question text");
+        question.put("student_answer_raw", "Mock answer");
+        question.putArray("student_answer_lines").add("Mock answer");
+        question.put("confidence", 0.95);
+        question.put("question_type", "open_ended");
+        question.put("expected_answer_raw", "Mock expected answer");
+        question.put("grading_rubric_raw", "Ana fikri dogru aciklamasi beklenir.");
+        question.put("max_points", 10);
+        question.put("awarded_points", 8);
+        question.put("grading_confidence", 0.86);
+        question.put("evaluation_summary", "Ana fikir buyuk oranda dogru.");
+        question.put("needs_review", false);
+        question.put("is_correct", false);
+        page.putArray("questions").add(question);
+        page.putArray("unmatched_text_blocks");
         ObjectNode result = objectMapper.createObjectNode();
+        result.put("grading_system_summary", "Her soru 10 puan uzerinden degerlendirilir.");
+        result.put("total_max_points", 10);
         result.putArray("pages").add(page);
         return new OcrDtos.FastApiResponse(
                 requestId != null ? requestId : UUID.randomUUID().toString(),

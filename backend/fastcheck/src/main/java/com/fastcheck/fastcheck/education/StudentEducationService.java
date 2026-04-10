@@ -19,6 +19,7 @@ public class StudentEducationService {
     private final EducationAccessService accessService;
     private final ExamRepository examRepository;
     private final QuestionRepository questionRepository;
+    private final StudentExamResultRepository studentExamResultRepository;
     private final ParentStudentLinkRepository parentStudentLinkRepository;
     private final UserRepository userRepository;
 
@@ -26,12 +27,14 @@ public class StudentEducationService {
             EducationAccessService accessService,
             ExamRepository examRepository,
             QuestionRepository questionRepository,
+            StudentExamResultRepository studentExamResultRepository,
             ParentStudentLinkRepository parentStudentLinkRepository,
             UserRepository userRepository
     ) {
         this.accessService = accessService;
         this.examRepository = examRepository;
         this.questionRepository = questionRepository;
+        this.studentExamResultRepository = studentExamResultRepository;
         this.parentStudentLinkRepository = parentStudentLinkRepository;
         this.userRepository = userRepository;
     }
@@ -46,7 +49,7 @@ public class StudentEducationService {
             throw new ApiException(HttpStatus.FORBIDDEN, "forbidden");
         }
 
-        return mapQuestions(examId);
+        return mapQuestions(examId, student.getId());
     }
 
     @Transactional(readOnly = true)
@@ -85,7 +88,10 @@ public class StudentEducationService {
                         exam.getSchoolClass().getId(),
                         exam.getTitle(),
                         exam.getStatus().name(),
-                        exam.getCreatedAt()
+                        exam.getCreatedAt(),
+                        resolveAwardedPoints(exam.getId(), student.getId()),
+                        resolveMaxPoints(exam.getId(), student.getId()),
+                        resolveScorePercentage(exam.getId(), student.getId())
                 ))
                 .toList();
 
@@ -114,6 +120,7 @@ public class StudentEducationService {
                 .findTop5BySchoolClass_IdOrderByCreatedAtDesc(classId)
                 .stream()
                 .map(this::toStudentExamList)
+                .map(item -> withStudentScore(item, student.getId()))
                 .toList();
 
         return new EducationDtos.StudentDashboardSummary(
@@ -155,12 +162,14 @@ public class StudentEducationService {
             throw new ApiException(HttpStatus.FORBIDDEN, "forbidden");
         }
 
-        return mapQuestions(examId);
+        return mapQuestions(examId, student.getId());
     }
 
-    private List<EducationDtos.QuestionResponse> mapQuestions(Long examId) {
+    private List<EducationDtos.QuestionResponse> mapQuestions(Long examId, Long studentId) {
         return questionRepository.findByExam_IdOrderByPageNumberAscQuestionOrderAsc(examId)
                 .stream()
+                .filter(q -> q.getExamImage() != null)
+                .filter(q -> studentId.equals(q.getExamImage().getMatchedStudentId()))
                 .map(q -> new EducationDtos.QuestionResponse(
                         q.getId(),
                         q.getPageNumber(),
@@ -168,7 +177,21 @@ public class StudentEducationService {
                         q.getSourceQuestionId(),
                         q.getQuestionTextRaw(),
                         q.getStudentAnswerRaw(),
-                        q.getConfidence()
+                        q.getConfidence(),
+                        q.getQuestionType().name(),
+                        q.getExpectedAnswerRaw(),
+                        q.getGradingRubricRaw(),
+                        q.getMaxPoints(),
+                        q.getAwardedPoints(),
+                        q.getGradingConfidence(),
+                        q.getGradingStatus().name(),
+                        q.getEvaluationSummary(),
+                        q.getCorrect(),
+                        q.getExamImage().getMatchedStudentId(),
+                        q.getExamImage().getMatchedStudentName(),
+                        q.getExamImage().getStudentMatchStatus() == null
+                                ? null
+                                : q.getExamImage().getStudentMatchStatus().name()
                 ))
                 .toList();
     }
@@ -179,7 +202,10 @@ public class StudentEducationService {
                 exam.getSchoolClass().getId(),
                 exam.getTitle(),
                 exam.getStatus().name(),
-                exam.getCreatedAt()
+                exam.getCreatedAt(),
+                null,
+                null,
+                null
         );
     }
 
@@ -218,6 +244,7 @@ public class StudentEducationService {
         List<EducationDtos.StudentExamListItem> items = exams.getContent()
                 .stream()
                 .map(this::toStudentExamList)
+                .map(item -> withStudentScore(item, studentId))
                 .toList();
 
         return new EducationDtos.PagedResponse<>(items, exams.getNumber(), exams.getSize(), exams.getTotalElements(), exams.getTotalPages());
@@ -242,5 +269,38 @@ public class StudentEducationService {
                 latest == null ? null : latest.getStatus().name(),
                 latest == null ? null : latest.getCreatedAt()
         );
+    }
+
+    private EducationDtos.StudentExamListItem withStudentScore(EducationDtos.StudentExamListItem item, Long studentId) {
+        return new EducationDtos.StudentExamListItem(
+                item.examId(),
+                item.classId(),
+                item.title(),
+                item.status(),
+                item.createdAt(),
+                resolveAwardedPoints(item.examId(), studentId),
+                resolveMaxPoints(item.examId(), studentId),
+                resolveScorePercentage(item.examId(), studentId)
+        );
+    }
+
+    private Double resolveAwardedPoints(Long examId, Long studentId) {
+        return studentExamResultRepository.findByExam_IdAndStudentId(examId, studentId)
+                .map(StudentExamResult::getAwardedPoints)
+                .orElse(null);
+    }
+
+    private Double resolveMaxPoints(Long examId, Long studentId) {
+        return studentExamResultRepository.findByExam_IdAndStudentId(examId, studentId)
+                .map(StudentExamResult::getMaxPoints)
+                .orElse(null);
+    }
+
+    private Double resolveScorePercentage(Long examId, Long studentId) {
+        return studentExamResultRepository.findByExam_IdAndStudentId(examId, studentId)
+                .map(result -> result.getMaxPoints() <= 0
+                        ? 0.0
+                        : Math.round((result.getAwardedPoints() / result.getMaxPoints()) * 10000.0) / 100.0)
+                .orElse(null);
     }
 }

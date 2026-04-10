@@ -6,6 +6,7 @@ import '../../../../core/widgets/app_error_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/app_surface_card.dart';
+import '../../domain/entities/student_entities.dart';
 import '../bloc/exam_questions_bloc.dart';
 import '../widgets/question_card.dart';
 
@@ -25,54 +26,28 @@ class ExamQuestionsPage extends StatelessWidget {
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          _buildAppBar(context),
+          SliverToBoxAdapter(child: _buildTopBar(context)),
           _buildBody(),
         ],
       ),
     );
   }
 
-  SliverAppBar _buildAppBar(BuildContext context) {
-    return SliverAppBar(
-      expandedHeight: 130,
-      floating: false,
-      pinned: true,
-      elevation: 0,
-      backgroundColor: AppColors.primary,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-        onPressed: () => context.pop(),
-      ),
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: const BoxDecoration(gradient: AppColors.headerGradient),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(56, 8, 24, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    'Sınav Detayı',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.white.withValues(alpha: 0.8),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    examTitle,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
+  Widget _buildTopBar(BuildContext context) {
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: IconButton(
+            onPressed: () => context.pop(),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
+            style: IconButton.styleFrom(
+              backgroundColor: AppColors.surface,
+              foregroundColor: AppColors.textPrimary,
             ),
           ),
         ),
@@ -118,7 +93,7 @@ class ExamQuestionsPage extends StatelessWidget {
             final questions = state.questions;
             return Column(
               children: [
-                _buildSummaryBar(questions.length),
+                _buildSummaryBar(questions),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                   child: ListView.separated(
@@ -144,7 +119,16 @@ class ExamQuestionsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryBar(int count) {
+  Widget _buildSummaryBar(List<QuestionEntity> questions) {
+    final count = questions.length;
+    final awarded = questions.fold<double>(
+      0,
+      (sum, q) => sum + (q.awardedPoints ?? 0),
+    );
+    final maxPoints = questions.fold<double>(
+      0,
+      (sum, q) => sum + (q.maxPoints ?? 0),
+    );
     return AppSurfaceCard(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -153,12 +137,16 @@ class ExamQuestionsPage extends StatelessWidget {
         children: [
           const Icon(Icons.quiz_rounded, size: 20, color: AppColors.primary),
           const SizedBox(width: 10),
-          Text(
-            'Toplam $count soru',
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primary,
+          Expanded(
+            child: Text(
+              maxPoints > 0
+                  ? 'Toplam $count soru, ${awarded.toStringAsFixed(awarded % 1 == 0 ? 0 : 1)} / ${maxPoints.toStringAsFixed(maxPoints % 1 == 0 ? 0 : 1)} puan'
+                  : 'Toplam $count soru',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primary,
+              ),
             ),
           ),
         ],

@@ -26,6 +26,21 @@ abstract class TeacherRemoteDataSource {
   });
   Future<ExamStatusModel> getExamStatus(int examId);
   Future<ExamStatusModel> reprocessExam(int examId);
+  Future<ExamStatusModel> updateExamImageStudentMatch({
+    required int examId,
+    required int imageId,
+    required int studentId,
+  });
+  Future<ExamStatusModel> updateQuestionOverride({
+    required int examId,
+    required int questionId,
+    required double awardedPoints,
+    required double maxPoints,
+    String? expectedAnswer,
+    String? gradingRubric,
+    String? evaluationSummary,
+    bool? correct,
+  });
   Future<StudentModel> addStudentToClass({
     required int classId,
     required String fullName,
@@ -43,6 +58,12 @@ class TeacherRemoteDataSourceImpl implements TeacherRemoteDataSource {
     final lower = path.toLowerCase();
     if (lower.endsWith('.png')) {
       return MediaType.parse('image/png');
+    }
+    if (lower.endsWith('.heic')) {
+      return MediaType.parse('image/heic');
+    }
+    if (lower.endsWith('.heif')) {
+      return MediaType.parse('image/heif');
     }
     if (lower.endsWith('.webp')) {
       return MediaType.parse('image/webp');
@@ -235,7 +256,60 @@ class TeacherRemoteDataSourceImpl implements TeacherRemoteDataSource {
   @override
   Future<ExamStatusModel> reprocessExam(int examId) async {
     try {
-      final response = await dio.post(ApiConstants.teacherExamReprocess(examId));
+      final response =
+          await dio.post(ApiConstants.teacherExamReprocess(examId));
+      return ExamStatusModel.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw ServerException(
+        message: e.response?.data?['message']?.toString() ?? 'Sunucu hatası',
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
+
+  @override
+  Future<ExamStatusModel> updateExamImageStudentMatch({
+    required int examId,
+    required int imageId,
+    required int studentId,
+  }) async {
+    try {
+      final response = await dio.patch(
+        ApiConstants.teacherExamImageStudentMatch(examId, imageId),
+        data: {'studentId': studentId},
+      );
+      return ExamStatusModel.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw ServerException(
+        message: e.response?.data?['message']?.toString() ?? 'Sunucu hatası',
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
+
+  @override
+  Future<ExamStatusModel> updateQuestionOverride({
+    required int examId,
+    required int questionId,
+    required double awardedPoints,
+    required double maxPoints,
+    String? expectedAnswer,
+    String? gradingRubric,
+    String? evaluationSummary,
+    bool? correct,
+  }) async {
+    try {
+      final response = await dio.patch(
+        ApiConstants.teacherExamQuestionOverride(examId, questionId),
+        data: {
+          'awardedPoints': awardedPoints,
+          'maxPoints': maxPoints,
+          'expectedAnswer': expectedAnswer,
+          'gradingRubric': gradingRubric,
+          'evaluationSummary': evaluationSummary,
+          'correct': correct,
+        },
+      );
       return ExamStatusModel.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw ServerException(

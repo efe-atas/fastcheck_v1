@@ -95,11 +95,16 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton(() => UploadExamImages(sl()));
   sl.registerLazySingleton(() => GetExamStatus(sl()));
   sl.registerLazySingleton(() => ReprocessExam(sl()));
+  sl.registerLazySingleton(() => UpdateExamImageStudentMatch(sl()));
+  sl.registerLazySingleton(() => UpdateQuestionOverride(sl()));
   sl.registerLazySingleton(() => AddStudentToClass(sl()));
 
   sl.registerFactory(() => ClassesBloc(getClasses: sl()));
   sl.registerFactory(
-    () => TeacherDashboardCubit(getTeacherDashboardSummary: sl()),
+    () => TeacherDashboardCubit(
+      getTeacherDashboardSummary: sl(),
+      ocrListMine: sl(),
+    ),
   );
   sl.registerFactory(
     () => ClassDetailBloc(getClassExams: sl(), getClassStudents: sl()),
@@ -110,6 +115,8 @@ Future<void> initDependencies() async {
       uploadExamImages: sl(),
       getExamStatus: sl(),
       reprocessExam: sl(),
+      updateExamImageStudentMatch: sl(),
+      updateQuestionOverride: sl(),
     ),
   );
 

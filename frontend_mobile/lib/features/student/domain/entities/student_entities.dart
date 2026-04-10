@@ -6,6 +6,9 @@ class StudentExamEntity extends Equatable {
   final String title;
   final String status;
   final DateTime createdAt;
+  final double? awardedPoints;
+  final double? maxPoints;
+  final double? scorePercentage;
 
   const StudentExamEntity({
     required this.examId,
@@ -13,10 +16,22 @@ class StudentExamEntity extends Equatable {
     required this.title,
     required this.status,
     required this.createdAt,
+    this.awardedPoints,
+    this.maxPoints,
+    this.scorePercentage,
   });
 
   @override
-  List<Object?> get props => [examId, classId, title, status, createdAt];
+  List<Object?> get props => [
+        examId,
+        classId,
+        title,
+        status,
+        createdAt,
+        awardedPoints,
+        maxPoints,
+        scorePercentage,
+      ];
 }
 
 class QuestionEntity extends Equatable {
@@ -27,6 +42,15 @@ class QuestionEntity extends Equatable {
   final String? questionText;
   final String? studentAnswer;
   final double? confidence;
+  final String? questionType;
+  final String? expectedAnswer;
+  final String? gradingRubric;
+  final double? maxPoints;
+  final double? awardedPoints;
+  final double? gradingConfidence;
+  final String? gradingStatus;
+  final String? evaluationSummary;
+  final bool? correct;
 
   const QuestionEntity({
     required this.id,
@@ -36,7 +60,21 @@ class QuestionEntity extends Equatable {
     this.questionText,
     this.studentAnswer,
     this.confidence,
+    this.questionType,
+    this.expectedAnswer,
+    this.gradingRubric,
+    this.maxPoints,
+    this.awardedPoints,
+    this.gradingConfidence,
+    this.gradingStatus,
+    this.evaluationSummary,
+    this.correct,
   });
+
+  double get scorePercent =>
+      (maxPoints == null || maxPoints == 0)
+          ? 0
+          : ((awardedPoints ?? 0) / maxPoints!) * 100;
 
   @override
   List<Object?> get props => [
@@ -47,6 +85,15 @@ class QuestionEntity extends Equatable {
         questionText,
         studentAnswer,
         confidence,
+        questionType,
+        expectedAnswer,
+        gradingRubric,
+        maxPoints,
+        awardedPoints,
+        gradingConfidence,
+        gradingStatus,
+        evaluationSummary,
+        correct,
       ];
 }
 

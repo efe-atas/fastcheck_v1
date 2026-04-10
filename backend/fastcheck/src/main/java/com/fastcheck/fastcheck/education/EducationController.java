@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -128,6 +129,24 @@ public class EducationController {
     @PostMapping("/teacher/exams/{examId}/reprocess")
     public EducationDtos.TeacherExamStatusResponse reprocessExam(@PathVariable Long examId) {
         return teacherEducationService.reprocessExam(examId);
+    }
+
+    @PatchMapping("/teacher/exams/{examId}/images/{imageId}/student-match")
+    public EducationDtos.TeacherExamStatusResponse updateExamImageStudentMatch(
+            @PathVariable Long examId,
+            @PathVariable Long imageId,
+            @Valid @RequestBody EducationDtos.UpdateExamImageStudentMatchRequest request
+    ) {
+        return teacherEducationService.updateExamImageStudentMatch(examId, imageId, request);
+    }
+
+    @PatchMapping("/teacher/exams/{examId}/questions/{questionId}/override")
+    public EducationDtos.TeacherExamStatusResponse updateQuestionOverride(
+            @PathVariable Long examId,
+            @PathVariable Long questionId,
+            @Valid @RequestBody EducationDtos.UpdateQuestionOverrideRequest request
+    ) {
+        return teacherEducationService.updateQuestionOverride(examId, questionId, request);
     }
 
     @GetMapping("/teacher/classes")

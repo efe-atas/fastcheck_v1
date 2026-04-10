@@ -2,7 +2,7 @@ import json
 import logging
 import time
 
-from openai import APIConnectionError, APIError, AuthenticationError, BadRequestError, OpenAI, RateLimitError
+from openai import APITimeoutError, APIConnectionError, APIError, AuthenticationError, BadRequestError, OpenAI, RateLimitError
 
 from app.core.settings import Settings
 from app.services.schemas import JSON_SCHEMA
@@ -16,6 +16,7 @@ class LlmClient:
         self._client = OpenAI(
             base_url=settings.openrouter_base_url,
             api_key=settings.openrouter_api_key,
+            timeout=settings.llm_request_timeout_seconds,
         )
 
     def extract_exam_json(self, messages: list[dict], request_id: str = "no-request-id") -> dict:
@@ -25,10 +26,11 @@ class LlmClient:
 
         started_at = time.perf_counter()
         logger.info(
-            "[req=%s] Stage 3/4 llm_extract start model=%s base_url=%s",
+            "[req=%s] Stage 3/4 llm_extract start model=%s base_url=%s timeout_seconds=%s",
             request_id,
             self._settings.openrouter_model,
             self._settings.openrouter_base_url,
+            self._settings.llm_request_timeout_seconds,
         )
         try:
             response = self._client.chat.completions.create(
@@ -47,6 +49,9 @@ class LlmClient:
         except BadRequestError as exc:
             logger.exception("[req=%s] Stage 3/4 llm_extract bad request", request_id)
             raise RuntimeError(f"OpenRouter bad request: {exc}") from exc
+        except APITimeoutError as exc:
+            logger.exception("[req=%s] Stage 3/4 llm_extract timed out", request_id)
+            raise RuntimeError("OpenRouter request timed out") from exc
         except APIConnectionError as exc:
             logger.exception("[req=%s] Stage 3/4 llm_extract connection failed", request_id)
             raise RuntimeError("OpenRouter connection failed") from exc

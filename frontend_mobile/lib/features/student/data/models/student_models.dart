@@ -6,6 +6,9 @@ class StudentExamModel {
   final String title;
   final String status;
   final String createdAt;
+  final double? awardedPoints;
+  final double? maxPoints;
+  final double? scorePercentage;
 
   const StudentExamModel({
     required this.examId,
@@ -13,6 +16,9 @@ class StudentExamModel {
     required this.title,
     required this.status,
     required this.createdAt,
+    this.awardedPoints,
+    this.maxPoints,
+    this.scorePercentage,
   });
 
   factory StudentExamModel.fromJson(Map<String, dynamic> json) {
@@ -22,6 +28,9 @@ class StudentExamModel {
       title: json['title'] as String,
       status: json['status'] as String,
       createdAt: json['createdAt'] as String,
+      awardedPoints: (json['awardedPoints'] as num?)?.toDouble(),
+      maxPoints: (json['maxPoints'] as num?)?.toDouble(),
+      scorePercentage: (json['scorePercentage'] as num?)?.toDouble(),
     );
   }
 
@@ -32,6 +41,9 @@ class StudentExamModel {
       title: title,
       status: status,
       createdAt: DateTime.parse(createdAt),
+      awardedPoints: awardedPoints,
+      maxPoints: maxPoints,
+      scorePercentage: scorePercentage,
     );
   }
 }
@@ -44,6 +56,15 @@ class QuestionModel {
   final String? questionText;
   final String? studentAnswer;
   final double? confidence;
+  final String? questionType;
+  final String? expectedAnswer;
+  final String? gradingRubric;
+  final double? maxPoints;
+  final double? awardedPoints;
+  final double? gradingConfidence;
+  final String? gradingStatus;
+  final String? evaluationSummary;
+  final bool? correct;
 
   const QuestionModel({
     required this.id,
@@ -53,6 +74,15 @@ class QuestionModel {
     this.questionText,
     this.studentAnswer,
     this.confidence,
+    this.questionType,
+    this.expectedAnswer,
+    this.gradingRubric,
+    this.maxPoints,
+    this.awardedPoints,
+    this.gradingConfidence,
+    this.gradingStatus,
+    this.evaluationSummary,
+    this.correct,
   });
 
   factory QuestionModel.fromJson(Map<String, dynamic> json) {
@@ -64,6 +94,15 @@ class QuestionModel {
       questionText: json['questionText'] as String?,
       studentAnswer: json['studentAnswer'] as String?,
       confidence: (json['confidence'] as num?)?.toDouble(),
+      questionType: json['questionType'] as String?,
+      expectedAnswer: json['expectedAnswer'] as String?,
+      gradingRubric: json['gradingRubric'] as String?,
+      maxPoints: (json['maxPoints'] as num?)?.toDouble(),
+      awardedPoints: (json['awardedPoints'] as num?)?.toDouble(),
+      gradingConfidence: (json['gradingConfidence'] as num?)?.toDouble(),
+      gradingStatus: json['gradingStatus'] as String?,
+      evaluationSummary: json['evaluationSummary'] as String?,
+      correct: json['correct'] as bool?,
     );
   }
 
@@ -76,6 +115,15 @@ class QuestionModel {
       questionText: questionText,
       studentAnswer: studentAnswer,
       confidence: confidence,
+      questionType: questionType,
+      expectedAnswer: expectedAnswer,
+      gradingRubric: gradingRubric,
+      maxPoints: maxPoints,
+      awardedPoints: awardedPoints,
+      gradingConfidence: gradingConfidence,
+      gradingStatus: gradingStatus,
+      evaluationSummary: evaluationSummary,
+      correct: correct,
     );
   }
 }

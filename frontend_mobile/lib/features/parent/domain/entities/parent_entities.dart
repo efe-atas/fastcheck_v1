@@ -33,6 +33,15 @@ class ParentQuestionEntity extends Equatable {
   final String? questionText;
   final String? studentAnswer;
   final double confidence;
+  final String? questionType;
+  final String? expectedAnswer;
+  final String? gradingRubric;
+  final double? maxPoints;
+  final double? awardedPoints;
+  final double? gradingConfidence;
+  final String? gradingStatus;
+  final String? evaluationSummary;
+  final bool? correct;
 
   const ParentQuestionEntity({
     required this.id,
@@ -42,14 +51,41 @@ class ParentQuestionEntity extends Equatable {
     this.questionText,
     this.studentAnswer,
     required this.confidence,
+    this.questionType,
+    this.expectedAnswer,
+    this.gradingRubric,
+    this.maxPoints,
+    this.awardedPoints,
+    this.gradingConfidence,
+    this.gradingStatus,
+    this.evaluationSummary,
+    this.correct,
   });
 
   int get confidencePercent => (confidence * 100).round();
+  double get scorePercent =>
+      (maxPoints == null || maxPoints == 0)
+          ? 0
+          : ((awardedPoints ?? 0) / maxPoints!) * 100;
 
   @override
   List<Object?> get props => [
-        id, pageNumber, questionOrder, sourceQuestionId,
-        questionText, studentAnswer, confidence,
+        id,
+        pageNumber,
+        questionOrder,
+        sourceQuestionId,
+        questionText,
+        studentAnswer,
+        confidence,
+        questionType,
+        expectedAnswer,
+        gradingRubric,
+        maxPoints,
+        awardedPoints,
+        gradingConfidence,
+        gradingStatus,
+        evaluationSummary,
+        correct,
       ];
 }
 
@@ -99,6 +135,9 @@ class ParentStudentExamEntity extends Equatable {
   final String title;
   final String status;
   final DateTime createdAt;
+  final double? awardedPoints;
+  final double? maxPoints;
+  final double? scorePercentage;
 
   const ParentStudentExamEntity({
     required this.examId,
@@ -106,10 +145,22 @@ class ParentStudentExamEntity extends Equatable {
     required this.title,
     required this.status,
     required this.createdAt,
+    this.awardedPoints,
+    this.maxPoints,
+    this.scorePercentage,
   });
 
   @override
-  List<Object?> get props => [examId, classId, title, status, createdAt];
+  List<Object?> get props => [
+        examId,
+        classId,
+        title,
+        status,
+        createdAt,
+        awardedPoints,
+        maxPoints,
+        scorePercentage,
+      ];
 }
 
 class ParentDashboardSummaryEntity extends Equatable {

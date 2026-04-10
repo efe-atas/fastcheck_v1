@@ -172,6 +172,60 @@ class TeacherRepositoryImpl implements TeacherRepository {
   }
 
   @override
+  Future<Either<Failure, ExamStatusEntity>> updateExamImageStudentMatch({
+    required int examId,
+    required int imageId,
+    required int studentId,
+  }) async {
+    try {
+      final model = await remoteDataSource.updateExamImageStudentMatch(
+        examId: examId,
+        imageId: imageId,
+        studentId: studentId,
+      );
+      return Right(model.toEntity());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.statusCode));
+    } on NetworkException {
+      return const Left(NetworkFailure());
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ExamStatusEntity>> updateQuestionOverride({
+    required int examId,
+    required int questionId,
+    required double awardedPoints,
+    required double maxPoints,
+    String? expectedAnswer,
+    String? gradingRubric,
+    String? evaluationSummary,
+    bool? correct,
+  }) async {
+    try {
+      final model = await remoteDataSource.updateQuestionOverride(
+        examId: examId,
+        questionId: questionId,
+        awardedPoints: awardedPoints,
+        maxPoints: maxPoints,
+        expectedAnswer: expectedAnswer,
+        gradingRubric: gradingRubric,
+        evaluationSummary: evaluationSummary,
+        correct: correct,
+      );
+      return Right(model.toEntity());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.statusCode));
+    } on NetworkException {
+      return const Left(NetworkFailure());
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, StudentEntity>> addStudentToClass({
     required int classId,
     required String fullName,
