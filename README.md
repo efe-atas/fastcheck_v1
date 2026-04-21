@@ -25,10 +25,8 @@ Bu repo, çoklu frontend ve backend bileşenlerinden oluşan bir örnek projedir
 
 ### Mobil / Backend Bağlantısı
 
-- Mobil uygulama `frontend_mobile/lib/core/constants/api_constants.dart` içindeki `DEV_MACHINE_IP` değişkenine göre backend’e bağlanır.  
-  - iOS simülatörü için varsayılan `127.0.0.1` yeterlidir.  
-  - Android emülatörü için `10.0.2.2` otomatik seçilir.  
-  - Fiziksel cihaz kullanıyorsanız backend çalışan makinenin LAN IP adresini `flutter run --dart-define=DEV_MACHINE_IP=192.168.x.x` ile geçin.
+- Mobil uygulama varsayılan olarak tüm build tiplerinde `https://api.efeatas.dev/api` adresine bağlanır.
+- Farklı bir ortam kullanmanız gerekirse `flutter run --dart-define=API_BASE_URL=https://your-api-host/api` ile override edebilirsiniz.
 - Backend CORS politikası `app.cors.allowed-origins` environment değişkeni ile ayarlanabilir (örn. `http://localhost:3000,http://127.0.0.1:5173`). Varsayılan değer tüm origin’leri kabul eder ve mobil geliştirme sırasında ek yapılandırma gerektirmez.
 
 ### Backend API Dokümantasyonu ve Seed Verileri

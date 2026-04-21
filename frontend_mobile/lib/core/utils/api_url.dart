@@ -27,8 +27,25 @@ String _remapLoopbackUrlIfNeeded(String absoluteUrl) {
         scheme: base.scheme,
         host: base.host,
         port: base.hasPort ? base.port : null,
+        path: _resolveRemappedPath(incoming.path, base.path),
       )
       .toString();
+}
+
+String _resolveRemappedPath(String incomingPath, String basePath) {
+  if (basePath.isEmpty || basePath == '/') {
+    return incomingPath;
+  }
+  if (incomingPath == basePath || incomingPath.startsWith('$basePath/')) {
+    return incomingPath;
+  }
+  final normalizedBasePath = basePath.endsWith('/')
+      ? basePath.substring(0, basePath.length - 1)
+      : basePath;
+  final normalizedIncomingPath = incomingPath.startsWith('/')
+      ? incomingPath
+      : '/$incomingPath';
+  return '$normalizedBasePath$normalizedIncomingPath';
 }
 
 bool _isLoopbackHost(String host) {
