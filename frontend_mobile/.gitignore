@@ -43,6 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/keystore.properties
+/android/*.jks
+/android/*.keystore
 
 # Local dev server override (generated)
 lib/core/constants/generated_dev_server_override.dart
