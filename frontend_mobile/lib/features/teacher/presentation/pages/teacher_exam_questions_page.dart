@@ -118,7 +118,7 @@ class TeacherExamQuestionsPage extends StatelessWidget {
             context,
             examStatus,
             images: examStatus.images,
-            title: 'Kagit sayfalari',
+            title: 'Kağıt sayfaları',
           ),
         ],
       ],
@@ -135,9 +135,9 @@ class TeacherExamQuestionsPage extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         child: const EmptyStateWidget(
           icon: Icons.person_search_outlined,
-          title: 'Ogrenci grubu bulunamadi',
+          title: 'Öğrenci grubu bulunamadı',
           subtitle:
-              'Secilen ogrenci veya atanmamis kagit grubu bu sinavda bulunamadi.',
+              'Seçilen öğrenci veya atanmamış kağıt grubu bu sınavda bulunamadı.',
         ),
       );
     }
@@ -153,8 +153,8 @@ class TeacherExamQuestionsPage extends StatelessWidget {
             examStatus,
             images: selectedCluster.images,
             title: selectedCluster.unmatched
-                ? 'Atanmamis sayfalar'
-                : 'Ogrenciye ait sayfalar',
+                ? 'Atanmamış sayfalar'
+                : 'Öğrenciye ait sayfalar',
           ),
         if (selectedCluster.images.isNotEmpty) const SizedBox(height: 20),
         _buildFocusedQuestionSection(
@@ -294,8 +294,8 @@ class TeacherExamQuestionsPage extends StatelessWidget {
     if (clusters.isEmpty) {
       return const EmptyStateWidget(
         icon: Icons.groups_outlined,
-        title: 'Ogrenci grubu bulunmadi',
-        subtitle: 'Kagitlar eslestikce bu ekranda ogrenci kartlari gorunecek.',
+        title: 'Öğrenci grubu bulunmadı',
+        subtitle: 'Kağıtlar eşleştikçe bu ekranda öğrenci kartları görünecek.',
       );
     }
 
@@ -305,7 +305,7 @@ class TeacherExamQuestionsPage extends StatelessWidget {
         const Padding(
           padding: EdgeInsets.only(left: 2, bottom: 10),
           child: Text(
-            'Ogrenci gruplari',
+            'Öğrenci grupları',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
@@ -373,7 +373,7 @@ class TeacherExamQuestionsPage extends StatelessWidget {
                             : Icons.arrow_forward_rounded,
                       ),
                       label: Text(
-                        cluster.unmatched ? 'Kagitlari Eslestir' : 'Detaya Git',
+                        cluster.unmatched ? 'Kağıtları Eşleştir' : 'Detaya Git',
                       ),
                     ),
                   ),
@@ -541,7 +541,7 @@ class TeacherExamQuestionsPage extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(left: 2, bottom: 10),
           child: Text(
-            cluster.unmatched ? 'Atanmamis sorular' : 'Soru listesi',
+            cluster.unmatched ? 'Atanmamış sorular' : 'Soru listesi',
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
@@ -555,11 +555,11 @@ class TeacherExamQuestionsPage extends StatelessWidget {
                 ? Icons.person_search_outlined
                 : Icons.quiz_outlined,
             title: cluster.unmatched
-                ? 'Sorular ogrenciye baglanmayi bekliyor'
-                : 'Bu ogrenci icin soru bulunmuyor',
+                ? 'Sorular öğrenciye bağlanmayı bekliyor'
+                : 'Bu öğrenci için soru bulunmuyor',
             subtitle: cluster.unmatched
-                ? 'Yukaridaki sayfalari acip manuel eslestirme yapabilirsiniz.'
-                : 'OCR sonrasi soru kaydi henuz olusmamis olabilir.',
+                ? 'Yukarıdaki sayfaları açıp manuel eşleştirme yapabilirsiniz.'
+                : 'OCR sonrası soru kaydı henüz oluşmamış olabilir.',
           )
         else
           ListView.separated(
@@ -1145,7 +1145,7 @@ class _QuestionCardState extends State<_QuestionCard>
                 if (widget.question.studentAnswer?.isNotEmpty ?? false) ...[
                   const SizedBox(height: 10),
                   _PreviewBlock(
-                    title: 'Ogrenci Cevabi',
+                    title: 'Öğrenci Cevabı',
                     icon: Icons.edit_note_rounded,
                     content: widget.question.studentAnswer!,
                   ),
@@ -1224,7 +1224,7 @@ class _QuestionCardState extends State<_QuestionCard>
                     child: OutlinedButton.icon(
                       onPressed: widget.onOverride,
                       icon: const Icon(Icons.edit_note_rounded, size: 18),
-                      label: const Text('Ogretmen Override'),
+                      label: const Text('Öğretmen Override'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.primary,
                         side: const BorderSide(color: AppColors.border),
@@ -1254,13 +1254,13 @@ class _QuestionCardState extends State<_QuestionCard>
   String _formatQuestionType(String value) {
     switch (value.toUpperCase()) {
       case 'MULTIPLE_CHOICE':
-        return 'Coktan secmeli';
+        return 'Çoktan seçmeli';
       case 'SHORT_TEXT':
-        return 'Kisa cevap';
+        return 'Kısa cevap';
       case 'NUMERIC':
-        return 'Sayisal';
+        return 'Sayısal';
       case 'OPEN_ENDED':
-        return 'Acik uclu';
+        return 'Açık uçlu';
       default:
         return value;
     }
@@ -1269,15 +1269,15 @@ class _QuestionCardState extends State<_QuestionCard>
   String _formatGradingStatus(String value) {
     switch (value.toUpperCase()) {
       case 'GRADED':
-        return 'Puanlandi';
+        return 'Puanlandı';
       case 'PARTIALLY_GRADED':
-        return 'Kismi puan';
+        return 'Kısmi puan';
       case 'OVERRIDDEN':
-        return 'Ogretmen override';
+        return 'Öğretmen override';
       case 'NEEDS_REVIEW':
-        return 'Kontrol onerilir';
+        return 'Kontrol önerilir';
       case 'FAILED':
-        return 'Puanlama hatasi';
+        return 'Puanlama hatası';
       default:
         return value;
     }
@@ -1374,7 +1374,7 @@ class _QuestionOverrideSheetState extends State<_QuestionOverrideSheet> {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Ogretmen Override',
+                    'Öğretmen Override',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -1434,7 +1434,7 @@ class _QuestionOverrideSheetState extends State<_QuestionOverrideSheet> {
                   const SizedBox(height: 12),
                   _buildTextField(
                     controller: _evaluationSummaryController,
-                    label: 'Ogretmen Notu',
+                    label: 'Öğretmen Notu',
                     maxLines: 4,
                   ),
                   const SizedBox(height: 18),
@@ -1543,12 +1543,12 @@ class _QuestionOverrideSheetState extends State<_QuestionOverrideSheet> {
               onTap: () => setState(() => _correct = true),
             ),
             _CorrectnessChip(
-              label: 'Yanlis',
+              label: 'Yanlış',
               selected: _correct == false,
               onTap: () => setState(() => _correct = false),
             ),
             _CorrectnessChip(
-              label: 'Kismi / Belirsiz',
+              label: 'Kısmi / Belirsiz',
               selected: _correct == null,
               onTap: () => setState(() => _correct = null),
             ),

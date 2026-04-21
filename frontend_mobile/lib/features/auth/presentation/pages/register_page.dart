@@ -100,7 +100,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               const _TopBrandMark(),
                               const SizedBox(height: 18),
                               Text(
-                                'Hesabini olustur',
+                                'Hesabını oluştur',
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context)
                                     .textTheme
@@ -161,14 +161,14 @@ class _RegisterPageState extends State<RegisterPage> {
         children: [
           Expanded(
             child: _AuthTabButton(
-              label: 'Kayit Ol',
+              label: 'Kayıt Ol',
               isSelected: true,
               onTap: () {},
             ),
           ),
           Expanded(
             child: _AuthTabButton(
-              label: 'Giris Yap',
+              label: 'Giriş Yap',
               isSelected: false,
               onTap: () => context.go('/auth/login'),
             ),
@@ -261,7 +261,7 @@ class _RegisterPageState extends State<RegisterPage> {
           const SizedBox(height: 18),
           _AuthTextField(
             controller: _passwordController,
-            label: 'Sifre Belirle',
+            label: 'Şifre Belirle',
             hint: '******',
             obscureText: true,
             validator: (value) {
@@ -293,12 +293,12 @@ class _RegisterPageState extends State<RegisterPage> {
                 onTap: () => setState(() => _selectedRole = AuthRoles.admin),
               ),
               _RoleChip(
-                label: 'Ogretmen',
+                label: 'Öğretmen',
                 isSelected: _selectedRole == AuthRoles.teacher,
                 onTap: () => setState(() => _selectedRole = AuthRoles.teacher),
               ),
               _RoleChip(
-                label: 'Ogrenci',
+                label: 'Öğrenci',
                 isSelected: _selectedRole == AuthRoles.student,
                 onTap: () => setState(() => _selectedRole = AuthRoles.student),
               ),
@@ -308,7 +308,7 @@ class _RegisterPageState extends State<RegisterPage> {
           _buildRegisterButton(),
           const SizedBox(height: 24),
           Text(
-            'Kayit olarak Hizmet Kosullari ve Veri Isleme Sozlesmesini kabul etmis olursunuz.',
+            'Kayıt olarak Hizmet Koşulları ve Veri İşleme Sözleşmesi’ni kabul etmiş olursunuz.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: const Color(0xFF7B8498),
@@ -360,7 +360,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     )
                   : const Text(
-                      'Kayit Ol',
+                      'Kayıt Ol',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,

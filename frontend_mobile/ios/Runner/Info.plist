@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Frontend Mobile</string>
+	<string>FastCheck</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>frontend_mobile</string>
+	<string>FastCheck</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -28,6 +28,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Belge taramak ve OCR için kameraya erişim gerekir.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Galeriden belge ve görsel seçmek için fotoğraf arşivine erişim gerekir.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Uygulama, aynı ağdaki Fastcheck sunucusuna bağlanabilmek için yerel ağ erişimine ihtiyaç duyar.</string>
 	<key>NSAppTransportSecurity</key>

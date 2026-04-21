@@ -438,7 +438,7 @@ class TeacherStudentClusterModel {
   }) {
     return TeacherStudentClusterModel(
       studentId: (json['studentId'] as num?)?.toInt(),
-      studentName: json['studentName'] as String? ?? 'Bilinmeyen Ogrenci',
+      studentName: json['studentName'] as String? ?? 'Bilinmeyen Öğrenci',
       studentEmail: json['studentEmail'] as String?,
       unmatched: json['unmatched'] as bool? ?? false,
       matchingStatus: json['matchingStatus'] as String?,

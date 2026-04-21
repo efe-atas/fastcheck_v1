@@ -103,7 +103,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                'Hesabina giris yap veya yeni bir hesap olusturarak devam et.',
+                                'Hesabına giriş yap veya yeni bir hesap oluşturarak devam et.',
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context)
                                     .textTheme
@@ -151,14 +151,14 @@ class _LoginPageState extends State<LoginPage> {
         children: [
           Expanded(
             child: _AuthTabButton(
-              label: 'Giris Yap',
+              label: 'Giriş Yap',
               isSelected: true,
               onTap: () {},
             ),
           ),
           Expanded(
             child: _AuthTabButton(
-              label: 'Kayit Ol',
+              label: 'Kayıt Ol',
               isSelected: false,
               onTap: () => context.go('/auth/register'),
             ),
@@ -195,7 +195,7 @@ class _LoginPageState extends State<LoginPage> {
               spacing: 6,
               children: [
                 Text(
-                  'Hesabin yok mu?',
+                  'Hesabın yok mu?',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: const Color(0xFF7B8498),
                       ),
@@ -203,7 +203,7 @@ class _LoginPageState extends State<LoginPage> {
                 GestureDetector(
                   onTap: () => context.go('/auth/register'),
                   child: Text(
-                    'Kayit Ol',
+                    'Kayıt Ol',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w700,
