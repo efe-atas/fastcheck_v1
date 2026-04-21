@@ -2,7 +2,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/register_usecase.dart';
 import '../../domain/repositories/auth_repository.dart';
-import '../../domain/entities/user_entity.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 
@@ -20,24 +19,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthLoginRequested>(_onLoginRequested);
     on<AuthRegisterRequested>(_onRegisterRequested);
     on<AuthLogoutRequested>(_onLogoutRequested);
-    on<AuthDevBypassRequested>(_onDevBypassRequested);
-  }
-
-  void _onDevBypassRequested(
-    AuthDevBypassRequested event,
-    Emitter<AuthState> emit,
-  ) {
-    emit(
-      AuthAuthenticated(
-        UserEntity(
-          id: -1,
-          email: 'dev-bypass@local.test',
-          role: event.role,
-          accessToken: '',
-          refreshToken: '',
-        ),
-      ),
-    );
   }
 
   Future<void> _onCheckRequested(

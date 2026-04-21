@@ -11,6 +11,44 @@ import '../bloc/auth_state.dart';
 
 const _motionDuration = Duration(milliseconds: 650);
 
+const _demoAccounts = <_DemoAccount>[
+  _DemoAccount(
+    label: 'Admin',
+    email: 'demo.admin@fastcheck.app',
+    password: 'Demo123!',
+    icon: Icons.admin_panel_settings_outlined,
+    accentColor: Color(0xFF8E44AD),
+  ),
+  _DemoAccount(
+    label: 'Öğretmen',
+    email: 'demo.ogretmen@fastcheck.app',
+    password: 'Demo123!',
+    icon: Icons.school_outlined,
+    accentColor: Color(0xFF1F7A5C),
+  ),
+  _DemoAccount(
+    label: 'Öğrenci 1',
+    email: 'demo.ogrenci1@fastcheck.app',
+    password: 'Demo123!',
+    icon: Icons.person_outlined,
+    accentColor: Color(0xFF2563EB),
+  ),
+  _DemoAccount(
+    label: 'Öğrenci 2',
+    email: 'demo.ogrenci2@fastcheck.app',
+    password: 'Demo123!',
+    icon: Icons.person_2_outlined,
+    accentColor: Color(0xFF0F766E),
+  ),
+  _DemoAccount(
+    label: 'Veli',
+    email: 'demo.veli@fastcheck.app',
+    password: 'Demo123!',
+    icon: Icons.family_restroom_outlined,
+    accentColor: Color(0xFFB45309),
+  ),
+];
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -49,6 +87,17 @@ class _LoginPageState extends State<LoginPage> {
             ),
           );
     }
+  }
+
+  void _loginWithDemoAccount(_DemoAccount account) {
+    _emailController.text = account.email;
+    _passwordController.text = account.password;
+    context.read<AuthBloc>().add(
+          AuthLoginRequested(
+            email: account.email,
+            password: account.password,
+          ),
+        );
   }
 
   @override
@@ -314,6 +363,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildDebugSection(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -327,64 +377,91 @@ class _LoginPageState extends State<LoginPage> {
               ),
         ),
         const SizedBox(height: 12),
-        _devRoleButton(
-          context,
-          label: 'Admin',
-          role: 'ROLE_ADMIN',
-          icon: Icons.admin_panel_settings_outlined,
+        Text(
+          'Tek dokunuşla gerçek demo hesabına giriş yap.',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: const Color(0xFF98A1B3),
+            height: 1.4,
+          ),
         ),
-        const SizedBox(height: 8),
-        _devRoleButton(
-          context,
-          label: 'Öğretmen',
-          role: 'ROLE_TEACHER',
-          icon: Icons.school_outlined,
-        ),
-        const SizedBox(height: 8),
-        _devRoleButton(
-          context,
-          label: 'Öğrenci',
-          role: 'ROLE_STUDENT',
-          icon: Icons.person_outlined,
-        ),
-        const SizedBox(height: 8),
-        _devRoleButton(
-          context,
-          label: 'Veli',
-          role: 'ROLE_PARENT',
-          icon: Icons.family_restroom_outlined,
+        const SizedBox(height: 14),
+        BlocBuilder<AuthBloc, AuthState>(
+          builder: (context, state) {
+            final isLoading = state is AuthLoading;
+            return Column(
+              children: [
+                for (final account in _demoAccounts) ...[
+                  _demoLoginButton(
+                    context,
+                    account: account,
+                    isLoading: isLoading,
+                  ),
+                  if (account != _demoAccounts.last) const SizedBox(height: 8),
+                ],
+              ],
+            );
+          },
         ),
       ],
     );
   }
 
-  Widget _devRoleButton(
+  Widget _demoLoginButton(
     BuildContext context, {
-    required String label,
-    required String role,
-    required IconData icon,
+    required _DemoAccount account,
+    required bool isLoading,
   }) {
     return OutlinedButton.icon(
       style: OutlinedButton.styleFrom(
-        minimumSize: const Size.fromHeight(48),
-        side: const BorderSide(color: Color(0xFFDCE3F0)),
+        minimumSize: const Size.fromHeight(54),
+        side: BorderSide(color: account.accentColor.withOpacity(0.18)),
+        backgroundColor: account.accentColor.withOpacity(0.04),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
       ),
-      icon: Icon(icon, size: 18, color: AppColors.textPrimary),
-      onPressed: () => context.read<AuthBloc>().add(
-            AuthDevBypassRequested(role: role),
+      icon: Icon(account.icon, size: 18, color: account.accentColor),
+      onPressed: isLoading ? null : () => _loginWithDemoAccount(account),
+      label: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${account.label} olarak gir',
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-      label: Text(
-        '$label olarak gir',
-        style: const TextStyle(
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.w600,
-        ),
+          const SizedBox(height: 2),
+          Text(
+            account.email,
+            style: const TextStyle(
+              color: Color(0xFF7B8498),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class _DemoAccount {
+  const _DemoAccount({
+    required this.label,
+    required this.email,
+    required this.password,
+    required this.icon,
+    required this.accentColor,
+  });
+
+  final String label;
+  final String email;
+  final String password;
+  final IconData icon;
+  final Color accentColor;
 }
 
 class _TopBrandMark extends StatelessWidget {
