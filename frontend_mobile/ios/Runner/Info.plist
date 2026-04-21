@@ -30,13 +30,6 @@
 	<string>Belge taramak ve OCR için kameraya erişim gerekir.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Galeriden belge ve görsel seçmek için fotoğraf arşivine erişim gerekir.</string>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>Uygulama, aynı ağdaki Fastcheck sunucusuna bağlanabilmek için yerel ağ erişimine ihtiyaç duyar.</string>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-	</dict>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -4,8 +4,13 @@ Flutter client for the Fastcheck education platform.
 
 ## Local backend access from iOS devices
 
-Physical iOS builds can now reach the backend running on your Mac without
-changing code or remembering `--dart-define` flags. The workflow:
+The committed iOS release configuration is App Store safe and expects HTTPS
+traffic to the public API. Physical-device LAN debugging against a local
+`http://` backend is no longer enabled by default in `Info.plist`.
+
+If you temporarily need local-device debugging against your Mac, add the
+required ATS/local-network exceptions only in a local, uncommitted debug setup.
+The workflow for that temporary setup is:
 
 1. Keep the backend server listening on `0.0.0.0:8081` and allow incoming
    connections in macOS Firewall (or disable the firewall while developing).
@@ -42,15 +47,9 @@ Simulators/emulators keep their previous behavior:
 - iOS Simulator → `127.0.0.1`
 - Android Emulator → `10.0.2.2`
 
-Use the LAN IP flow only when deploying to **physical** devices.
+Use the LAN IP flow only in a local debug-only setup for **physical** devices.
 
 ### Production / TestFlight builds
 
 Release builds use the public API base URL `https://api.efeatas.dev/api` by
-default. Local LAN access is only needed for physical-device debug runs.
-
-### Local Network permission
-
-`NSLocalNetworkUsageDescription` explains why the app needs LAN access:
-“Uygulama, aynı ağdaki Fastcheck sunucusuna bağlanabilmek için yerel ağ erişimine
-ihtiyaç duyar.” Make sure this string matches your localization requirements.
+default.
