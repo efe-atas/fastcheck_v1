@@ -1,19 +1,31 @@
 import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart';
+
 import 'dev_server_override.dart';
 
 class ApiConstants {
   ApiConstants._();
 
+  static const String _productionBaseUrl =
+      String.fromEnvironment(
+        'API_BASE_URL',
+        defaultValue: 'https://api.efeatas.dev/api',
+      );
+
   /// Base API URL. Android emülatörleri host makinesine farklı IP ile gider.
+  /// Debug dışındaki build'lerde public API gateway kullanılır.
   /// Diğer platformlarda `DevServerOverride` yerel ağ IP’sini çözer.
   static String get baseUrl {
+    if (!kDebugMode) {
+      return _productionBaseUrl;
+    }
     if (Platform.isAndroid) {
       // Android emülatör → host makinesi
-      return 'http://10.0.2.2:8080';
+      return 'http://10.0.2.2:8081';
     }
     final host = DevServerOverride.baseUrlHost;
-    return 'http://$host:8080';
+    return 'http://$host:8081';
   }
 
   // Auth
